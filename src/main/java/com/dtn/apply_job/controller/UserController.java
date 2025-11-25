@@ -1,6 +1,7 @@
 package com.dtn.apply_job.controller;
 
 import com.dtn.apply_job.domain.User;
+import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +32,10 @@ public class UserController {
     }
 
     @GetMapping("/users/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable long id) {
+    public ResponseEntity<User> getUserById(@PathVariable long id) throws IdInvalidException {
+        if(id >= 1500){
+            throw new IdInvalidException("Id invalid!");
+        }
         User result = this.userService.getUserById(id);
         return ResponseEntity.ok().body(result);
     }
