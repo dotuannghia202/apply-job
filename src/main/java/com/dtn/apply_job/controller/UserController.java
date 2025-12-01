@@ -5,6 +5,7 @@ import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,9 +15,13 @@ public class UserController {
 
     private final UserService userService;
 
+    private final PasswordEncoder passwordEncoder;
 
-    public UserController(UserService userService) {
+
+    public UserController(UserService userService, PasswordEncoder passwordEncoder) {
+
         this.userService = userService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @GetMapping("/users")
@@ -27,6 +32,8 @@ public class UserController {
 
     @PostMapping ("/users")
     public ResponseEntity<User> createUser(@RequestBody User user) {
+        String hashedPassword = passwordEncoder.encode(user.getPassword());
+        user.setPassword(hashedPassword);
         User result = this.userService.createUser(user);
         return ResponseEntity.status(HttpStatus.CREATED).body(null);
     }

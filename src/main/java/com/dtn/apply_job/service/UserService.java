@@ -37,4 +37,8 @@ public class UserService {
         userUpdate.setPassword(newUser.getPassword());
         return this.userRepository.save(userUpdate);
     }
+
+    public User getUserByUsername(String email) {
+        return this.userRepository.findByEmail(email);
+    }
 }
