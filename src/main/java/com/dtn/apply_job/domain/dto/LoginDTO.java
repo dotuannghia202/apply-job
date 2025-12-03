@@ -1,7 +1,13 @@
 package com.dtn.apply_job.domain.dto;
 
+import jakarta.validation.constraints.NotBlank;
+
 public class LoginDTO {
+
+    @NotBlank(message = "Username cannot be blank!")
     private String username;
+
+    @NotBlank(message = "Username cannot be blank!")
     private String password;
 
     public LoginDTO(String username, String password) {
