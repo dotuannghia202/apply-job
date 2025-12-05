@@ -4,6 +4,7 @@ import com.dtn.apply_job.domain.RestRespon;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -18,11 +19,11 @@ public class GlobalException {
 
     @ExceptionHandler(value = {
             BadCredentialsException.class,
-            IdInvalidException.class,
+            UsernameNotFoundException.class
     })
 
 
-    public ResponseEntity<RestRespon<Object>> handleIdInvalidException(IdInvalidException ex) {
+    public ResponseEntity<RestRespon<Object>> handleIdException(Exception ex) {
         RestRespon<Object> res = new  RestRespon<>();
         res.setStatusCode(HttpStatus.BAD_REQUEST.value());
         res.setMessage(ex.getMessage());
