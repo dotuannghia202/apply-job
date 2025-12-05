@@ -45,7 +45,7 @@ public class SecurityUtil {
                         .issuedAt(now)
                                 .expiresAt(validity)
                                         .subject(authentication.getName())
-                                                .claim("devgay", authentication)
+                                                .claim("Dev_gay", authentication)
                                                         .build();
         JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
