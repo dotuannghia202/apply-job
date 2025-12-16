@@ -2,6 +2,8 @@ package com.dtn.apply_job.service;
 
 import com.dtn.apply_job.domain.User;
 import com.dtn.apply_job.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,8 +16,9 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public List<User> getAllUsers() {
-        return this.userRepository.findAll();
+    public List<User> getAllUsers(Pageable pageable) {
+        Page<User> pageUser =  this.userRepository.findAll(pageable);
+        return pageUser.getContent();
     }
 
     public User createUser(User user) {

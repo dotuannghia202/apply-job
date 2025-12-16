@@ -31,7 +31,7 @@ public class CompanyController {
 
     @GetMapping("/companies")
     public ResponseEntity<List<Company>> getAllCompanies() {
-        List<Company> companyList = this.companyService.getAllCompanies();
+        List<Company> companyList = this.companyService.handleGetAllCompany();
         return ResponseEntity.status(HttpStatus.OK).body(companyList);
     }
 

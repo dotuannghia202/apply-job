@@ -23,7 +23,7 @@ public class CompanyService {
         return this.companyRepository.save(company);
     }
 
-    public List<Company> getAllCompanies() {
+    public List<Company> handleGetAllCompany() {
         return this.companyRepository.findAll();
     }
 
