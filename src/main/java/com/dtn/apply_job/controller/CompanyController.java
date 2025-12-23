@@ -2,15 +2,21 @@ package com.dtn.apply_job.controller;
 
 import com.dtn.apply_job.domain.Company;
 import com.dtn.apply_job.domain.RestRespon;
+import com.dtn.apply_job.domain.dto.ResultPaginationDTO;
 import com.dtn.apply_job.service.CompanyService;
+import com.turkraft.springfilter.boot.Filter;
 import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @Setter
 @Getter
@@ -30,14 +36,16 @@ public class CompanyController {
     }
 
     @GetMapping("/companies")
-    public ResponseEntity<List<Company>> getAllCompanies() {
-        List<Company> companyList = this.companyService.handleGetAllCompany();
-        return ResponseEntity.status(HttpStatus.OK).body(companyList);
+    public ResponseEntity<ResultPaginationDTO> getAllCompanies(@Filter Specification<Company> spec, Pageable pageable) {
+
+        ResultPaginationDTO resultPaginationDTO = this.companyService.handleGetAllCompany(spec, pageable);
+
+        return ResponseEntity.status(HttpStatus.OK).body(resultPaginationDTO);
     }
 
     @PutMapping("/companies/{id}")
     public ResponseEntity<Company> updateCompany(@PathVariable long id, @Valid @RequestBody Company company) {
-        Company companyUpdated = this.companyService.handleUpdateCompany(id,  company);
+        Company companyUpdated = this.companyService.handleUpdateCompany(id, company);
         return ResponseEntity.status(HttpStatus.OK).body(companyUpdated);
     }
 

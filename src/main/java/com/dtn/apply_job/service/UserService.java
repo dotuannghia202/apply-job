@@ -1,9 +1,12 @@
 package com.dtn.apply_job.service;
 
 import com.dtn.apply_job.domain.User;
+import com.dtn.apply_job.domain.dto.Meta;
+import com.dtn.apply_job.domain.dto.ResultPaginationDTO;
 import com.dtn.apply_job.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,9 +19,21 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public List<User> getAllUsers(Pageable pageable) {
-        Page<User> pageUser =  this.userRepository.findAll(pageable);
-        return pageUser.getContent();
+    public ResultPaginationDTO getAllUsers(Specification<User> spec, Pageable pageable) {
+        Page<User> pageUser =  this.userRepository.findAll(spec, pageable);
+
+        ResultPaginationDTO resultPaginationDTO = new ResultPaginationDTO();
+        Meta meta = new Meta();
+
+        meta.setPage(pageUser.getNumber() + 1);
+        meta.setPageSize(pageUser.getSize());
+        meta.setPages(pageUser.getTotalPages());
+        meta.setTotal(pageUser.getTotalElements());
+
+        resultPaginationDTO.setMeta(meta);
+        resultPaginationDTO.setResult(pageUser.getContent());
+
+        return resultPaginationDTO;
     }
 
     public User createUser(User user) {

@@ -26,6 +26,7 @@ dependencies {
     implementation ("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
     implementation ("org.springframework.boot:spring-boot-starter-validation")
+    implementation("com.turkraft.springfilter:jpa:3.1.7")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 	providedRuntime("org.springframework.boot:spring-boot-starter-tomcat")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")

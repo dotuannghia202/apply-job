@@ -1,6 +1,7 @@
 package com.dtn.apply_job.util;
 
 import com.dtn.apply_job.domain.RestRespon;
+import com.dtn.apply_job.util.annotation.ApiMessage;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
@@ -35,7 +36,8 @@ public class FormatResponse implements ResponseBodyAdvice<Object> {
                 return body;
             }else{
                 res.setData(body);
-                res.setMessage("Call Api Success!");
+                ApiMessage message = returnType.getMethodAnnotation(ApiMessage.class);
+                res.setMessage(message != null ? message.value() : "Call Api Success");
             }
             return res;
         }

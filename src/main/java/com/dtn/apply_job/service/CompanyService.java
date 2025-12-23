@@ -1,9 +1,14 @@
 package com.dtn.apply_job.service;
 
 import com.dtn.apply_job.domain.Company;
+import com.dtn.apply_job.domain.dto.Meta;
+import com.dtn.apply_job.domain.dto.ResultPaginationDTO;
 import com.dtn.apply_job.repository.CompanyRepository;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,8 +28,21 @@ public class CompanyService {
         return this.companyRepository.save(company);
     }
 
-    public List<Company> handleGetAllCompany() {
-        return this.companyRepository.findAll();
+    public ResultPaginationDTO handleGetAllCompany(Specification spec, Pageable pageable) {
+
+        Page<Company> companyPage = this.companyRepository.findAll(spec, pageable);
+
+        ResultPaginationDTO resultPaginationDTO = new ResultPaginationDTO();
+        Meta meta = new Meta();
+        meta.setPage(companyPage.getNumber() + 1);
+        meta.setPageSize(companyPage.getSize());
+        meta.setPages(companyPage.getTotalPages());
+        meta.setTotal(companyPage.getTotalElements());
+
+        resultPaginationDTO.setMeta(meta);
+        resultPaginationDTO.setResult(companyPage.getContent());
+
+        return resultPaginationDTO;
     }
 
     public Company handleUpdateCompany(long id, Company company) {
