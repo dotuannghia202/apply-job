@@ -10,6 +10,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,26 +20,26 @@ public class GlobalException {
 
     @ExceptionHandler(value = {
             BadCredentialsException.class,
+            EmailExistedException.class,
             UsernameNotFoundException.class
     })
-
-
-    public ResponseEntity<RestRespon<Object>> handleIdException(Exception ex) {
-        RestRespon<Object> res = new  RestRespon<>();
+    public ResponseEntity<RestRespon<Object>> handleBadRequestException(Exception ex) {
+        RestRespon<Object> res = new RestRespon<>();
         res.setStatusCode(HttpStatus.BAD_REQUEST.value());
         res.setMessage(ex.getMessage());
-        res.setError(ex.getMessage());
+        res.setError(ex.getClass().getSimpleName());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
     }
 
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<RestRespon<Object>> validationError (MethodArgumentNotValidException ex) {
+    public ResponseEntity<RestRespon<Object>> validationError(MethodArgumentNotValidException ex) {
 
         //Lấy ra lỗi sử dụng đối tượng BindingResult
         BindingResult result = ex.getBindingResult();
         final List<FieldError> fieldErrors = result.getFieldErrors();
 
-        RestRespon<Object> res = new  RestRespon<>();
+        RestRespon<Object> res = new RestRespon<>();
         res.setStatusCode(HttpStatus.BAD_REQUEST.value());
         res.setMessage(ex.getBody().getDetail());
 
@@ -49,4 +50,16 @@ public class GlobalException {
 
     }
 
+
+    @ExceptionHandler(value = {
+            NoResourceFoundException.class,
+            IdInvalidException.class,
+    })
+    public ResponseEntity<RestRespon<Object>> handleNotFoundException(Exception ex) {
+        RestRespon<Object> res = new RestRespon<>();
+        res.setStatusCode(HttpStatus.NOT_FOUND.value());
+        res.setError(ex.getClass().getSimpleName());
+        res.setMessage(ex instanceof NoResourceFoundException ? "URL is not found" : ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(res);
+    }
 }

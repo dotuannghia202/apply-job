@@ -1,9 +1,19 @@
 package com.dtn.apply_job.domain;
 
+import com.dtn.apply_job.util.GenderEnum;
+import com.dtn.apply_job.util.SecurityUtil;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.time.Instant;
 
 @Entity
 @Table(name = "users")
+@Getter
+@Setter
 public class User {
 
     @Id
@@ -11,49 +21,54 @@ public class User {
     private long id;
 
     private String name;
+
+    @NotBlank(message = "Password is not blank")
     private String password;
+
+    @NotBlank(message = "Email is not blank")
     private String email;
+
+    private int age;
+
+    @Enumerated(EnumType.STRING)
+    private GenderEnum gender;
+
+    private String address;
+    private String refreshToken;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
+    private Instant createdAt;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
+    private Instant updatedAt;
+
+    private String createdBy;
+    private String updatedBy;
+
+    @PrePersist
+    public void handleBeforeCreate() {
+        this.createdBy = SecurityUtil.getCurrentUserLogin().isPresent() == true ? SecurityUtil.getCurrentUserLogin().get() : "";
+        this.createdAt = Instant.now();
+    }
+
+    @PreUpdate
+    public void handleBeforeUpdate() {
+        this.updatedBy = SecurityUtil.getCurrentUserLogin().isPresent() == true ? SecurityUtil.getCurrentUserLogin().get() : "";
+        this.updatedAt = Instant.now();
+    }
+
     public User() {
 
     }
 
-    public long getId() {
-        return id;
-    }
-
-    public User(String name, String password, String email) {
+    public User(String name, String password, String email, int age, GenderEnum gender, String address, String refreshToken) {
         this.name = name;
         this.password = password;
         this.email = email;
+        this.age = age;
+        this.gender = gender;
+        this.address = address;
+        this.refreshToken = refreshToken;
     }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
 
 }

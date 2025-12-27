@@ -21,6 +21,7 @@ import java.util.Optional;
 @Setter
 @Getter
 @RestController
+@RequestMapping("/api/v1")
 public class CompanyController {
 
     private CompanyService companyService;

@@ -51,7 +51,7 @@ public class SecurityConfiguration {
 
                                 authz
 
-                                        .requestMatchers("/", "/login").permitAll()
+                                        .requestMatchers("/", "/api/v1/login").permitAll()
                                         .anyRequest().authenticated()
 
                 )
