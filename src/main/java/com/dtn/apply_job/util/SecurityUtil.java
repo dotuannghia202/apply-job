@@ -1,5 +1,6 @@
 package com.dtn.apply_job.util;
 
+import com.dtn.apply_job.domain.dto.ResLoginDTO;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -30,23 +31,43 @@ public class SecurityUtil {
     @Value("${jwt.secret}")
     private String jwtKey;
 
-    @Value("${jwt.expiration}")
-    private long jwtExpiration;
+    @Value("${jwt.access-token.expiration}")
+    private long accessTokenExpiration;
+
+    @Value("${jwt.refresh-token.expiration}")
+    private long refreshTokenExpiration;
 
 
-    public String createToken(Authentication authentication) {
+    public String createAccessGToken(Authentication authentication) {
 
         //Cấu hình thời gian token
         Instant now = Instant.now();
-        Instant validity = now.plus(this.jwtExpiration, ChronoUnit.MILLIS);
+        Instant validity = now.plus(this.accessTokenExpiration, ChronoUnit.MILLIS);
 
         //Cấu hình payload
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                        .issuedAt(now)
-                                .expiresAt(validity)
-                                        .subject(authentication.getName())
-                                                .claim("Dev_gay", authentication)
-                                                        .build();
+                .issuedAt(now)
+                .expiresAt(validity)
+                .subject(authentication.getName())
+                .claim("Dev_gay", authentication)
+                .build();
+        JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();
+        return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
+    }
+
+    public String createRefreshToken(String email, ResLoginDTO dto) {
+
+        //Cấu hình thời gian token
+        Instant now = Instant.now();
+        Instant validity = now.plus(this.refreshTokenExpiration, ChronoUnit.MILLIS);
+
+        //Cấu hình payload
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .issuedAt(now)
+                .expiresAt(validity)
+                .subject(email)
+                .claim("user", dto.getUserLogin())
+                .build();
         JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
     }
