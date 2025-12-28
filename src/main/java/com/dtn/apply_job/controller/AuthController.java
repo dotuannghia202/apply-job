@@ -42,7 +42,7 @@ public class AuthController {
         //Xác thực, so sánh thông tin người dùng trong database, ghi đè loadUserByUsername
         Authentication authentication = authenticationManagerBuidlder.getObject().authenticate(token);
 
-
+        //Lưu thông tin tài khoản đang đăng nhập vào context để có thể sử dụng sau này
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         ResLoginDTO res = new ResLoginDTO();
