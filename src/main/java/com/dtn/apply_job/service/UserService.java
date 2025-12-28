@@ -129,15 +129,23 @@ public class UserService {
         resUpdateDTO.setAddress(updatedUser.getAddress());
         resUpdateDTO.setUpdatedAt(updatedUser.getUpdatedAt());
         resUpdateDTO.setUpdatedBy(updatedUser.getUpdatedBy());
-        
+
         return resUpdateDTO;
     }
 
-    public User getUserByUsername(String email) {
+    public User handleGetUserByUsername(String email) {
         return this.userRepository.findByEmail(email);
     }
 
     public boolean existsByEmail(String email) {
         return this.userRepository.existsByEmail(email);
+    }
+
+    public void updateUserToken(String token, String email) {
+        User currentUser = this.handleGetUserByUsername(email);
+        if (currentUser != null) {
+            currentUser.setRefreshToken(token);
+            this.userRepository.save(currentUser);
+        }
     }
 }
