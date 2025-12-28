@@ -5,6 +5,7 @@ import com.dtn.apply_job.domain.dto.LoginDTO;
 import com.dtn.apply_job.domain.dto.ResLoginDTO;
 import com.dtn.apply_job.service.UserService;
 import com.dtn.apply_job.util.SecurityUtil;
+import com.dtn.apply_job.util.annotation.ApiMessage;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -14,10 +15,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -36,7 +34,7 @@ public class AuthController {
         this.userService = userService;
     }
 
-    @PostMapping("/login")
+    @PostMapping("/auth/login")
     public ResponseEntity<ResLoginDTO> login(@Valid @RequestBody LoginDTO loginDTO) {
         //Nạp input username và password
         UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(loginDTO.getUsername(), loginDTO.getPassword());
@@ -44,7 +42,7 @@ public class AuthController {
         //Xác thực, so sánh thông tin người dùng trong database, ghi đè loadUserByUsername
         Authentication authentication = authenticationManagerBuidlder.getObject().authenticate(token);
 
-        String access_token = this.securityUtil.createAccessGToken(authentication);
+
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         ResLoginDTO res = new ResLoginDTO();
@@ -56,6 +54,8 @@ public class AuthController {
                     currentUserDB.getName());
             res.setUserLogin(resLoginDTO);
         }
+
+        String access_token = this.securityUtil.createAccessGToken(authentication, res.getUserLogin());
 
         res.setAccessToken(access_token);
 
@@ -74,5 +74,22 @@ public class AuthController {
                 .build();
 
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, resCookies.toString()).body(res);
+    }
+
+    @GetMapping("/auth/account")
+    @ApiMessage("Fetch info account")
+    public ResLoginDTO.UserLogin getAccount() {
+        String email = SecurityUtil.getCurrentUserLogin().isPresent() ?
+                SecurityUtil.getCurrentUserLogin().get() : "";
+
+        User currentUserDB = this.userService.handleGetUserByUsername(email);
+
+        ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin();
+        if (currentUserDB != null) {
+            userLogin.setId(currentUserDB.getId());
+            userLogin.setEmail(currentUserDB.getEmail());
+            userLogin.setName(currentUserDB.getName());
+        }
+        return userLogin;
     }
 }

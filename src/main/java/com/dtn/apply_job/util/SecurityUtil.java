@@ -38,7 +38,7 @@ public class SecurityUtil {
     private long refreshTokenExpiration;
 
 
-    public String createAccessGToken(Authentication authentication) {
+    public String createAccessGToken(Authentication authentication, ResLoginDTO.UserLogin user) {
 
         //Cấu hình thời gian token
         Instant now = Instant.now();
@@ -49,7 +49,7 @@ public class SecurityUtil {
                 .issuedAt(now)
                 .expiresAt(validity)
                 .subject(authentication.getName())
-                .claim("Dev_gay", authentication)
+                .claim("user", user)
                 .build();
         JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
