@@ -1,6 +1,7 @@
 package com.dtn.apply_job.util;
 
 import com.dtn.apply_job.domain.dto.ResLoginDTO;
+import com.nimbusds.jose.util.Base64;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -11,6 +12,7 @@ import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -26,6 +28,7 @@ public class SecurityUtil {
 
     private final JwtEncoder jwtEncoder;
 
+
     public SecurityUtil(JwtEncoder jwtEncoder) {
         this.jwtEncoder = jwtEncoder;
     }
@@ -39,6 +42,23 @@ public class SecurityUtil {
     @Value("${jwt.refresh-token.expiration}")
     private long refreshTokenExpiration;
 
+    private SecretKey getSecretKey() {
+        byte[] keyBytes = Base64.from(jwtKey).decode();
+        return new SecretKeySpec(keyBytes, 0, keyBytes.length, JWT_ALGORITHM.getName());
+    }
+
+    //Kiểm tra
+    public Jwt checkValidRefreshToken(String refresh_token) {
+        NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder.withSecretKey(
+                getSecretKey()).macAlgorithm(SecurityUtil.JWT_ALGORITHM).build();
+        try {
+            System.out.println(">>> Refresh token valid");
+            return jwtDecoder.decode(refresh_token);
+        } catch (Exception e) {
+            System.out.println(">>> Refresh token error: " + e.getMessage());
+            throw e;
+        }
+    }
 
     public String createAccessGToken(Authentication authentication, ResLoginDTO.UserLogin user) {
 
