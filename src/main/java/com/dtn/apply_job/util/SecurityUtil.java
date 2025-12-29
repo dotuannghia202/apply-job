@@ -60,7 +60,7 @@ public class SecurityUtil {
         }
     }
 
-    public String createAccessGToken(Authentication authentication, ResLoginDTO.UserLogin user) {
+    public String createAccessToken(String email, ResLoginDTO.UserLogin user) {
 
         //Cấu hình thời gian token
         Instant now = Instant.now();
@@ -75,7 +75,7 @@ public class SecurityUtil {
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuedAt(now)
                 .expiresAt(validity)
-                .subject(authentication.getName())
+                .subject(email)
                 .claim("user", user)
                 .claim("permission", listAuthority)
                 .build();
