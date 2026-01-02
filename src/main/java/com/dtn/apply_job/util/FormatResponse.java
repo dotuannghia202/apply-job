@@ -1,6 +1,6 @@
 package com.dtn.apply_job.util;
 
-import com.dtn.apply_job.domain.RestRespon;
+import com.dtn.apply_job.domain.response.RestRespon;
 import com.dtn.apply_job.util.annotation.ApiMessage;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.core.MethodParameter;
@@ -28,13 +28,13 @@ public class FormatResponse implements ResponseBodyAdvice<Object> {
             RestRespon<Object> res = new RestRespon<>();
             res.setStatusCode(statusCode);
 
-            if(body instanceof String){
+            if (body instanceof String) {
                 return body;
             }
 
-            if(statusCode >= 400){
+            if (statusCode >= 400) {
                 return body;
-            }else{
+            } else {
                 res.setData(body);
                 ApiMessage message = returnType.getMethodAnnotation(ApiMessage.class);
                 res.setMessage(message != null ? message.value() : "Call Api Success");

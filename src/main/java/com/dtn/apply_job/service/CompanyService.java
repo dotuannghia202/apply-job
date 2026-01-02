@@ -1,8 +1,7 @@
 package com.dtn.apply_job.service;
 
 import com.dtn.apply_job.domain.Company;
-import com.dtn.apply_job.domain.dto.Meta;
-import com.dtn.apply_job.domain.dto.ResultPaginationDTO;
+import com.dtn.apply_job.domain.response.ResultPaginationDTO;
 import com.dtn.apply_job.repository.CompanyRepository;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,7 +10,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
 
 @Setter
@@ -33,7 +31,7 @@ public class CompanyService {
         Page<Company> companyPage = this.companyRepository.findAll(spec, pageable);
 
         ResultPaginationDTO resultPaginationDTO = new ResultPaginationDTO();
-        Meta meta = new Meta();
+        ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
         meta.setPage(companyPage.getNumber() + 1);
         meta.setPageSize(companyPage.getSize());
         meta.setPages(companyPage.getTotalPages());

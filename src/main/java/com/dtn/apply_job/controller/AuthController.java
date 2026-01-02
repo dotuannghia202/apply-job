@@ -1,8 +1,8 @@
 package com.dtn.apply_job.controller;
 
 import com.dtn.apply_job.domain.User;
-import com.dtn.apply_job.domain.dto.LoginDTO;
-import com.dtn.apply_job.domain.dto.ResLoginDTO;
+import com.dtn.apply_job.domain.request.ReqLoginDTO;
+import com.dtn.apply_job.domain.response.ResLoginDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.service.UserService;
 import com.dtn.apply_job.util.SecurityUtil;
@@ -37,9 +37,10 @@ public class AuthController {
     }
 
     @PostMapping("/auth/login")
-    public ResponseEntity<ResLoginDTO> login(@Valid @RequestBody LoginDTO loginDTO) {
+    @ApiMessage("User login")
+    public ResponseEntity<ResLoginDTO> login(@Valid @RequestBody ReqLoginDTO reqLoginDTO) {
         //Nạp input username và password
-        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(loginDTO.getUsername(), loginDTO.getPassword());
+        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(reqLoginDTO.getUsername(), reqLoginDTO.getPassword());
 
         //Xác thực, so sánh thông tin người dùng trong database, ghi đè loadUserByUsername
         Authentication authentication = authenticationManagerBuidlder.getObject().authenticate(token);
@@ -48,7 +49,7 @@ public class AuthController {
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         ResLoginDTO res = new ResLoginDTO();
-        User currentUserDB = this.userService.handleGetUserByUsername(loginDTO.getUsername());
+        User currentUserDB = this.userService.handleGetUserByUsername(reqLoginDTO.getUsername());
         if (currentUserDB != null) {
             ResLoginDTO.UserLogin resLoginDTO = new ResLoginDTO.UserLogin(
                     currentUserDB.getId(),
@@ -62,10 +63,10 @@ public class AuthController {
         res.setAccessToken(access_token);
 
         //Create refresh-token
-        String refresh_token = this.securityUtil.createRefreshToken(loginDTO.getUsername(), res);
+        String refresh_token = this.securityUtil.createRefreshToken(reqLoginDTO.getUsername(), res);
 
         //Update user
-        this.userService.updateUserToken(refresh_token, loginDTO.getUsername());
+        this.userService.handleUpdateUserToken(refresh_token, reqLoginDTO.getUsername());
 
         //Set cookie
         ResponseCookie resCookies = ResponseCookie.from("refresh_token", refresh_token)
@@ -80,19 +81,21 @@ public class AuthController {
 
     @GetMapping("/auth/account")
     @ApiMessage("Fetch info account")
-    public ResLoginDTO.UserLogin getAccount() {
-        String email = SecurityUtil.getCurrentUserLogin().isPresent() ?
-                SecurityUtil.getCurrentUserLogin().get() : "";
+    public ResponseEntity<ResLoginDTO.UserGetAccount> getAccount() {
+        String email = SecurityUtil.getCurrentUser().isPresent() ?
+                SecurityUtil.getCurrentUser().get() : "";
 
         User currentUserDB = this.userService.handleGetUserByUsername(email);
 
         ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin();
+        ResLoginDTO.UserGetAccount userGetAccount = new ResLoginDTO.UserGetAccount();
         if (currentUserDB != null) {
             userLogin.setId(currentUserDB.getId());
             userLogin.setEmail(currentUserDB.getEmail());
             userLogin.setName(currentUserDB.getName());
+            userGetAccount.setUser(userLogin);
         }
-        return userLogin;
+        return ResponseEntity.ok().body(userGetAccount);
     }
 
     @GetMapping("/auth/refresh")
@@ -116,6 +119,7 @@ public class AuthController {
         userLogin.setId(currentUser.getId());
         userLogin.setEmail(currentUser.getEmail());
         userLogin.setName(currentUser.getName());
+
         userRefreshToken.setUserLogin(userLogin);
 
         String access_token = this.securityUtil.createAccessToken(email, userRefreshToken.getUserLogin());
@@ -126,7 +130,7 @@ public class AuthController {
         String new_refresh_token = this.securityUtil.createRefreshToken(email, userRefreshToken);
 
         //Update user
-        this.userService.updateUserToken(new_refresh_token, email);
+        this.userService.handleUpdateUserToken(new_refresh_token, email);
 
         //Set cookie
         ResponseCookie resCookies = ResponseCookie.from("refresh_token", new_refresh_token)
@@ -137,5 +141,30 @@ public class AuthController {
                 .build();
 
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, resCookies.toString()).body(userRefreshToken);
+    }
+
+    @PostMapping("/api/v1/auth/logout")
+    @ApiMessage("User logout")
+    public ResponseEntity<Void> logout() throws IdInvalidException {
+        String email = SecurityUtil.getCurrentUser().isPresent() ?
+                SecurityUtil.getCurrentUser().get() : "";
+
+        if (email.equals("")) {
+            throw new IdInvalidException("Access token invalid!");
+        }
+
+        //update refresh token = null
+        this.userService.handleUpdateUserToken(null, email);
+
+        //remove refresh token in cookie
+        ResponseCookie deleteCookie = ResponseCookie
+                .from("refresh_token", null)
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(0)
+                .build();
+
+        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, deleteCookie.toString()).body(null);
     }
 }

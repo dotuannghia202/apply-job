@@ -1,6 +1,6 @@
 package com.dtn.apply_job.util;
 
-import com.dtn.apply_job.domain.dto.ResLoginDTO;
+import com.dtn.apply_job.domain.response.ResLoginDTO;
 import com.nimbusds.jose.util.Base64;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
@@ -105,7 +105,7 @@ public class SecurityUtil {
      *
      * @return the login of the current user.
      */
-    public static Optional<String> getCurrentUserLogin() {
+    public static Optional<String> getCurrentUser() {
         SecurityContext securityContext = SecurityContextHolder.getContext();
         return Optional.ofNullable(extractPrincipal(securityContext.getAuthentication()));
     }

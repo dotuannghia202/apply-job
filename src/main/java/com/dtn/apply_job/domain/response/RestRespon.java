@@ -1,4 +1,4 @@
-package com.dtn.apply_job.domain;
+package com.dtn.apply_job.domain.response;
 
 public class RestRespon<T> {
     private int statusCode;

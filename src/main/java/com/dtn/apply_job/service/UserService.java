@@ -1,7 +1,10 @@
 package com.dtn.apply_job.service;
 
 import com.dtn.apply_job.domain.User;
-import com.dtn.apply_job.domain.dto.*;
+import com.dtn.apply_job.domain.response.ResCreatedDTO;
+import com.dtn.apply_job.domain.response.ResUpdateDTO;
+import com.dtn.apply_job.domain.response.ResUserDTO;
+import com.dtn.apply_job.domain.response.ResultPaginationDTO;
 import com.dtn.apply_job.exception.EmailExistedException;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.repository.UserRepository;
@@ -45,7 +48,7 @@ public class UserService {
         }
 
         ResultPaginationDTO resultPaginationDTO = new ResultPaginationDTO();
-        Meta meta = new Meta();
+        ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
 
         meta.setPage(pageUser.getNumber() + 1);
         meta.setPageSize(pageUser.getSize());
@@ -141,7 +144,7 @@ public class UserService {
         return this.userRepository.existsByEmail(email);
     }
 
-    public void updateUserToken(String token, String email) {
+    public void handleUpdateUserToken(String token, String email) {
         User currentUser = this.handleGetUserByUsername(email);
         if (currentUser != null) {
             currentUser.setRefreshToken(token);

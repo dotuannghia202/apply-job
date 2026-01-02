@@ -1,20 +1,17 @@
 package com.dtn.apply_job.config;
 
-import com.dtn.apply_job.domain.RestRespon;
+import com.dtn.apply_job.domain.response.RestRespon;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ProblemDetail;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.oauth2.jwt.JwtValidationException;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.net.URI;
 import java.util.Optional;
 
 @Component
@@ -34,15 +31,15 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
 
         response.setContentType("application/json;charset=UTF-8");
 
-        RestRespon<Object> res = new  RestRespon<>();
+        RestRespon<Object> res = new RestRespon<>();
         res.setStatusCode(HttpStatus.UNAUTHORIZED.value());
 
         String errorMessage = Optional.ofNullable(authException.getCause())
                 .map(Throwable::getMessage)
-                        .orElse(authException.getMessage());
+                .orElse(authException.getMessage());
         res.setError(errorMessage);
 
-        res.setMessage("Token không hợp lệ (hết hạn, không đúng định dạng, hoặc không có JWT ở header!");
+        res.setMessage("Invalid token (expired, incorrect format, or missing JWT in header!)");
 
         mapper.writeValue(response.getWriter(), res);
     }

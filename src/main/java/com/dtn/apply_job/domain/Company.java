@@ -1,7 +1,6 @@
 package com.dtn.apply_job.domain;
 
 import com.dtn.apply_job.util.SecurityUtil;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
@@ -30,7 +29,7 @@ public class Company {
 
     private String logo;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
+    //    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
     private Instant createdAt;
 
     private Instant updatedAt;
@@ -41,7 +40,7 @@ public class Company {
 
     @PrePersist
     public void handleBeforeCreate() {
-        this.createdBy = SecurityUtil.getCurrentUserLogin().isPresent() == true ? SecurityUtil.getCurrentUserLogin().get() : "";
+        this.createdBy = SecurityUtil.getCurrentUser().isPresent() == true ? SecurityUtil.getCurrentUser().get() : "";
         this.createdAt = Instant.now();
     }
 
@@ -49,7 +48,7 @@ public class Company {
 
     }
 
-    public Company(String name,  String description, String address, String logo) {
+    public Company(String name, String description, String address, String logo) {
         this.name = name;
         this.description = description;
         this.address = address;

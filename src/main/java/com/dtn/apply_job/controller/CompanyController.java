@@ -1,22 +1,18 @@
 package com.dtn.apply_job.controller;
 
 import com.dtn.apply_job.domain.Company;
-import com.dtn.apply_job.domain.RestRespon;
-import com.dtn.apply_job.domain.dto.ResultPaginationDTO;
+import com.dtn.apply_job.domain.response.RestRespon;
+import com.dtn.apply_job.domain.response.ResultPaginationDTO;
 import com.dtn.apply_job.service.CompanyService;
 import com.turkraft.springfilter.boot.Filter;
 import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.Optional;
 
 @Setter
 @Getter
@@ -26,7 +22,7 @@ public class CompanyController {
 
     private CompanyService companyService;
 
-    public CompanyController (CompanyService companyService) {
+    public CompanyController(CompanyService companyService) {
         this.companyService = companyService;
     }
 
@@ -52,8 +48,8 @@ public class CompanyController {
 
     @DeleteMapping("/companies/{id}")
     public ResponseEntity<Void> deleteCompany(@PathVariable long id) {
-       this.companyService.handleDeleteCompany(id);
-       return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
+        this.companyService.handleDeleteCompany(id);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
     }
 
 }

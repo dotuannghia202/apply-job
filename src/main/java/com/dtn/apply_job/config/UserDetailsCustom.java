@@ -1,5 +1,6 @@
-package com.dtn.apply_job.service;
+package com.dtn.apply_job.config;
 
+import com.dtn.apply_job.service.UserService;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

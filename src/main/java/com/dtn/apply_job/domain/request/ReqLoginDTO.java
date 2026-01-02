@@ -1,8 +1,8 @@
-package com.dtn.apply_job.domain.dto;
+package com.dtn.apply_job.domain.request;
 
 import jakarta.validation.constraints.NotBlank;
 
-public class LoginDTO {
+public class ReqLoginDTO {
 
     @NotBlank(message = "Username cannot be blank!")
     private String username;
@@ -10,7 +10,7 @@ public class LoginDTO {
     @NotBlank(message = "Username cannot be blank!")
     private String password;
 
-    public LoginDTO(String username, String password) {
+    public ReqLoginDTO(String username, String password) {
         this.username = username;
         this.password = password;
     }
