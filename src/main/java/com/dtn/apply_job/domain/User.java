@@ -5,6 +5,7 @@ import com.dtn.apply_job.util.SecurityUtil;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -20,6 +21,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
+    @NotBlank(message = "Full name is not blank")
     private String name;
 
     @NotBlank(message = "Password is not blank")
@@ -30,6 +32,7 @@ public class User {
 
     private int age;
 
+    @NotNull
     @Enumerated(EnumType.STRING)
     private GenderEnum gender;
 
@@ -44,6 +47,10 @@ public class User {
 
     private String createdBy;
     private String updatedBy;
+
+    @ManyToOne
+    @JoinColumn(name = "company_id")
+    private Company company;
 
     @PrePersist
     public void handleBeforeCreate() {

@@ -1,6 +1,5 @@
 package com.dtn.apply_job.domain.response;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,9 +14,15 @@ public class ResUpdateDTO {
     private int age;
     private String gender;
     private String address;
-
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
     private Instant updatedAt;
-
     private String updatedBy;
+
+    private CompanyUser company;
+
+    @Setter
+    @Getter
+    public static class CompanyUser {
+        private long id;
+        String name;
+    }
 }

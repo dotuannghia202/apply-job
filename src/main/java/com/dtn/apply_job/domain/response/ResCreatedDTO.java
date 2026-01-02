@@ -20,4 +20,13 @@ public class ResCreatedDTO {
     private Instant createdAt;
 
     private String createdBy;
+
+    private CompanyUser company;
+
+    @Setter
+    @Getter
+    public static class CompanyUser {
+        private long id;
+        String name;
+    }
 }
