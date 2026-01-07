@@ -60,4 +60,8 @@ public class CompanyService {
         this.companyRepository.deleteById(id);
         return;
     }
+
+    public Optional<Company> handleGetCompanyById(long id) {
+        return this.companyRepository.findById(id);
+    }
 }

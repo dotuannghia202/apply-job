@@ -47,7 +47,15 @@ public class UserService {
             userDTO.setCreatedBy(user.getCreatedBy());
             userDTO.setUpdatedBy(user.getUpdatedBy());
 
+            if (user.getCompany() != null) {
+                ResUserDTO.CompanyUser companyUserDTO = new ResUserDTO.CompanyUser();
+                companyUserDTO.setId(user.getCompany().getId());
+                companyUserDTO.setName(user.getCompany().getName());
+                userDTO.setCompany(companyUserDTO);
+            }
+
             results.add(userDTO);
+
         }
 
         ResultPaginationDTO resultPaginationDTO = new ResultPaginationDTO();
@@ -151,6 +159,7 @@ public class UserService {
         currentUser.setAddress(user.getAddress());
 
         if (user.getCompany() != null) {
+
             currentUser.setCompany(user.getCompany());
         }
 
@@ -168,9 +177,12 @@ public class UserService {
 
         ResUpdateDTO.CompanyUser companyUser = new ResUpdateDTO.CompanyUser();
         if (user.getCompany() != null) {
-            companyUser.setId(user.getCompany().getId());
-            companyUser.setName(user.getCompany().getName());
-            resUpdateDTO.setCompany(companyUser);
+            Optional<Company> optionalCompany = this.companyService.handleGetCompanyById(user.getCompany().getId());
+            if (optionalCompany.isPresent()) {
+                companyUser.setId(optionalCompany.get().getId());
+                companyUser.setName(optionalCompany.get().getName());
+                resUpdateDTO.setCompany(companyUser);
+            }
         } else if (currentUser.getCompany() != null) {
             companyUser.setId(currentUser.getCompany().getId());
             companyUser.setName(currentUser.getCompany().getName());
