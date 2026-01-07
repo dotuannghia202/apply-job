@@ -212,4 +212,8 @@ public class UserService {
     public User handleGetUserByRefreshTokenAndEmail(String refresh_token, String email) {
         return this.userRepository.findByRefreshTokenAndEmail(refresh_token, email);
     }
+
+    public Optional<List<User>> handleGetUserByCompany(Company company) {
+        return this.userRepository.findByCompany(company);
+    }
 }

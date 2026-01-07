@@ -1,6 +1,7 @@
 package com.dtn.apply_job.domain;
 
 import com.dtn.apply_job.util.SecurityUtil;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
@@ -30,7 +31,7 @@ public class Company {
 
     private String logo;
 
-    
+
     private Instant createdAt;
 
     private Instant updatedAt;
@@ -40,6 +41,7 @@ public class Company {
     private String updatedBy;
 
     @OneToMany(mappedBy = "company", fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<User> users;
 
     @PrePersist

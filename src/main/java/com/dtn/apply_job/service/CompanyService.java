@@ -1,8 +1,10 @@
 package com.dtn.apply_job.service;
 
 import com.dtn.apply_job.domain.Company;
+import com.dtn.apply_job.domain.User;
 import com.dtn.apply_job.domain.response.ResultPaginationDTO;
 import com.dtn.apply_job.repository.CompanyRepository;
+import com.dtn.apply_job.repository.UserRepository;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.domain.Page;
@@ -10,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Setter
@@ -17,9 +20,11 @@ import java.util.Optional;
 @Service
 public class CompanyService {
     private final CompanyRepository companyRepository;
+    private final UserRepository userRepository;
 
-    public CompanyService(CompanyRepository companyRepository) {
+    public CompanyService(CompanyRepository companyRepository, UserRepository userRepository) {
         this.companyRepository = companyRepository;
+        this.userRepository = userRepository;
     }
 
     public Company handleCreateCompany(Company company) {
@@ -57,8 +62,16 @@ public class CompanyService {
     }
 
     public void handleDeleteCompany(long id) {
+        Optional<Company> optionalCompany = this.companyRepository.findById(id);
+        if (optionalCompany.isPresent()) {
+            Company company = optionalCompany.get();
+            Optional<List<User>> optionalUsers = this.userRepository.findByCompany(company);
+            if (optionalUsers.isPresent()) {
+                List<User> users = optionalUsers.get();
+                this.userRepository.deleteAll(users);
+            }
+        }
         this.companyRepository.deleteById(id);
-        return;
     }
 
     public Optional<Company> handleGetCompanyById(long id) {
