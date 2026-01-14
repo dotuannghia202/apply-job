@@ -1,7 +1,7 @@
 package com.dtn.apply_job.domain;
 
-import com.dtn.apply_job.util.GenderEnum;
 import com.dtn.apply_job.util.SecurityUtil;
+import com.dtn.apply_job.util.constant.enums.GenderEnum;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;

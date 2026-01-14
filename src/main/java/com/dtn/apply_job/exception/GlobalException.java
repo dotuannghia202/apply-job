@@ -1,6 +1,6 @@
 package com.dtn.apply_job.exception;
 
-import com.dtn.apply_job.domain.response.RestRespon;
+import com.dtn.apply_job.domain.response.user.RestRespon;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -21,7 +21,8 @@ public class GlobalException {
     @ExceptionHandler(value = {
             BadCredentialsException.class,
             EmailExistedException.class,
-            UsernameNotFoundException.class
+            UsernameNotFoundException.class,
+            NameExistedException.class,
     })
     public ResponseEntity<RestRespon<Object>> handleBadRequestException(Exception ex) {
         RestRespon<Object> res = new RestRespon<>();

@@ -1,4 +1,4 @@
-package com.dtn.apply_job.domain.response;
+package com.dtn.apply_job.domain.response.user;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;

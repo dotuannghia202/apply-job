@@ -2,7 +2,7 @@ package com.dtn.apply_job.service;
 
 import com.dtn.apply_job.domain.Company;
 import com.dtn.apply_job.domain.User;
-import com.dtn.apply_job.domain.response.ResultPaginationDTO;
+import com.dtn.apply_job.domain.response.user.ResultPaginationDTO;
 import com.dtn.apply_job.repository.CompanyRepository;
 import com.dtn.apply_job.repository.UserRepository;
 import lombok.Getter;

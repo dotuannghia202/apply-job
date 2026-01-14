@@ -1,6 +1,6 @@
 package com.dtn.apply_job.config;
 
-import com.dtn.apply_job.domain.response.RestRespon;
+import com.dtn.apply_job.domain.response.user.RestRespon;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

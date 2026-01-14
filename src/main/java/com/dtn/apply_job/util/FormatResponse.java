@@ -1,6 +1,6 @@
 package com.dtn.apply_job.util;
 
-import com.dtn.apply_job.domain.response.RestRespon;
+import com.dtn.apply_job.domain.response.user.RestRespon;
 import com.dtn.apply_job.util.annotation.ApiMessage;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.core.MethodParameter;

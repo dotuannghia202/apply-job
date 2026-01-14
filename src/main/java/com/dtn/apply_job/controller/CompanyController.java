@@ -1,8 +1,8 @@
 package com.dtn.apply_job.controller;
 
 import com.dtn.apply_job.domain.Company;
-import com.dtn.apply_job.domain.response.RestRespon;
-import com.dtn.apply_job.domain.response.ResultPaginationDTO;
+import com.dtn.apply_job.domain.response.user.RestRespon;
+import com.dtn.apply_job.domain.response.user.ResultPaginationDTO;
 import com.dtn.apply_job.service.CompanyService;
 import com.turkraft.springfilter.boot.Filter;
 import jakarta.validation.Valid;

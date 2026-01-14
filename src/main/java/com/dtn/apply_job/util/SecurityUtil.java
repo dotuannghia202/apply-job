@@ -1,6 +1,6 @@
 package com.dtn.apply_job.util;
 
-import com.dtn.apply_job.domain.response.ResLoginDTO;
+import com.dtn.apply_job.domain.response.user.ResLoginDTO;
 import com.nimbusds.jose.util.Base64;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
