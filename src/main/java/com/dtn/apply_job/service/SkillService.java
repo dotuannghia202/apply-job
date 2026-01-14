@@ -1,16 +1,16 @@
 package com.dtn.apply_job.service;
 
 import com.dtn.apply_job.domain.Skill;
-import com.dtn.apply_job.domain.User;
+import com.dtn.apply_job.domain.response.user.ResultPaginationDTO;
 import com.dtn.apply_job.domain.skill.ResUpdateDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.exception.NameExistedException;
 import com.dtn.apply_job.repository.SkillRepository;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -51,7 +51,21 @@ public class SkillService {
         return this.skillRepository.findById(id).get();
     }
 
-    public List<Skill> handleGetAllSkills(Specification<User> spec, Pageable pageable) {
-        return this.skillRepository.findAll();
+    public ResultPaginationDTO handleGetAllSkills(Specification<Skill> spec, Pageable pageable) {
+
+        Page<Skill> skillPage = this.skillRepository.findAll(spec, pageable);
+
+        ResultPaginationDTO resultPaginationDTO = new ResultPaginationDTO();
+        ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
+        meta.setPage(skillPage.getNumber() + 1);
+        meta.setPageSize(skillPage.getSize());
+        meta.setPages(skillPage.getTotalPages());
+        meta.setTotal(skillPage.getTotalElements());
+
+        resultPaginationDTO.setMeta(meta);
+        resultPaginationDTO.setResult(skillPage.getContent());
+
+        return resultPaginationDTO;
+
     }
 }

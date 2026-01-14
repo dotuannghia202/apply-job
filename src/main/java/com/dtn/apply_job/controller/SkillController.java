@@ -1,7 +1,7 @@
 package com.dtn.apply_job.controller;
 
 import com.dtn.apply_job.domain.Skill;
-import com.dtn.apply_job.domain.User;
+import com.dtn.apply_job.domain.response.user.ResultPaginationDTO;
 import com.dtn.apply_job.domain.skill.ResUpdateDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.exception.NameExistedException;
@@ -13,8 +13,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -48,12 +46,11 @@ public class SkillController {
 
     @GetMapping("/skills")
     @ApiMessage("Fetch all skills")
-    public ResponseEntity<List<Skill>> getAllSkills(
-            @Filter Specification<User> spec,
+    public ResponseEntity<ResultPaginationDTO> getAllSkills(
+            @Filter Specification<Skill> spec,
             Pageable pageable
     ) {
-
-        List<Skill> result = this.skillService.handleGetAllSkills(spec, pageable);
+        ResultPaginationDTO result = this.skillService.handleGetAllSkills(spec, pageable);
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
 }
