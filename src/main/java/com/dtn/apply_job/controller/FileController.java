@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 
 
@@ -25,11 +26,12 @@ public class FileController {
     }
 
     @PostMapping("/files")
-    public String upload(@RequestParam("file") MultipartFile file, @RequestParam("folder") String folder) throws URISyntaxException {
+    public String upload(@RequestParam("file") MultipartFile file, @RequestParam("folder") String folder) throws URISyntaxException, IOException {
 
         //create file if is not existed
         this.fileService.createDirectory(baseUri + folder);
         //store file
+        this.fileService.store(file, folder);
         return file.getOriginalFilename() + folder;
     }
 }
