@@ -1,7 +1,7 @@
 package com.dtn.apply_job.controller;
 
 import com.dtn.apply_job.domain.User;
-import com.dtn.apply_job.domain.request.ReqLoginDTO;
+import com.dtn.apply_job.domain.request.user.ReqLoginDTO;
 import com.dtn.apply_job.domain.response.user.ResLoginDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.service.UserService;

@@ -1,4 +1,4 @@
-package com.dtn.apply_job.domain.request;
+package com.dtn.apply_job.domain.request.user;
 
 import jakarta.validation.constraints.NotBlank;
 

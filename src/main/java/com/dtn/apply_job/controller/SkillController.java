@@ -32,7 +32,7 @@ public class SkillController {
 
     @PutMapping("/skills/{id}")
     @ApiMessage("Update skill")
-    public ResponseEntity<ResUpdateDTO> updateSkill(@PathVariable long id, @RequestBody Skill skill) throws IdInvalidException {
+    public ResponseEntity<ResUpdateDTO> updateSkill(@PathVariable long id, @RequestBody Skill skill) throws IdInvalidException, NameExistedException {
         ResUpdateDTO result = this.skillService.handleUpdateSkill(id, skill);
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
