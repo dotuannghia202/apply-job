@@ -9,14 +9,14 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class StaticResourcesWebConfiguration
         implements WebMvcConfigurer {
 
-    @Value("${devgay.upload-file.base-path}")
-    private String basePath;
+    @Value("${devgay.upload-file.base-uri}")
+    private String baseUri;
 
     //Lấy file được lưu trữ ở server ra
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/storage/**")
-                .addResourceLocations(basePath);
+                .addResourceLocations(baseUri);
     }
 }
 
