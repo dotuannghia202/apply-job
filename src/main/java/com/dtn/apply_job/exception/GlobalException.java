@@ -51,6 +51,22 @@ public class GlobalException {
 
     }
 
+    @ExceptionHandler(value = {
+            FileUploadException.class
+    })
+    public ResponseEntity<RestRespon<Object>> handleFileUploadException(Exception ex) {
+        RestRespon<Object> res = new RestRespon<Object>();
+        res.setStatusCode(HttpStatus.BAD_REQUEST.value());
+        res.setError(ex.getClass().getSimpleName());
+        String message = ex.getMessage();
+        res.setMessage(
+                (message != null && !message.isBlank())
+                        ? message
+                        : "Upload file failed!"
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
+    }
+
 
     @ExceptionHandler(value = {
             NoResourceFoundException.class,
