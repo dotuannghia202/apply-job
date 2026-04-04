@@ -174,10 +174,10 @@ public class AuthController {
 
     @PostMapping("/auth/register")
     @ApiMessage("User register")
-    public ResponseEntity<?> register(@Valid @RequestBody ReqRegisterDTO request) {
+    public ResponseEntity<?> register(@Valid @RequestBody ReqRegisterDTO registerPayload) {
         try {
             // Gọi AuthService truyền vào email và name
-            authService.registerUser(request.getEmail(), request.getName());
+            authService.registerUser(registerPayload);
             return ResponseEntity.ok("Đăng ký thành công! Vui lòng kiểm tra Email để lấy mật khẩu.");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());

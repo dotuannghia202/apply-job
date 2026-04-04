@@ -5,7 +5,6 @@ import com.dtn.apply_job.util.constant.enums.GenderEnum;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -32,12 +31,15 @@ public class User {
 
     private int age;
 
-    @NotNull
+
     @Enumerated(EnumType.STRING)
     private GenderEnum gender;
 
     private String address;
+
+    @Column(columnDefinition = "TEXT")
     private String refreshToken;
+    
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
     private Instant createdAt;
