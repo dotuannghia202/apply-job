@@ -1,4 +1,4 @@
-package com.dtn.apply_job.config;
+package com.dtn.apply_job.security;
 
 import com.dtn.apply_job.domain.response.user.RestRespon;
 import com.fasterxml.jackson.databind.ObjectMapper;

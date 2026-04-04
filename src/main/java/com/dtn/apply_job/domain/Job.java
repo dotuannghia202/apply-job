@@ -1,6 +1,6 @@
 package com.dtn.apply_job.domain;
 
-import com.dtn.apply_job.util.SecurityUtil;
+import com.dtn.apply_job.security.SecurityUtil;
 import com.dtn.apply_job.util.constant.enums.LevelEnum;
 import jakarta.persistence.*;
 import lombok.Getter;

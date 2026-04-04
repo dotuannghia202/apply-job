@@ -16,6 +16,7 @@ public class ResLoginDTO {
 
     @JsonProperty("user")
     private UserLogin userLogin;
+    
 
     @Setter
     @Getter

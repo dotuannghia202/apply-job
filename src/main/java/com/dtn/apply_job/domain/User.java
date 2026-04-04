@@ -1,6 +1,6 @@
 package com.dtn.apply_job.domain;
 
-import com.dtn.apply_job.util.SecurityUtil;
+import com.dtn.apply_job.security.SecurityUtil;
 import com.dtn.apply_job.util.constant.enums.GenderEnum;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
@@ -39,7 +39,7 @@ public class User {
 
     @Column(columnDefinition = "TEXT")
     private String refreshToken;
-    
+
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
     private Instant createdAt;

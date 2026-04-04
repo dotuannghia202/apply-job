@@ -1,6 +1,6 @@
 package com.dtn.apply_job.domain;
 
-import com.dtn.apply_job.util.SecurityUtil;
+import com.dtn.apply_job.security.SecurityUtil;
 import com.dtn.apply_job.util.constant.enums.LevelEnum;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
