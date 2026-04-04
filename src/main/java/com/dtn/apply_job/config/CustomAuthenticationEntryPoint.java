@@ -39,7 +39,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
                 .orElse(authException.getMessage());
         res.setError(errorMessage);
 
-        res.setMessage("Invalid token (expired, incorrect format, or missing JWT in header!)");
+        res.setMessage("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại!");
 
         mapper.writeValue(response.getWriter(), res);
     }

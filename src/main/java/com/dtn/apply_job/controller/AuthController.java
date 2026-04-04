@@ -1,9 +1,11 @@
 package com.dtn.apply_job.controller;
 
 import com.dtn.apply_job.domain.User;
+import com.dtn.apply_job.domain.request.auth.ReqRegisterDTO;
 import com.dtn.apply_job.domain.request.user.ReqLoginDTO;
 import com.dtn.apply_job.domain.response.user.ResLoginDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
+import com.dtn.apply_job.service.AuthService;
 import com.dtn.apply_job.service.UserService;
 import com.dtn.apply_job.util.SecurityUtil;
 import com.dtn.apply_job.util.annotation.ApiMessage;
@@ -26,14 +28,16 @@ public class AuthController {
     private final AuthenticationManagerBuilder authenticationManagerBuidlder;
     private final SecurityUtil securityUtil;
     private final UserService userService;
+    private final AuthService authService;
 
     @Value("${jwt.refresh-token.expiration}")
     private long refreshTokenExpiration;
 
-    public AuthController(AuthenticationManagerBuilder authenticationManagerBuilder, SecurityUtil securityUtil, UserService userService) {
+    public AuthController(AuthenticationManagerBuilder authenticationManagerBuilder, SecurityUtil securityUtil, UserService userService, AuthService authService) {
         this.authenticationManagerBuidlder = authenticationManagerBuilder;
         this.securityUtil = securityUtil;
         this.userService = userService;
+        this.authService = authService;
     }
 
     @PostMapping("/auth/login")
@@ -143,7 +147,7 @@ public class AuthController {
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, resCookies.toString()).body(userRefreshToken);
     }
 
-    @PostMapping("/api/v1/auth/logout")
+    @PostMapping("/auth/logout")
     @ApiMessage("User logout")
     public ResponseEntity<Void> logout() throws IdInvalidException {
         String email = SecurityUtil.getCurrentUser().isPresent() ?
@@ -166,5 +170,17 @@ public class AuthController {
                 .build();
 
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, deleteCookie.toString()).body(null);
+    }
+
+    @PostMapping("/auth/register")
+    @ApiMessage("User register")
+    public ResponseEntity<?> register(@Valid @RequestBody ReqRegisterDTO request) {
+        try {
+            // Gọi AuthService truyền vào email và name
+            authService.registerUser(request.getEmail(), request.getName());
+            return ResponseEntity.ok("Đăng ký thành công! Vui lòng kiểm tra Email để lấy mật khẩu.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

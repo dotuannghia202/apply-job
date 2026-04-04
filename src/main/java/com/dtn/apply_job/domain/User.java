@@ -52,6 +52,15 @@ public class User {
     @JoinColumn(name = "company_id")
     private Company company;
 
+
+    @ManyToMany(fetch = FetchType.EAGER) // Tải quyền ngay lập tức khi đăng nhập
+    @JoinTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private java.util.Set<Role> roles = new java.util.HashSet<>();
+
     @PrePersist
     public void handleBeforeCreate() {
         this.createdBy = SecurityUtil.getCurrentUser().isPresent() == true ? SecurityUtil.getCurrentUser().get() : "";
@@ -63,6 +72,7 @@ public class User {
         this.updatedBy = SecurityUtil.getCurrentUser().isPresent() == true ? SecurityUtil.getCurrentUser().get() : "";
         this.updatedAt = Instant.now();
     }
+
 
     public User() {
 

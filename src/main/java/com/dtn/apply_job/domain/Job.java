@@ -41,7 +41,7 @@ public class Job {
     @Column(nullable = false)
     private LevelEnum level;
 
-    @Column(columnDefinition = "MEDIUMTEXT")
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     private Instant startDate;

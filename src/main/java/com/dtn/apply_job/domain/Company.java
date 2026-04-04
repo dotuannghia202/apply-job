@@ -23,7 +23,7 @@ public class Company {
     @NotBlank(message = "Field name is required!")
     private String name;
 
-    @Column(columnDefinition = "MEDIUMTEXT")
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @NotBlank(message = "Field address is required!")

@@ -4,6 +4,7 @@ import com.dtn.apply_job.domain.response.user.RestRespon;
 import com.dtn.apply_job.util.annotation.ApiMessage;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.core.MethodParameter;
+import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.server.ServerHttpRequest;
@@ -28,7 +29,7 @@ public class FormatResponse implements ResponseBodyAdvice<Object> {
             RestRespon<Object> res = new RestRespon<>();
             res.setStatusCode(statusCode);
 
-            if (body instanceof String) {
+            if (body instanceof String || body instanceof Resource) {
                 return body;
             }
 
