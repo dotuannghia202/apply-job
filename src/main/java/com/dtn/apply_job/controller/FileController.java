@@ -1,9 +1,9 @@
 package com.dtn.apply_job.controller;
 
+import com.dtn.apply_job.common.annotation.ApiMessage;
 import com.dtn.apply_job.domain.response.file.ResUploadFileDTO;
 import com.dtn.apply_job.exception.FileUploadException;
 import com.dtn.apply_job.service.FileService;
-import com.dtn.apply_job.util.annotation.ApiMessage;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;

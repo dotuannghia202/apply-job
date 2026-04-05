@@ -1,20 +1,23 @@
 package com.dtn.apply_job.controller;
 
+import com.dtn.apply_job.common.annotation.ApiMessage;
 import com.dtn.apply_job.domain.User;
 import com.dtn.apply_job.domain.request.auth.ReqRegisterDTO;
 import com.dtn.apply_job.domain.request.user.ReqLoginDTO;
 import com.dtn.apply_job.domain.response.user.ResLoginDTO;
+import com.dtn.apply_job.exception.EmailExistedException;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.security.CustomUserDetails;
 import com.dtn.apply_job.security.SecurityUtil;
 import com.dtn.apply_job.service.AuthService;
 import com.dtn.apply_job.service.UserService;
-import com.dtn.apply_job.util.annotation.ApiMessage;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -180,14 +183,9 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    @ApiMessage("User register")
-    public ResponseEntity<?> register(@Valid @RequestBody ReqRegisterDTO registerPayload) {
-        try {
-            authService.registerUser(registerPayload);
-            return ResponseEntity.ok("Đăng ký thành công! Vui lòng kiểm tra Email để lấy mật khẩu.");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<Void> register(@Valid @RequestBody ReqRegisterDTO registerPayload) throws EmailExistedException, HttpMessageNotReadableException {
+        authService.registerUser(registerPayload);
+        return ResponseEntity.status(HttpStatus.CREATED).body(null);
     }
 
     private ResLoginDTO buildLoginResponse(
@@ -197,7 +195,7 @@ public class AuthController {
     ) {
         ResLoginDTO response = new ResLoginDTO();
         response.setAccessToken(accessToken);
-        
+
         response.setUserLogin(buildUserLogin(userDetails));
         return response;
     }

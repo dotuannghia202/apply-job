@@ -1,12 +1,12 @@
 package com.dtn.apply_job.controller;
 
+import com.dtn.apply_job.common.annotation.ApiMessage;
 import com.dtn.apply_job.domain.Skill;
 import com.dtn.apply_job.domain.response.user.ResultPaginationDTO;
 import com.dtn.apply_job.domain.skill.ResUpdateDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.exception.NameExistedException;
 import com.dtn.apply_job.service.SkillService;
-import com.dtn.apply_job.util.annotation.ApiMessage;
 import com.turkraft.springfilter.boot.Filter;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;

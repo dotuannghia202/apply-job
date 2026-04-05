@@ -1,5 +1,6 @@
 package com.dtn.apply_job.controller;
 
+import com.dtn.apply_job.common.annotation.ApiMessage;
 import com.dtn.apply_job.domain.Job;
 import com.dtn.apply_job.domain.request.job.ReqUpdateJobDTO;
 import com.dtn.apply_job.domain.response.job.ResCreateJobDTO;
@@ -8,7 +9,6 @@ import com.dtn.apply_job.domain.response.job.ResUpdateJobDTO;
 import com.dtn.apply_job.domain.response.user.ResultPaginationDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.service.JobService;
-import com.dtn.apply_job.util.annotation.ApiMessage;
 import com.turkraft.springfilter.boot.Filter;
 import jakarta.validation.Valid;
 import lombok.Getter;

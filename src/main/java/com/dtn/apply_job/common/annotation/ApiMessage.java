@@ -1,4 +1,4 @@
-package com.dtn.apply_job.util.annotation;
+package com.dtn.apply_job.common.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -9,10 +9,10 @@ import lombok.Setter;
 @Setter
 public class ReqRegisterDTO {
 
-    @NotBlank(message = "Email không được để trống")
-    @Email(message = "Email không đúng định dạng")
+    @NotBlank(message = "Email is required!")
+    @Email(message = "Email is not in the correct format!")
     private String email;
 
-    @NotBlank(message = "Họ tên không được để trống")
+    @NotBlank(message = "The full name must not be left blank!")
     private String name;
 }

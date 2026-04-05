@@ -3,9 +3,11 @@ package com.dtn.apply_job.service;
 import com.dtn.apply_job.domain.Role;
 import com.dtn.apply_job.domain.User;
 import com.dtn.apply_job.domain.request.auth.ReqRegisterDTO;
+import com.dtn.apply_job.exception.EmailExistedException;
 import com.dtn.apply_job.repository.RoleRepository;
 import com.dtn.apply_job.repository.UserRepository;
 import com.dtn.apply_job.util.constant.enums.ERole;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -42,10 +44,10 @@ public class AuthService {
         return sb.toString();
     }
 
-    public void registerUser(ReqRegisterDTO payload) throws Exception {
+    public void registerUser(ReqRegisterDTO payload) throws EmailExistedException, HttpMessageNotReadableException {
         // 1. Kiểm tra Email đã tồn tại chưa
         if (userRepository.findByEmail(payload.getEmail()) != null) {
-            throw new Exception("Email đã được sử dụng!");
+            throw new EmailExistedException("Email " + payload.getEmail() + " already exists, please use a different email address.");
         }
 
         // 2. Tạo mật khẩu ngẫu nhiên
@@ -61,7 +63,7 @@ public class AuthService {
 
         // Mặc định cho quyền ỨNG VIÊN
         Role userRole = roleRepository.findByName(ERole.CANDIDATE)
-                .orElseThrow(() -> new RuntimeException("Lỗi: Không tìm thấy Role."));
+                .orElseThrow(() -> new RuntimeException("Error: Role not found!."));
         newUser.getRoles().add(userRole);
 
         // 4. Lưu vào Database

@@ -1,6 +1,6 @@
 package com.dtn.apply_job.exception;
 
-import com.dtn.apply_job.domain.response.user.RestRespon;
+import com.dtn.apply_job.common.response.RestRespon;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -90,7 +90,7 @@ public class GlobalException {
         res.setError(ex.getClass().getSimpleName());
 
         // Khởi tạo câu báo lỗi mặc định
-        String errorMessage = "Dữ liệu đầu vào không hợp lệ (Lỗi định dạng JSON).";
+        String errorMessage = "Invalid input data!";
 
         // Đào sâu để lấy nguyên nhân gốc (Bắt lỗi sai giá trị Enum)
         Throwable cause = ex.getCause();
@@ -103,7 +103,7 @@ public class GlobalException {
                 String allowedValues = Arrays.toString(invalidFormatException.getTargetType().getEnumConstants());
 
                 // Format lại câu báo lỗi tiếng Việt thật dễ hiểu
-                errorMessage = String.format("Giá trị không hợp lệ cho trường '%s'. Chỉ chấp nhận các giá trị: %s",
+                errorMessage = String.format("Invalid value for the '%s' field. Only the following values are accepted: %s",
                         fieldName, allowedValues);
             }
         }

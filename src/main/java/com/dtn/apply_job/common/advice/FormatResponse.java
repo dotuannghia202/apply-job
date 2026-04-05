@@ -1,7 +1,7 @@
-package com.dtn.apply_job.util;
+package com.dtn.apply_job.common.advice;
 
-import com.dtn.apply_job.domain.response.user.RestRespon;
-import com.dtn.apply_job.util.annotation.ApiMessage;
+import com.dtn.apply_job.common.annotation.ApiMessage;
+import com.dtn.apply_job.common.response.RestRespon;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.io.Resource;
