@@ -5,6 +5,7 @@ import com.dtn.apply_job.domain.User;
 import com.dtn.apply_job.domain.request.auth.ReqRegisterDTO;
 import com.dtn.apply_job.domain.request.user.ReqLoginDTO;
 import com.dtn.apply_job.domain.response.user.ResLoginDTO;
+import com.dtn.apply_job.domain.response.user.ResRefreshTokenDTO;
 import com.dtn.apply_job.exception.EmailExistedException;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.security.CustomUserDetails;
@@ -21,9 +22,13 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -75,8 +80,12 @@ public class AuthController {
         // 6. Lưu refresh token vào DB
         userService.handleUpdateUserToken(refreshToken, userDetails.getUsername());
 
+        List<String> roles = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
+
         // 7. Build response
-        ResLoginDTO response = buildLoginResponse(userDetails, accessToken, refreshToken);
+        ResLoginDTO response = buildLoginResponse(userDetails, accessToken, refreshToken, roles);
 
         // 8. Set refresh token vào httpOnly cookie
         ResponseCookie responseCookie = buildRefreshTokenCookie(refreshToken);
@@ -104,8 +113,7 @@ public class AuthController {
     }
 
     @GetMapping("/refresh")
-    @ApiMessage("Refresh token")
-    public ResponseEntity<ResLoginDTO> refreshToken(
+    public ResponseEntity<ResRefreshTokenDTO> refreshToken(
             @CookieValue(name = "refresh_token", defaultValue = "") String refreshToken
     ) throws Exception {
 
@@ -146,15 +154,14 @@ public class AuthController {
         // 6. Update refresh token mới vào DB
         userService.handleUpdateUserToken(newRefreshToken, email);
 
-        // 7. Build response
-        ResLoginDTO response = buildLoginResponse(userDetails, newAccessToken, newRefreshToken);
-
-        // 8. Set cookie mới
+        // 7. Set cookie mới
         ResponseCookie responseCookie = buildRefreshTokenCookie(newRefreshToken);
+
+        ResRefreshTokenDTO res = new ResRefreshTokenDTO(newAccessToken);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, responseCookie.toString())
-                .body(response);
+                .body(res);
     }
 
     @PostMapping("/logout")
@@ -191,20 +198,21 @@ public class AuthController {
     private ResLoginDTO buildLoginResponse(
             CustomUserDetails userDetails,
             String accessToken,
-            String refreshToken
-    ) {
+            String refreshToken,
+            List<String> roles) {
         ResLoginDTO response = new ResLoginDTO();
         response.setAccessToken(accessToken);
 
-        response.setUserLogin(buildUserLogin(userDetails));
+        response.setUserLogin(buildUserLogin(userDetails, roles));
         return response;
     }
 
-    private ResLoginDTO.UserLogin buildUserLogin(CustomUserDetails userDetails) {
+    private ResLoginDTO.UserLogin buildUserLogin(CustomUserDetails userDetails, List<String> roles) {
         ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin();
         userLogin.setId(userDetails.getId());
         userLogin.setEmail(userDetails.getUsername());
         userLogin.setName(userDetails.getFullName());
+        userLogin.setRoles(roles);
         return userLogin;
     }
 
@@ -213,6 +221,9 @@ public class AuthController {
         userLogin.setId(user.getId());
         userLogin.setEmail(user.getEmail());
         userLogin.setName(user.getName());
+        userLogin.setRoles(user.getRoles().stream()
+                .map(role -> role.getName().name())
+                .collect(Collectors.toList()));
         return userLogin;
     }
 

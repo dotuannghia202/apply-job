@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 
 @Setter
 @Getter
@@ -16,7 +18,7 @@ public class ResLoginDTO {
 
     @JsonProperty("user")
     private UserLogin userLogin;
-    
+
 
     @Setter
     @Getter
@@ -26,6 +28,7 @@ public class ResLoginDTO {
         private long id;
         private String email;
         private String name;
+        private List<String> roles;
     }
 
     @Setter
