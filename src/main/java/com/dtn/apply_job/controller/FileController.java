@@ -20,7 +20,6 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
-
 @RestController
 @RequestMapping("/api/v1")
 public class FileController {
@@ -34,35 +33,49 @@ public class FileController {
         this.fileService = fileService;
     }
 
+    // =========================================================
+    // API UPLOAD LÊN CLOUDINARY (DÙNG CHO LUỒNG CHÍNH HIỆN TẠI)
+    // =========================================================
     @PostMapping("/files")
-    @ApiMessage("Upload single file")
-    public ResponseEntity<ResUploadFileDTO> upload(@RequestParam("file") MultipartFile file, @RequestParam("folder") String folder) throws URISyntaxException, IOException, FileUploadException {
+    @ApiMessage("Upload single file to Cloudinary")
+    public ResponseEntity<ResUploadFileDTO> upload(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("folder") String folder) throws URISyntaxException, IOException, FileUploadException {
 
-        //validate
-        if (file.isEmpty()) {
+        // 1. Validate file rỗng
+        if (file == null || file.isEmpty()) {
             throw new FileUploadException("File is empty, please try again!");
         }
-        //create file if is not existed
-        this.fileService.createDirectory(baseUri + folder);
+
+        // 2. Validate đuôi file (Chỉ cho phép Ảnh và PDF)
         String fileName = file.getOriginalFilename();
         List<String> allowedExtensions = Arrays.asList("jpg", "jpeg", "png", "gif", "pdf");
         boolean isValid = allowedExtensions.stream().anyMatch(i -> fileName.toLowerCase().endsWith(i));
-        if (!isValid) {
-            throw new FileUploadException("Invalid file extension, please try again!");
-        }
-        //store file
-        String uploadedFile = this.fileService.store(file, folder);
 
-        ResUploadFileDTO resUploadFileDTO = new ResUploadFileDTO(uploadedFile, Instant.now());
+        if (!isValid) {
+            throw new FileUploadException("Invalid file extension. Only allow: jpg, jpeg, png, gif, pdf!");
+        }
+
+        // 3. Upload thẳng lên Cloudinary (Không cần hàm createDirectory vì Cloudinary tự sinh folder)
+        String uploadedFileUrl = this.fileService.storeToCloudinary(file, folder);
+
+        // 4. Trả về DTO chứa Link URL trực tiếp của Cloudinary
+        ResUploadFileDTO resUploadFileDTO = new ResUploadFileDTO(uploadedFileUrl, Instant.now());
+
         return ResponseEntity.ok().body(resUploadFileDTO);
     }
 
+    // =========================================================
+    // API DOWNLOAD TỪ LOCAL (BACKUP CHO CÁC FILE CŨ Ở Ổ CỨNG)
+    // *Lưu ý: Cloudinary dùng link trực tiếp nên không cần API này
+    // =========================================================
     @GetMapping("/files")
-    @ApiMessage("Down load file")
+    @ApiMessage("Down load local file")
     public ResponseEntity<Resource> download(
             @RequestParam(name = "fileName", required = false) String fileName,
             @RequestParam(name = "folder", required = false) String folder)
             throws FileUploadException, URISyntaxException, FileNotFoundException {
+
         if (fileName == null || folder == null) {
             throw new FileUploadException("File name or folder required!");
         }
@@ -82,5 +95,4 @@ public class FileController {
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(resource);
     }
-
 }

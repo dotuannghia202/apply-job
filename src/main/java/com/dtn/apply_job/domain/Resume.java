@@ -47,6 +47,10 @@ public class Resume {
     )
     private List<Skill> skills;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "specialization_id")
+    private Specialization specialization;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

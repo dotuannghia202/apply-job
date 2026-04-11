@@ -9,30 +9,25 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
-import java.util.Set;
+import java.util.List;
 
 @Entity
-@Table(name = "skills")
+@Table(name = "industries")
 @Getter
 @Setter
-public class Skill {
+public class Industry {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @NotBlank(message = "Skill names cannot be left blank!")
+    @NotBlank(message = "Tên ngành không được để trống!")
     private String name;
 
-    // Quan hệ N-N ngược lại với bảng Job
-    @ManyToMany(mappedBy = "skills", fetch = FetchType.LAZY)
+    // 1 Ngành lớn có nhiều Mảng ngành (Specialization)
+    @OneToMany(mappedBy = "industry", fetch = FetchType.LAZY)
     @JsonIgnore
-    private Set<Job> jobs;
-
-    // Quan hệ N-N ngược lại với bảng Resume
-    @ManyToMany(mappedBy = "skills", fetch = FetchType.LAZY)
-    @JsonIgnore
-    private Set<Resume> resumes;
+    private List<Specialization> specializations;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
     private Instant createdAt;

@@ -72,6 +72,10 @@ public class Job {
     )
     private List<Skill> skills;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "specialization_id")
+    private Specialization specialization;
+
     @PrePersist
     public void handleBeforeCreate() {
         this.createdBy = SecurityUtil.getCurrentUser().orElse("");

@@ -1,4 +1,4 @@
-package com.dtn.apply_job.domain.skill;
+package com.dtn.apply_job.domain.response.skill;
 
 import lombok.Getter;
 import lombok.Setter;
