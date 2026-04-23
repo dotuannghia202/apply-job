@@ -2,7 +2,6 @@ package com.dtn.apply_job.domain.response.job;
 
 import com.dtn.apply_job.util.constant.enums.LevelEnum;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.persistence.Column;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,8 +16,8 @@ public class ResUpdateJobDTO {
     private String location;
     private Double salary;
     private int quantity;
-    private LevelEnum level;
-    @Column(columnDefinition = "MEDIUMTEXT")
+    private List<LevelEnum> levels;
+
     private String description;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
     private Instant startDate;

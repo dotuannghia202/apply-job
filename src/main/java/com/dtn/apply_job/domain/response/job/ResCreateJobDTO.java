@@ -17,7 +17,7 @@ public class ResCreateJobDTO {
     private String location;
     private Double salary;
     private int quantity;
-    private LevelEnum level;
+    private List<LevelEnum> level;
     @Column(columnDefinition = "MEDIUMTEXT")
     private String description;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")

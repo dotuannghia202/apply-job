@@ -30,6 +30,7 @@ public class Application {
     private Resume resume;
 
     // Trạng thái đơn (Dùng Enum)
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private ApplicationStatus status = ApplicationStatus.PENDING;

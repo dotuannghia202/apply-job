@@ -39,7 +39,7 @@ public class Job {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private LevelEnum level;
+    private List<LevelEnum> levels;
 
     @Column(columnDefinition = "TEXT")
     private String description;

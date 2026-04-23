@@ -12,11 +12,15 @@ import com.dtn.apply_job.repository.JobRepository;
 import com.dtn.apply_job.repository.ResumeRepository;
 import com.dtn.apply_job.repository.SpecializationRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SpecializationService {
@@ -27,10 +31,10 @@ public class SpecializationService {
     private final ResumeRepository resumeRepository;
 
     public ResSpecializationDTO handleCreateSpecialization(ReqCreateSpecializationDTO payload) throws IdInvalidException {
-        String reqName = payload.getName();
+        String reqName = payload.getName() != null ? payload.getName().trim() : null;
         Long industryId = payload.getIndustryId();
 
-        if (industryId == null || industryId <= 0) {
+        if (industryId <= 0) {
             throw new IdInvalidException("Industry id is required for specialization");
         }
 
@@ -65,7 +69,9 @@ public class SpecializationService {
         Specialization currentSpecialization = this.specializationRepository.findById(id)
                 .orElseThrow(() -> new IdInvalidException("Specialization id not found"));
 
-        String targetName = reqSpecialization.getName() != null ? reqSpecialization.getName() : currentSpecialization.getName();
+        String targetName = reqSpecialization.getName() != null
+                ? reqSpecialization.getName().trim()
+                : currentSpecialization.getName();
         Industry targetIndustry = currentSpecialization.getIndustry();
 
         if (reqSpecialization.getIndustry() != null && reqSpecialization.getIndustry().getId() > 0) {
@@ -87,14 +93,38 @@ public class SpecializationService {
         return this.specializationRepository.save(currentSpecialization);
     }
 
-    public Specialization handleGetSpecializationById(long id) throws IdInvalidException {
-        return this.specializationRepository.findById(id)
+    public ResSpecializationDTO handleGetSpecializationById(long id) throws IdInvalidException {
+        Specialization specicalization = this.specializationRepository.findById(id)
                 .orElseThrow(() -> new IdInvalidException("Specialization id not found!"));
+        ResSpecializationDTO result = new ResSpecializationDTO();
+        result.setId(specicalization.getId());
+        result.setName(specicalization.getName());
+        result.setCreatedAt(specicalization.getCreatedAt());
+        result.setCreatedBy(specicalization.getCreatedBy());
+        if (specicalization.getIndustry() != null) {
+            ResSpecializationDTO.IndustryInfo industryInfo = new ResSpecializationDTO.IndustryInfo();
+            industryInfo.setId(specicalization.getIndustry().getId());
+            industryInfo.setName(specicalization.getIndustry().getName());
+            result.setIndustry(industryInfo);
+        }
+        return result;
     }
 
     public ResultPaginationDTO handleGetAllSpecializations(Specification<Specialization> spec, Pageable pageable) {
         Page<Specialization> specializationPage = this.specializationRepository.findAll(spec, pageable);
+        List<ResSpecializationDTO> specializationDTOs = specializationPage.getContent()
+                .stream()
+                .map(this::convertToResSpecializationDTO)
+                .toList();
 
+        // ================= ĐOẠN CODE ĐỂ LOG =================
+        log.info("Kiểm tra kiểu trả về: {}", specializationPage);
+        log.info(">>> KIỂM TRA DỮ LIỆU TRANG: ");
+        log.info("- Tổng số bản ghi (Total Elements): {}", specializationPage.getTotalElements());
+        log.info("- Tổng số trang (Total Pages): {}", specializationPage.getTotalPages());
+        log.info("- Số bản ghi trên 1 trang (Size): {}", specializationPage.getSize());
+        log.info("- Nội dung Data (Content): {}", specializationDTOs);
+        // ====================================================
         ResultPaginationDTO resultPaginationDTO = new ResultPaginationDTO();
         ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
         meta.setPage(specializationPage.getNumber() + 1);
@@ -103,9 +133,26 @@ public class SpecializationService {
         meta.setTotal(specializationPage.getTotalElements());
 
         resultPaginationDTO.setMeta(meta);
-        resultPaginationDTO.setResult(specializationPage.getContent());
+        resultPaginationDTO.setResult(specializationDTOs);
 
         return resultPaginationDTO;
+    }
+
+    private ResSpecializationDTO convertToResSpecializationDTO(Specialization specialization) {
+        ResSpecializationDTO dto = new ResSpecializationDTO();
+        dto.setId(specialization.getId());
+        dto.setName(specialization.getName());
+        dto.setCreatedAt(specialization.getCreatedAt());
+        dto.setCreatedBy(specialization.getCreatedBy());
+
+        if (specialization.getIndustry() != null) {
+            ResSpecializationDTO.IndustryInfo industryInfo = new ResSpecializationDTO.IndustryInfo();
+            industryInfo.setId(specialization.getIndustry().getId());
+            industryInfo.setName(specialization.getIndustry().getName());
+            dto.setIndustry(industryInfo);
+        }
+
+        return dto;
     }
 
     public void handleDeleteSpecialization(long id) throws IdInvalidException {

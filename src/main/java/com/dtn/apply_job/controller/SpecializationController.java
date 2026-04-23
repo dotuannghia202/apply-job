@@ -43,8 +43,8 @@ public class SpecializationController {
 
     @GetMapping("/specializations/{id}")
     @ApiMessage("Fetch specialization by Id")
-    public ResponseEntity<Specialization> getSpecialization(@PathVariable long id) throws IdInvalidException {
-        Specialization specialization = this.specializationService.handleGetSpecializationById(id);
+    public ResponseEntity<ResSpecializationDTO> getSpecialization(@PathVariable long id) throws IdInvalidException {
+        ResSpecializationDTO specialization = this.specializationService.handleGetSpecializationById(id);
         return ResponseEntity.status(HttpStatus.OK).body(specialization);
     }
 

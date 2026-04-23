@@ -18,6 +18,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,7 +37,7 @@ public class JobService {
     public ResCreateJobDTO handleCreateJob(Job job) {
         if (job.getSkills() != null) {
             List<Long> reqSkills = job.getSkills()
-                    .stream().map(skill -> skill.getId())
+                    .stream().map(Skill::getId)
                     .collect(Collectors.toList());
 
             List<Skill> dbSkills = this.skillRepository.findByIdIn(reqSkills);
@@ -50,7 +51,7 @@ public class JobService {
         dto.setName(currentJob.getName());
         dto.setLocation(currentJob.getLocation());
         dto.setSalary(currentJob.getSalary());
-        dto.setLevel(currentJob.getLevel());
+        dto.setLevel(currentJob.getLevels());
         dto.setStartDate(currentJob.getStartDate());
         dto.setEndDate(currentJob.getEndDate());
         dto.setActive(currentJob.getActive());
@@ -59,8 +60,7 @@ public class JobService {
 
         if (currentJob.getSkills() != null) {
             dto.setSkills(currentJob.getSkills()
-                    .stream().map(skill -> skill
-                            .getName().toString())
+                    .stream().map(Skill::getName)
                     .collect(Collectors.toList()));
         }
         return dto;
@@ -74,7 +74,7 @@ public class JobService {
         job.setName(req.getName());
         job.setLocation(req.getLocation());
         job.setSalary(req.getSalary());
-        job.setLevel(req.getLevel());
+        job.setLevels(Collections.singletonList(req.getLevel()));
         job.setDescription(req.getDescription());
         job.setStartDate(req.getStartDate());
         job.setEndDate(req.getEndDate());
@@ -90,7 +90,7 @@ public class JobService {
         dto.setName(job.getName());
         dto.setLocation(job.getLocation());
         dto.setSalary(job.getSalary());
-        dto.setLevel(job.getLevel());
+        dto.setLevels(job.getLevels());
         dto.setDescription(job.getDescription());
         dto.setStartDate(job.getStartDate());
         dto.setEndDate(job.getEndDate());
@@ -100,8 +100,8 @@ public class JobService {
 
         if (job.getSkills() != null) {
             dto.setSkills(job.getSkills().stream()
-                    .map(s -> s.getName()
-                            .toString()).collect(Collectors.toList()));
+                    .map(Skill::getName)
+                    .collect(Collectors.toList()));
         }
 
         return dto;
@@ -118,7 +118,9 @@ public class JobService {
             jobDTO.setLocation(job.getLocation());
             jobDTO.setSalary(job.getSalary());
             jobDTO.setQuantity(job.getQuantity());
-            jobDTO.setLevel(job.getLevel());
+            jobDTO.setLevel(job.getLevels() != null && !job.getLevels().isEmpty()
+                    ? job.getLevels().get(0)
+                    : null);
             jobDTO.setStartDate(job.getStartDate());
             jobDTO.setEndDate(job.getEndDate());
             jobDTO.setActive(job.getActive());
@@ -131,7 +133,7 @@ public class JobService {
 
             if (job.getSkills() != null) {
                 jobDTO.setSkills(job.getSkills().stream()
-                        .map(skill -> skill.getName().toString())
+                        .map(Skill::getName)
                         .collect(Collectors.toList()));
 
             }
@@ -164,7 +166,9 @@ public class JobService {
         jobDTO.setLocation(job.getLocation());
         jobDTO.setSalary(job.getSalary());
         jobDTO.setQuantity(job.getQuantity());
-        jobDTO.setLevel(job.getLevel());
+        jobDTO.setLevel(job.getLevels() != null && !job.getLevels().isEmpty()
+                ? job.getLevels().get(0)
+                : null);
         jobDTO.setStartDate(job.getStartDate());
         jobDTO.setEndDate(job.getEndDate());
         jobDTO.setActive(job.getActive());
@@ -177,7 +181,7 @@ public class JobService {
 
         if (job.getSkills() != null) {
             jobDTO.setSkills(job.getSkills().stream()
-                    .map(skill -> skill.getName().toString())
+                    .map(Skill::getName)
                     .collect(Collectors.toList()));
 
         }
@@ -186,6 +190,5 @@ public class JobService {
 
     public void handleDeleteJob(long id) {
         this.jobRepository.deleteById(id);
-        return;
     }
 }

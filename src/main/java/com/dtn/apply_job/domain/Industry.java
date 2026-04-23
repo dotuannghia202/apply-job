@@ -21,7 +21,7 @@ public class Industry {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @NotBlank(message = "Tên ngành không được để trống!")
+    @NotBlank(message = "Industry name is required!")
     private String name;
 
     // 1 Ngành lớn có nhiều Mảng ngành (Specialization)
