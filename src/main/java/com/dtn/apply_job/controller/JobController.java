@@ -2,8 +2,8 @@ package com.dtn.apply_job.controller;
 
 import com.dtn.apply_job.common.annotation.ApiMessage;
 import com.dtn.apply_job.domain.Job;
+import com.dtn.apply_job.domain.request.job.ReqCreateJobDTO;
 import com.dtn.apply_job.domain.request.job.ReqUpdateJobDTO;
-import com.dtn.apply_job.domain.response.job.ResCreateJobDTO;
 import com.dtn.apply_job.domain.response.job.ResJobDTO;
 import com.dtn.apply_job.domain.response.job.ResUpdateJobDTO;
 import com.dtn.apply_job.domain.response.user.ResultPaginationDTO;
@@ -11,57 +11,60 @@ import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.service.JobService;
 import com.turkraft.springfilter.boot.Filter;
 import jakarta.validation.Valid;
-import lombok.Getter;
-import lombok.Setter;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@Setter
-@Getter
 @RestController
-@RequestMapping("api/v1")
+@RequestMapping("/api/v1/jobs")
 public class JobController {
-    private JobService jobService;
+
+    private final JobService jobService;
 
     public JobController(JobService jobService) {
         this.jobService = jobService;
     }
 
-    @PostMapping("/jobs")
+    @PostMapping
     @ApiMessage("Create a job")
-    public ResponseEntity<ResCreateJobDTO> createJob(@Valid @RequestBody Job job) {
-        ResCreateJobDTO newJob = this.jobService.handleCreateJob(job);
+    // Dùng ReqCreateJobDTO để nhận CompanyId, SpecializationId và List<SkillId>
+    public ResponseEntity<ResJobDTO> createJob(@Valid @RequestBody ReqCreateJobDTO reqDTO) throws IdInvalidException {
+        ResJobDTO newJob = this.jobService.handleCreateJob(reqDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(newJob);
     }
 
-    @PutMapping("/jobs/{id}")
-    @ApiMessage("Update job")
-    public ResponseEntity<ResUpdateJobDTO> updateJob(@PathVariable long id, @Valid @RequestBody ReqUpdateJobDTO dto) throws IdInvalidException {
-        ResUpdateJobDTO updateJobDTO = this.jobService.handleUpdateJob(id, dto);
-        return ResponseEntity.status(HttpStatus.OK).body(updateJobDTO);
+    @PutMapping("/{id}")
+    @ApiMessage("Update a job")
+    public ResponseEntity<ResUpdateJobDTO> updateJob(
+            @PathVariable long id,
+            @Valid @RequestBody ReqUpdateJobDTO reqDTO) throws IdInvalidException {
+        // Service của bạn cũng cần sửa lại để trả về ResJobDTO nhé
+        ResUpdateJobDTO updatedJob = this.jobService.handleUpdateJob(id, reqDTO);
+        return ResponseEntity.ok().body(updatedJob);
     }
 
-    @GetMapping("jobs")
-    @ApiMessage("Get All Jobs")
-    public ResponseEntity<ResultPaginationDTO> getAllJobs(@Filter Specification<Job> spec, Pageable pageable) {
+    @GetMapping
+    @ApiMessage("Get all jobs with pagination and filter")
+    public ResponseEntity<ResultPaginationDTO> getAllJobs(
+            @Filter Specification<Job> spec,
+            Pageable pageable) {
         ResultPaginationDTO result = this.jobService.handleGetAllJobs(spec, pageable);
-        return ResponseEntity.status(HttpStatus.OK).body(result);
+        return ResponseEntity.ok().body(result);
     }
 
-    @GetMapping("jobs/{id}")
-    @ApiMessage("Fetch Job By Id")
+    @GetMapping("/{id}")
+    @ApiMessage("Fetch job by id")
     public ResponseEntity<ResJobDTO> getJobById(@PathVariable long id) throws IdInvalidException {
         ResJobDTO dto = this.jobService.handleGetJobById(id);
-        return ResponseEntity.status(HttpStatus.OK).body(dto);
+        return ResponseEntity.ok().body(dto);
     }
 
-    @DeleteMapping("jobs/{id}")
-    @ApiMessage("Delete job")
+    @DeleteMapping("/{id}")
+    @ApiMessage("Delete a job")
     public ResponseEntity<Void> deleteJob(@PathVariable long id) throws IdInvalidException {
         this.jobService.handleDeleteJob(id);
-        return ResponseEntity.status(HttpStatus.OK).build();
+        return ResponseEntity.ok().build();
     }
 }

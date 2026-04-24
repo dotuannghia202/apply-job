@@ -1,12 +1,12 @@
 package com.dtn.apply_job.domain.response.job;
 
 import com.dtn.apply_job.util.constant.enums.LevelEnum;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 
 @Setter
 @Getter
@@ -17,18 +17,37 @@ public class ResJobDTO {
     private String location;
     private Double salary;
     private int quantity;
-    private LevelEnum level;
+    private Set<LevelEnum> levels;
     private String description;
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
+
     private Instant startDate;
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
+
     private Instant endDate;
     private boolean active;
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
+
     private Instant createdAt;
     private String createdBy;
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
+
     private Instant updatedAt;
     private String updatedBy;
-    List<String> skills;
+    private List<String> skills;
+
+    private CompanyInfo company;
+    private SpecializationInfo specialization;
+
+    // Inner Classes
+    @Getter
+    @Setter
+    public static class CompanyInfo {
+        private long id;
+        private String name;
+        private String logo;
+    }
+
+    @Getter
+    @Setter
+    public static class SpecializationInfo {
+        private long id;
+        private String name;
+    }
 }

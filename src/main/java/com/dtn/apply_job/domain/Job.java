@@ -7,14 +7,16 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(
         name = "jobs",
         indexes = {
                 @Index(name = "idx_job_active", columnList = "active"),
-                @Index(name = "idx_job_level", columnList = "level"),
+                @Index(name = "idx_job_specialization", columnList = "specialization_id"),
                 @Index(name = "idx_job_company", columnList = "company_id")
         }
 )
@@ -37,9 +39,20 @@ public class Job {
     @Column(nullable = false)
     private Integer quantity;
 
+    @ElementCollection(targetClass = LevelEnum.class, fetch = FetchType.LAZY)
+    @CollectionTable(
+            name = "job_levels",
+            joinColumns = @JoinColumn(name = "job_id", nullable = false),
+            uniqueConstraints = {
+                    @UniqueConstraint(
+                            name = "uk_job_levels_job_id_level",
+                            columnNames = {"job_id", "level"}
+                    )
+            }
+    )
+    @Column(name = "level", nullable = false, length = 50)
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private List<LevelEnum> levels;
+    private Set<LevelEnum> levels = new HashSet<>();
 
     @Column(columnDefinition = "TEXT")
     private String description;
@@ -48,7 +61,7 @@ public class Job {
     private Instant endDate;
 
     @Column(nullable = false)
-    private Boolean active;
+    private Boolean active = true;
 
     @Column(updatable = false)
     private Instant createdAt;
@@ -78,6 +91,9 @@ public class Job {
 
     @PrePersist
     public void handleBeforeCreate() {
+        if (this.active == null) {
+            this.active = true;
+        }
         this.createdBy = SecurityUtil.getCurrentUser().orElse("");
         this.createdAt = Instant.now();
     }

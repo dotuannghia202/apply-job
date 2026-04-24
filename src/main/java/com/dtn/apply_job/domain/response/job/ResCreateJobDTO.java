@@ -1,13 +1,12 @@
 package com.dtn.apply_job.domain.response.job;
 
 import com.dtn.apply_job.util.constant.enums.LevelEnum;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.persistence.Column;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 
 @Setter
 @Getter
@@ -17,15 +16,14 @@ public class ResCreateJobDTO {
     private String location;
     private Double salary;
     private int quantity;
-    private List<LevelEnum> level;
-    @Column(columnDefinition = "MEDIUMTEXT")
+    private Set<LevelEnum> levels;
     private String description;
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
+
     private Instant startDate;
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
+
     private Instant endDate;
     private boolean active;
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
+
     private Instant createdAt;
     private String createdBy;
     List<String> skills;

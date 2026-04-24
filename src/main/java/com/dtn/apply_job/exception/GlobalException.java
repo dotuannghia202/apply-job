@@ -23,9 +23,24 @@ public class GlobalException {
 
     @ExceptionHandler(value = {
             BadCredentialsException.class,
+            UsernameNotFoundException.class
+    })
+    public ResponseEntity<RestRespon<Object>> handleUnauthorizedException(Exception ex) {
+        RestRespon<Object> res = new RestRespon<>();
+        res.setStatusCode(HttpStatus.UNAUTHORIZED.value());
+        res.setError(ex.getClass().getSimpleName());
+
+        // Cố tình ghi đè câu thông báo lỗi để bảo mật hơn
+        res.setMessage("Incorrect account or password!");
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(res);
+    }
+
+    @ExceptionHandler(value = {
             EmailExistedException.class,
-            UsernameNotFoundException.class,
             NameExistedException.class,
+            InvalidDateRangeException.class,
+            InvalidRequestException.class
     })
     public ResponseEntity<RestRespon<Object>> handleBadRequestException(Exception ex) {
         RestRespon<Object> res = new RestRespon<>();
