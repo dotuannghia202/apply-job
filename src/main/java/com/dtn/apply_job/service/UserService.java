@@ -225,8 +225,11 @@ public class UserService {
         resUpdateDTO.setName(updatedUser.getName());
         resUpdateDTO.setEmail(updatedUser.getEmail());
         resUpdateDTO.setAge(updatedUser.getAge());
-        resUpdateDTO.setGender(updatedUser.getGender().toString());
+        resUpdateDTO.setGender(updatedUser.getGender() != null ? updatedUser.getGender().toString() : null);
         resUpdateDTO.setAddress(updatedUser.getAddress());
+        resUpdateDTO.setRoles(updatedUser.getRoles().stream()
+                .map(role -> role.getName().name())
+                .toList());
         resUpdateDTO.setIsActive(updatedUser.getIsActive());
         resUpdateDTO.setUpdatedAt(updatedUser.getUpdatedAt());
         resUpdateDTO.setUpdatedBy(updatedUser.getUpdatedBy());
