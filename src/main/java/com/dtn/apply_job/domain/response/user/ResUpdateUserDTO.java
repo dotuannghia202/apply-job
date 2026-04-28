@@ -1,25 +1,24 @@
 package com.dtn.apply_job.domain.response.user;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.List;
 
 @Setter
 @Getter
-public class ResCreatedDTO {
+public class ResUpdateUserDTO {
     private long id;
-    private String email;
     private String name;
-    private int age;
+    private String email;
+    private Integer age;
     private String gender;
     private String address;
-
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
-    private Instant createdAt;
-
-    private String createdBy;
+    private List<String> roles;
+    private Boolean isActive;
+    private Instant updatedAt;
+    private String updatedBy;
 
     private CompanyUser company;
 

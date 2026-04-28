@@ -2,8 +2,10 @@ package com.dtn.apply_job.controller;
 
 import com.dtn.apply_job.common.annotation.ApiMessage;
 import com.dtn.apply_job.domain.User;
-import com.dtn.apply_job.domain.response.user.ResCreatedDTO;
-import com.dtn.apply_job.domain.response.user.ResUpdateDTO;
+import com.dtn.apply_job.domain.request.user.ReqCreateUserDTO;
+import com.dtn.apply_job.domain.request.user.ReqUpdateUserDTO;
+import com.dtn.apply_job.domain.response.user.ResCreateUserDTO;
+import com.dtn.apply_job.domain.response.user.ResUpdateUserDTO;
 import com.dtn.apply_job.domain.response.user.ResUserDTO;
 import com.dtn.apply_job.domain.response.user.ResultPaginationDTO;
 import com.dtn.apply_job.exception.EmailExistedException;
@@ -44,9 +46,9 @@ public class UserController {
 
     @PostMapping("/users")
     @ApiMessage("Create a new user")
-    public ResponseEntity<ResCreatedDTO> createUser(@RequestBody User user) throws EmailExistedException {
+    public ResponseEntity<ResCreateUserDTO> createUser(@RequestBody ReqCreateUserDTO user) throws EmailExistedException, IdInvalidException {
 
-        ResCreatedDTO result = this.userService.handleCreateUser(user);
+        ResCreateUserDTO result = this.userService.handleCreateUser(user);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
@@ -68,8 +70,8 @@ public class UserController {
 
     @PutMapping("/users/{id}")
     @ApiMessage("Update user")
-    public ResponseEntity<ResUpdateDTO> updateUser(@PathVariable long id, @RequestBody User user) throws IdInvalidException {
-        ResUpdateDTO result = this.userService.handleUpdateUser(id, user);
+    public ResponseEntity<ResUpdateUserDTO> updateUser(@PathVariable long id, @RequestBody ReqUpdateUserDTO user) throws IdInvalidException {
+        ResUpdateUserDTO result = this.userService.handleUpdateUser(id, user);
         return ResponseEntity.ok().body(result);
     }
 }

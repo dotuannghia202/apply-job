@@ -2,13 +2,14 @@ package com.dtn.apply_job.domain;
 
 import com.dtn.apply_job.security.SecurityUtil;
 import com.dtn.apply_job.util.constant.enums.GenderEnum;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -29,7 +30,7 @@ public class User {
     @NotBlank(message = "Email is not blank")
     private String email;
 
-    private int age;
+    private Integer age;
 
 
     @Enumerated(EnumType.STRING)
@@ -37,14 +38,16 @@ public class User {
 
     private String address;
 
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
+
     @Column(columnDefinition = "TEXT")
     private String refreshToken;
 
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
     private Instant createdAt;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
+
     private Instant updatedAt;
 
     private String createdBy;
@@ -61,7 +64,7 @@ public class User {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
-    private java.util.Set<Role> roles = new java.util.HashSet<>();
+    private Set<Role> roles = new HashSet<>();
 
     @PrePersist
     public void handleBeforeCreate() {
@@ -80,11 +83,12 @@ public class User {
 
     }
 
-    public User(String name, String password, String email, int age, GenderEnum gender, String address, String refreshToken) {
+    public User(String name, String password, String email, int age, GenderEnum gender, String address, Boolean isActive, String refreshToken) {
         this.name = name;
         this.password = password;
         this.email = email;
         this.age = age;
+        this.isActive = isActive;
         this.gender = gender;
         this.address = address;
         this.refreshToken = refreshToken;

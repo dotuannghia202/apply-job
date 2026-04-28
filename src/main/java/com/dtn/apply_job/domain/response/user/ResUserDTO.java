@@ -1,5 +1,6 @@
 package com.dtn.apply_job.domain.response.user;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,6 +20,9 @@ public class ResUserDTO {
     private String createdBy;
     private Instant updatedAt;
     private String updatedBy;
+
+    @JsonProperty("isActive")
+    private boolean isActive;
 
     private CompanyUser company;
 

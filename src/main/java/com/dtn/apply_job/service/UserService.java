@@ -1,14 +1,21 @@
 package com.dtn.apply_job.service;
 
 import com.dtn.apply_job.domain.Company;
+import com.dtn.apply_job.domain.Role;
 import com.dtn.apply_job.domain.User;
-import com.dtn.apply_job.domain.response.user.ResCreatedDTO;
-import com.dtn.apply_job.domain.response.user.ResUpdateDTO;
+import com.dtn.apply_job.domain.request.user.ReqCreateUserDTO;
+import com.dtn.apply_job.domain.request.user.ReqUpdateUserDTO;
+import com.dtn.apply_job.domain.response.user.ResCreateUserDTO;
+import com.dtn.apply_job.domain.response.user.ResUpdateUserDTO;
 import com.dtn.apply_job.domain.response.user.ResUserDTO;
 import com.dtn.apply_job.domain.response.user.ResultPaginationDTO;
 import com.dtn.apply_job.exception.EmailExistedException;
 import com.dtn.apply_job.exception.IdInvalidException;
+import com.dtn.apply_job.exception.InvalidRequestException;
+import com.dtn.apply_job.repository.CompanyRepository;
+import com.dtn.apply_job.repository.RoleRepository;
 import com.dtn.apply_job.repository.UserRepository;
+import com.dtn.apply_job.util.constant.enums.ERole;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -23,12 +30,14 @@ import java.util.Optional;
 public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
-    private final CompanyService companyService;
+    private final CompanyRepository companyRepository;
+    private final RoleRepository roleRepository;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, CompanyService companyService) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, CompanyRepository companyRepository, RoleRepository roleRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.companyService = companyService;
+        this.companyRepository = companyRepository;
+        this.roleRepository = roleRepository;
     }
 
     public ResultPaginationDTO getAllUsers(Specification<User> spec, Pageable pageable) {
@@ -42,6 +51,7 @@ public class UserService {
             userDTO.setEmail(user.getEmail());
             userDTO.setAge(user.getAge());
             userDTO.setAddress(user.getAddress());
+            userDTO.setActive(user.getIsActive());
             userDTO.setCreatedAt(user.getCreatedAt());
             userDTO.setUpdatedAt(user.getUpdatedAt());
             userDTO.setCreatedBy(user.getCreatedBy());
@@ -72,35 +82,60 @@ public class UserService {
         return resultPaginationDTO;
     }
 
-    public ResCreatedDTO handleCreateUser(User user) throws EmailExistedException {
-        if (this.userRepository.existsByEmail(user.getEmail())) {
-            throw new EmailExistedException("Email " + user.getEmail() + " already exists, please use a different email address.");
+    public ResCreateUserDTO handleCreateUser(ReqCreateUserDTO reqDTO) throws EmailExistedException, IdInvalidException {
+        // 1. Check Email
+        if (this.userRepository.existsByEmail(reqDTO.getEmail())) {
+            throw new EmailExistedException("The email address already exists in the system.");
         }
 
-        if (user.getCompany() != null) {
-            Optional<Company> optionalCompany = this.companyService.getCompanyRepository().findById(user.getCompany().getId());
-            user.setCompany(optionalCompany.isPresent() ? optionalCompany.get() : null);
+        User newUser = new User();
+        newUser.setName(reqDTO.getName());
+        newUser.setEmail(reqDTO.getEmail());
+        newUser.setAge(reqDTO.getAge());
+        newUser.setGender(reqDTO.getGender());
+        newUser.setAddress(reqDTO.getAddress());
+
+        newUser.setPassword(passwordEncoder.encode(reqDTO.getPassword()));
+
+        if (reqDTO.getCompanyId() != null) {
+            Company company = this.companyRepository.findById(reqDTO.getCompanyId())
+                    .orElseThrow(() -> new IdInvalidException("Company doesn't exist!"));
+            newUser.setCompany(company);
         }
 
-        String hashedPassword = passwordEncoder.encode(user.getPassword());
-        user.setPassword(hashedPassword);
+        // 4. Cấp quyền (Role)
+        if (reqDTO.getRoleName() != null) {
+            Role role = this.roleRepository.findByName(reqDTO.getRoleName())
+                    .orElseThrow(() -> new IdInvalidException("Invalid role!"));
+            newUser.getRoles().add(role);
+        } else {
+            // Nếu KHÔNG truyền lên thì lấy quyền CANDIDATE làm mặc định
+            Role defaultRole = this.roleRepository.findByName(ERole.CANDIDATE)
+                    .orElseThrow(() -> new IdInvalidException("Default role 'CANDIDATE' not found in system!"));
+            newUser.getRoles().add(defaultRole);
+        }
 
-        User newUser = this.userRepository.save(user);
+        // 5. Lưu vào Database
+        User savedUser = this.userRepository.save(newUser);
 
-        ResCreatedDTO resCreatedDTO = new ResCreatedDTO();
-        resCreatedDTO.setId(newUser.getId());
-        resCreatedDTO.setName(newUser.getName());
-        resCreatedDTO.setEmail(newUser.getEmail());
-        resCreatedDTO.setAge(newUser.getAge());
-        resCreatedDTO.setGender(newUser.getGender().toString());
-        resCreatedDTO.setAddress(newUser.getAddress());
-        resCreatedDTO.setCreatedAt(newUser.getCreatedAt());
-        resCreatedDTO.setCreatedBy(newUser.getCreatedBy());
+        // 6. Trả về Response DTO
+        ResCreateUserDTO resCreatedDTO = new ResCreateUserDTO();
+        resCreatedDTO.setId(savedUser.getId());
+        resCreatedDTO.setName(savedUser.getName());
+        resCreatedDTO.setEmail(savedUser.getEmail());
+        resCreatedDTO.setAge(savedUser.getAge());
+        resCreatedDTO.setGender(savedUser.getGender() != null ? savedUser.getGender().toString() : null);
+        resCreatedDTO.setAddress(savedUser.getAddress());
+        resCreatedDTO.setRoles(savedUser.getRoles().stream()
+                .map(role -> role.getName().name())
+                .toList());
+        resCreatedDTO.setCreatedAt(savedUser.getCreatedAt());
+        resCreatedDTO.setCreatedBy(savedUser.getCreatedBy());
 
-        if (user.getCompany() != null) {
-            ResCreatedDTO.CompanyUser companyUser = new ResCreatedDTO.CompanyUser();
-            companyUser.setId(user.getCompany().getId());
-            companyUser.setName(user.getCompany().getName());
+        if (savedUser.getCompany() != null) {
+            ResCreateUserDTO.CompanyUser companyUser = new ResCreateUserDTO.CompanyUser();
+            companyUser.setId(savedUser.getCompany().getId());
+            companyUser.setName(savedUser.getCompany().getName());
             resCreatedDTO.setCompany(companyUser);
         }
 
@@ -144,7 +179,7 @@ public class UserService {
         return;
     }
 
-    public ResUpdateDTO handleUpdateUser(long id, User user) throws IdInvalidException {
+    public ResUpdateUserDTO handleUpdateUser(long id, ReqUpdateUserDTO reqUser) throws IdInvalidException, InvalidRequestException {
 
         Optional<User> optionalUser = this.userRepository.findById(id);
         if (!optionalUser.isPresent()) {
@@ -153,42 +188,54 @@ public class UserService {
 
         User currentUser = (User) optionalUser.get();
 
-        currentUser.setName(user.getName());
-        currentUser.setAge(user.getAge());
-        currentUser.setGender(user.getGender());
-        currentUser.setAddress(user.getAddress());
+        currentUser.setName(reqUser.getName());
+        currentUser.setAge(reqUser.getAge());
+        currentUser.setGender(reqUser.getGender());
+        currentUser.setAddress(reqUser.getAddress());
+        currentUser.setIsActive(reqUser.getIsActive());
 
-        if (user.getCompany() != null) {
+        if (reqUser.getCompanyId() != null) {
+            Company company = this.companyRepository.findById(reqUser.getCompanyId())
+                    .orElseThrow(() -> new IdInvalidException("Company doesn't exist!"));
+            currentUser.setCompany(company);
+        }
 
-            currentUser.setCompany(user.getCompany());
+
+        if (reqUser.getRoles() != null && !reqUser.getRoles().isEmpty()) {
+
+
+            currentUser.getRoles().clear();
+
+
+            for (ERole rName : reqUser.getRoles()) {
+                Role role = this.roleRepository.findByName(rName)
+                        .orElseThrow(() -> new IdInvalidException("Invalid role: " + rName));
+
+
+                currentUser.getRoles().add(role);
+            }
+        } else {
+            throw new InvalidRequestException("Role is required!");
         }
 
         User updatedUser = this.userRepository.save(currentUser);
 
-        ResUpdateDTO resUpdateDTO = new ResUpdateDTO();
+        ResUpdateUserDTO resUpdateDTO = new ResUpdateUserDTO();
         resUpdateDTO.setId(updatedUser.getId());
         resUpdateDTO.setName(updatedUser.getName());
         resUpdateDTO.setEmail(updatedUser.getEmail());
         resUpdateDTO.setAge(updatedUser.getAge());
         resUpdateDTO.setGender(updatedUser.getGender().toString());
         resUpdateDTO.setAddress(updatedUser.getAddress());
+        resUpdateDTO.setIsActive(updatedUser.getIsActive());
         resUpdateDTO.setUpdatedAt(updatedUser.getUpdatedAt());
         resUpdateDTO.setUpdatedBy(updatedUser.getUpdatedBy());
 
-        ResUpdateDTO.CompanyUser companyUser = new ResUpdateDTO.CompanyUser();
-        if (user.getCompany() != null) {
-            Optional<Company> optionalCompany = this.companyService.handleGetCompanyById(user.getCompany().getId());
-            if (optionalCompany.isPresent()) {
-                companyUser.setId(optionalCompany.get().getId());
-                companyUser.setName(optionalCompany.get().getName());
-                resUpdateDTO.setCompany(companyUser);
-            }
-        } else if (currentUser.getCompany() != null) {
-            companyUser.setId(currentUser.getCompany().getId());
-            companyUser.setName(currentUser.getCompany().getName());
+        if (updatedUser.getCompany() != null) {
+            ResUpdateUserDTO.CompanyUser companyUser = new ResUpdateUserDTO.CompanyUser();
+            companyUser.setId(updatedUser.getCompany().getId());
+            companyUser.setName(updatedUser.getCompany().getName());
             resUpdateDTO.setCompany(companyUser);
-        } else {
-            resUpdateDTO.setCompany(null);
         }
         return resUpdateDTO;
     }
