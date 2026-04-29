@@ -16,12 +16,19 @@ import com.dtn.apply_job.repository.CompanyRepository;
 import com.dtn.apply_job.repository.JobRepository;
 import com.dtn.apply_job.repository.SkillRepository;
 import com.dtn.apply_job.repository.SpecializationRepository;
+import com.dtn.apply_job.util.constant.enums.LevelEnum;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -103,6 +110,23 @@ public class JobService {
         rs.setResult(listJobDTO);
 
         return rs;
+    }
+
+    public ResultPaginationDTO handleGetAllJobsWithFilters(
+            Specification<Job> spec,
+            Pageable pageable,
+            String location,
+            List<String> levels,
+            Long specializationId,
+            String name,
+            String skill,
+            Boolean active
+    ) throws IdInvalidException {
+        Set<LevelEnum> levelEnums = parseLevelEnums(levels);
+        Specification<Job> filterSpec = buildJobFilterSpec(location, levelEnums, specializationId, name, skill, active);
+        Specification<Job> combinedSpec = spec == null ? filterSpec : spec.and(filterSpec);
+
+        return handleGetAllJobs(combinedSpec, pageable);
     }
 
     public ResJobDTO handleGetJobById(long id) throws IdInvalidException {
@@ -238,5 +262,72 @@ public class JobService {
         }
 
         return dto;
+    }
+
+    private Specification<Job> buildJobFilterSpec(
+            String location,
+            Set<LevelEnum> levels,
+            Long specializationId,
+            String name,
+            String skill,
+            Boolean active
+    ) {
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            boolean needsDistinct = false;
+
+            if (hasText(location)) {
+                predicates.add(cb.like(cb.lower(root.get("location")), "%" + location.trim().toLowerCase() + "%"));
+            }
+            if (hasText(name)) {
+                predicates.add(cb.like(cb.lower(root.get("name")), "%" + name.trim().toLowerCase() + "%"));
+            }
+            if (specializationId != null) {
+                predicates.add(cb.equal(root.get("specialization").get("id"), specializationId));
+            }
+            if (active != null) {
+                predicates.add(cb.equal(root.get("active"), active));
+            }
+            if (levels != null && !levels.isEmpty()) {
+                Join<Job, LevelEnum> levelJoin = root.join("levels", JoinType.LEFT);
+                predicates.add(levelJoin.in(levels));
+                needsDistinct = true;
+            }
+            if (hasText(skill)) {
+                Join<Job, Skill> skillJoin = root.join("skills", JoinType.LEFT);
+                predicates.add(cb.like(cb.lower(skillJoin.get("name")), "%" + skill.trim().toLowerCase() + "%"));
+                needsDistinct = true;
+            }
+
+            if (needsDistinct) {
+                query.distinct(true);
+            }
+
+            return predicates.isEmpty() ? cb.conjunction() : cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    private Set<LevelEnum> parseLevelEnums(List<String> levels) throws IdInvalidException {
+        if (levels == null || levels.isEmpty()) {
+            return new HashSet<>();
+        }
+
+        Set<LevelEnum> result = new HashSet<>();
+        for (String rawLevel : levels) {
+            if (!hasText(rawLevel)) {
+                continue;
+            }
+            try {
+                result.add(LevelEnum.valueOf(rawLevel.trim().toUpperCase()));
+            } catch (IllegalArgumentException ex) {
+                throw new IdInvalidException("Invalid level: " + rawLevel);
+            }
+        }
+
+        return result;
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 }

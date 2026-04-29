@@ -17,6 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/jobs")
 public class JobController {
@@ -49,8 +51,16 @@ public class JobController {
     @ApiMessage("Get all jobs with pagination and filter")
     public ResponseEntity<ResultPaginationDTO> getAllJobs(
             @Filter Specification<Job> spec,
-            Pageable pageable) {
-        ResultPaginationDTO result = this.jobService.handleGetAllJobs(spec, pageable);
+            Pageable pageable,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) List<String> levels,
+            @RequestParam(required = false) Long specialization,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String skill,
+            @RequestParam(required = false) Boolean active
+    ) throws IdInvalidException {
+        ResultPaginationDTO result = this.jobService.handleGetAllJobsWithFilters(
+                spec, pageable, location, levels, specialization, name, skill, active);
         return ResponseEntity.ok().body(result);
     }
 
