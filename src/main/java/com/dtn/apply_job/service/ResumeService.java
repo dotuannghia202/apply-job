@@ -7,6 +7,7 @@ import com.dtn.apply_job.domain.User;
 import com.dtn.apply_job.domain.request.resume.ReqCreateResumeDTO;
 import com.dtn.apply_job.domain.request.resume.ReqUpdateResumeDTO;
 import com.dtn.apply_job.domain.response.resume.ResResumeDTO;
+import com.dtn.apply_job.domain.response.resume.ResUpdateResumeDTO;
 import com.dtn.apply_job.domain.response.user.ResultPaginationDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.repository.ResumeRepository;
@@ -19,8 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,22 +38,56 @@ public class ResumeService {
         Resume resume = new Resume();
         applyRequestToEntity(resume, req.getCandidateId(), req.getFileName(), req.getFileUrl(), req.getParsedText(),
                 req.getActive(), req.getSkillIds(), req.getSpecializationId());
-        resume.setCreatedAt(LocalDateTime.now());
+        resume.setCreatedAt(Instant.now());
 
         Resume savedResume = this.resumeRepository.save(resume);
         return convertToResResumeDTO(savedResume);
     }
 
-    public ResResumeDTO handleUpdateResume(long id, ReqUpdateResumeDTO req) throws IdInvalidException {
-        Resume currentResume = this.resumeRepository.findById(id)
+    public ResUpdateResumeDTO handleUpdateResume(long id, ReqUpdateResumeDTO reqDTO) throws IdInvalidException {
+        // ... (Đoạn check User sở hữu CV giống như đã hướng dẫn trước đây) ...
+
+        Resume currentResume = resumeRepository.findById(id)
                 .orElseThrow(() -> new IdInvalidException("Resume id not found"));
 
-        applyRequestToEntity(currentResume, req.getCandidateId(), req.getFileName(), req.getFileUrl(), req.getParsedText(),
-                req.getActive(), req.getSkillIds(), req.getSpecializationId());
-        currentResume.setUpdatedAt(LocalDateTime.now());
+        if (reqDTO.getFileName() != null) {
+            currentResume.setFileName(reqDTO.getFileName());
+        }
 
-        Resume updatedResume = this.resumeRepository.save(currentResume);
-        return convertToResResumeDTO(updatedResume);
+        if (reqDTO.getFileUrl() != null && !reqDTO.getFileUrl().equals(currentResume.getFileUrl())) {
+            currentResume.setFileUrl(reqDTO.getFileUrl());
+
+            // 🚨 GỌI LẠI AI PYTHON VÌ FILE ĐÃ THAY ĐỔI 🚨
+            // String newText = pythonAiService.parsePdf(reqDTO.getFileUrl());
+            // currentResume.setParsedText(newText);
+        }
+
+        if (reqDTO.getIsActive() != null) {
+            currentResume.setActive(reqDTO.getIsActive());
+        }
+
+        if (reqDTO.getSkillIds() != null) {
+            if (reqDTO.getSkillIds().isEmpty()) {
+                currentResume.setSkills(Collections.emptyList());
+            } else {
+                List<Skill> skills = this.skillRepository.findByIdIn(reqDTO.getSkillIds());
+                if (skills.size() != reqDTO.getSkillIds().size()) {
+                    throw new IdInvalidException("Some skill ids are invalid");
+                }
+                currentResume.setSkills(skills);
+            }
+        }
+
+        if (reqDTO.getSpecializationId() != null) {
+            Specialization specialization = this.specializationRepository.findById(reqDTO.getSpecializationId())
+                    .orElseThrow(() -> new IdInvalidException("Specialization id not found"));
+            currentResume.setSpecialization(specialization);
+        }
+
+        currentResume.setUpdatedAt(Instant.now());
+
+        Resume updatedResume = resumeRepository.save(currentResume);
+        return convertToResUpdateResumeDTO(updatedResume);
     }
 
     public ResResumeDTO handleGetResumeById(long id) throws IdInvalidException {
@@ -129,22 +163,71 @@ public class ResumeService {
     private ResResumeDTO convertToResResumeDTO(Resume resume) {
         ResResumeDTO dto = new ResResumeDTO();
         dto.setId(resume.getId());
-        dto.setCandidateId(resume.getCandidate() != null ? resume.getCandidate().getId() : null);
         dto.setFileName(resume.getFileName());
         dto.setFileUrl(resume.getFileUrl());
-        dto.setParsedText(resume.getParsedText());
         dto.setActive(resume.isActive());
-
-        List<Long> skillIds = new ArrayList<>();
-        if (resume.getSkills() != null) {
-            skillIds = resume.getSkills().stream().map(Skill::getId).collect(Collectors.toList());
-        }
-        dto.setSkillIds(skillIds);
-
-        dto.setSpecializationId(resume.getSpecialization() != null ? resume.getSpecialization().getId() : null);
         dto.setCreatedAt(resume.getCreatedAt());
         dto.setUpdatedAt(resume.getUpdatedAt());
+
+        List<String> skillNames = Collections.emptyList();
+        if (resume.getSkills() != null) {
+            skillNames = resume.getSkills().stream()
+                    .map(Skill::getName)
+                    .collect(Collectors.toList());
+        }
+        dto.setSkills(skillNames);
+
+        if (resume.getCandidate() != null) {
+            ResResumeDTO.CandidateInfo candidateInfo = new ResResumeDTO.CandidateInfo();
+            candidateInfo.setId(resume.getCandidate().getId());
+            candidateInfo.setName(resume.getCandidate().getName());
+            candidateInfo.setEmail(resume.getCandidate().getEmail());
+            dto.setCandidate(candidateInfo);
+        }
+
+        if (resume.getSpecialization() != null) {
+            ResResumeDTO.SpecializationInfo specializationInfo = new ResResumeDTO.SpecializationInfo();
+            specializationInfo.setId(resume.getSpecialization().getId());
+            specializationInfo.setName(resume.getSpecialization().getName());
+            dto.setSpecialization(specializationInfo);
+        }
+
+        return dto;
+    }
+
+    private ResUpdateResumeDTO convertToResUpdateResumeDTO(Resume resume) {
+        ResUpdateResumeDTO dto = new ResUpdateResumeDTO();
+        dto.setId(resume.getId());
+        dto.setFileName(resume.getFileName());
+        dto.setFileUrl(resume.getFileUrl());
+        dto.setActive(resume.isActive());
+        dto.setCreatedAt(resume.getCreatedAt());
+        dto.setUpdatedAt(resume.getUpdatedAt());
+        dto.setUpdatedBy(resume.getUpdatedBy());
+
+        List<String> skillNames = Collections.emptyList();
+        if (resume.getSkills() != null) {
+            skillNames = resume.getSkills().stream()
+                    .map(Skill::getName)
+                    .collect(Collectors.toList());
+        }
+        dto.setSkills(skillNames);
+
+        if (resume.getCandidate() != null) {
+            ResUpdateResumeDTO.CandidateInfo candidateInfo = new ResUpdateResumeDTO.CandidateInfo();
+            candidateInfo.setId(resume.getCandidate().getId());
+            candidateInfo.setName(resume.getCandidate().getName());
+            candidateInfo.setEmail(resume.getCandidate().getEmail());
+            dto.setCandidate(candidateInfo);
+        }
+
+        if (resume.getSpecialization() != null) {
+            ResUpdateResumeDTO.SpecializationInfo specializationInfo = new ResUpdateResumeDTO.SpecializationInfo();
+            specializationInfo.setId(resume.getSpecialization().getId());
+            specializationInfo.setName(resume.getSpecialization().getName());
+            dto.setSpecialization(specializationInfo);
+        }
+
         return dto;
     }
 }
-

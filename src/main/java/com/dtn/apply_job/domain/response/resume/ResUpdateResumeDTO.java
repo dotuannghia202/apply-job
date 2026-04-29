@@ -8,10 +8,13 @@ import java.util.List;
 
 @Getter
 @Setter
-public class ResResumeDTO {
+public class ResUpdateResumeDTO {
     private long id;
     private String fileName;
+
+    // Link Cloudinary để Frontend render hoặc cho người dùng tải lại
     private String fileUrl;
+
     private boolean active;
 
 
@@ -19,6 +22,9 @@ public class ResResumeDTO {
 
 
     private Instant updatedAt;
+
+
+    private String updatedBy;
 
 
     private List<String> skills;
@@ -29,6 +35,7 @@ public class ResResumeDTO {
 
     private SpecializationInfo specialization;
 
+    // ================= INNER CLASSES (LÀM GỌN OBJECT) =================
 
     @Getter
     @Setter

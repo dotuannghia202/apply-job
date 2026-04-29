@@ -5,6 +5,7 @@ import com.dtn.apply_job.domain.Resume;
 import com.dtn.apply_job.domain.request.resume.ReqCreateResumeDTO;
 import com.dtn.apply_job.domain.request.resume.ReqUpdateResumeDTO;
 import com.dtn.apply_job.domain.response.resume.ResResumeDTO;
+import com.dtn.apply_job.domain.response.resume.ResUpdateResumeDTO;
 import com.dtn.apply_job.domain.response.user.ResultPaginationDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.service.ResumeService;
@@ -33,9 +34,9 @@ public class ResumeController {
 
     @PutMapping("/resumes/{id}")
     @ApiMessage("Update resume")
-    public ResponseEntity<ResResumeDTO> updateResume(@PathVariable long id, @Valid @RequestBody ReqUpdateResumeDTO req)
-            throws IdInvalidException {
-        ResResumeDTO updatedResume = this.resumeService.handleUpdateResume(id, req);
+    public ResponseEntity<ResUpdateResumeDTO> updateResume(@PathVariable long id, @Valid @RequestBody ReqUpdateResumeDTO req)
+            throws Exception {
+        ResUpdateResumeDTO updatedResume = this.resumeService.handleUpdateResume(id, req);
         return ResponseEntity.status(HttpStatus.OK).body(updatedResume);
     }
 
@@ -63,4 +64,3 @@ public class ResumeController {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }
-
