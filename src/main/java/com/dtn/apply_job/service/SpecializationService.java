@@ -1,10 +1,10 @@
 package com.dtn.apply_job.service;
 
+import com.dtn.apply_job.common.response.ResultPaginationDTO;
 import com.dtn.apply_job.domain.Industry;
 import com.dtn.apply_job.domain.Specialization;
 import com.dtn.apply_job.domain.request.specialization.ReqCreateSpecializationDTO;
 import com.dtn.apply_job.domain.response.specialization.ResSpecializationDTO;
-import com.dtn.apply_job.domain.response.user.ResultPaginationDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.exception.NameExistedException;
 import com.dtn.apply_job.repository.IndustryRepository;

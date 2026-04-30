@@ -1,9 +1,9 @@
 package com.dtn.apply_job.controller;
 
 import com.dtn.apply_job.common.annotation.ApiMessage;
+import com.dtn.apply_job.common.response.ResultPaginationDTO;
 import com.dtn.apply_job.domain.Skill;
 import com.dtn.apply_job.domain.response.skill.ResUpdateDTO;
-import com.dtn.apply_job.domain.response.user.ResultPaginationDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.exception.NameExistedException;
 import com.dtn.apply_job.service.SkillService;

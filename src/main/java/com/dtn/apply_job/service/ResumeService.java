@@ -1,5 +1,6 @@
 package com.dtn.apply_job.service;
 
+import com.dtn.apply_job.common.response.ResultPaginationDTO;
 import com.dtn.apply_job.domain.Resume;
 import com.dtn.apply_job.domain.Skill;
 import com.dtn.apply_job.domain.Specialization;
@@ -8,7 +9,6 @@ import com.dtn.apply_job.domain.request.resume.ReqCreateResumeDTO;
 import com.dtn.apply_job.domain.request.resume.ReqUpdateResumeDTO;
 import com.dtn.apply_job.domain.response.resume.ResResumeDTO;
 import com.dtn.apply_job.domain.response.resume.ResUpdateResumeDTO;
-import com.dtn.apply_job.domain.response.user.ResultPaginationDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.repository.ResumeRepository;
 import com.dtn.apply_job.repository.SkillRepository;

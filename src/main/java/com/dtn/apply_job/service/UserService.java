@@ -1,5 +1,6 @@
 package com.dtn.apply_job.service;
 
+import com.dtn.apply_job.common.response.ResultPaginationDTO;
 import com.dtn.apply_job.domain.Company;
 import com.dtn.apply_job.domain.Role;
 import com.dtn.apply_job.domain.User;
@@ -8,7 +9,6 @@ import com.dtn.apply_job.domain.request.user.ReqUpdateUserDTO;
 import com.dtn.apply_job.domain.response.user.ResCreateUserDTO;
 import com.dtn.apply_job.domain.response.user.ResUpdateUserDTO;
 import com.dtn.apply_job.domain.response.user.ResUserDTO;
-import com.dtn.apply_job.domain.response.user.ResultPaginationDTO;
 import com.dtn.apply_job.exception.EmailExistedException;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.exception.InvalidRequestException;

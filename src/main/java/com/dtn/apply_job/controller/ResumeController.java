@@ -1,12 +1,12 @@
 package com.dtn.apply_job.controller;
 
 import com.dtn.apply_job.common.annotation.ApiMessage;
+import com.dtn.apply_job.common.response.ResultPaginationDTO;
 import com.dtn.apply_job.domain.Resume;
 import com.dtn.apply_job.domain.request.resume.ReqCreateResumeDTO;
 import com.dtn.apply_job.domain.request.resume.ReqUpdateResumeDTO;
 import com.dtn.apply_job.domain.response.resume.ResResumeDTO;
 import com.dtn.apply_job.domain.response.resume.ResUpdateResumeDTO;
-import com.dtn.apply_job.domain.response.user.ResultPaginationDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.service.ResumeService;
 import com.turkraft.springfilter.boot.Filter;

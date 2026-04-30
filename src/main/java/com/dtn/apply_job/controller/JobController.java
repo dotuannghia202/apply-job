@@ -1,13 +1,14 @@
 package com.dtn.apply_job.controller;
 
 import com.dtn.apply_job.common.annotation.ApiMessage;
+import com.dtn.apply_job.common.response.ResultPaginationDTO;
 import com.dtn.apply_job.domain.Job;
 import com.dtn.apply_job.domain.request.job.ReqCreateJobDTO;
 import com.dtn.apply_job.domain.request.job.ReqUpdateJobDTO;
 import com.dtn.apply_job.domain.response.job.ResJobDTO;
 import com.dtn.apply_job.domain.response.job.ResUpdateJobDTO;
-import com.dtn.apply_job.domain.response.user.ResultPaginationDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
+import com.dtn.apply_job.exception.InvalidDateRangeException;
 import com.dtn.apply_job.service.JobService;
 import com.turkraft.springfilter.boot.Filter;
 import jakarta.validation.Valid;
@@ -35,6 +36,14 @@ public class JobController {
     public ResponseEntity<ResJobDTO> createJob(@Valid @RequestBody ReqCreateJobDTO reqDTO) throws IdInvalidException {
         ResJobDTO newJob = this.jobService.handleCreateJob(reqDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(newJob);
+    }
+
+    @PostMapping("/batch")
+    @ApiMessage("Create jobs in batch")
+    public ResponseEntity<List<ResJobDTO>> createJobsBatch(
+            @Valid @RequestBody List<ReqCreateJobDTO> reqDTOs) throws IdInvalidException, InvalidDateRangeException {
+        List<ResJobDTO> newJobs = this.jobService.handleCreateJobs(reqDTOs);
+        return ResponseEntity.status(HttpStatus.CREATED).body(newJobs);
     }
 
     @PutMapping("/{id}")

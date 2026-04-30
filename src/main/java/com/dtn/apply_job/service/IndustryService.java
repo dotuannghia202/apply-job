@@ -1,7 +1,7 @@
 package com.dtn.apply_job.service;
 
+import com.dtn.apply_job.common.response.ResultPaginationDTO;
 import com.dtn.apply_job.domain.Industry;
-import com.dtn.apply_job.domain.response.user.ResultPaginationDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.exception.NameExistedException;
 import com.dtn.apply_job.repository.IndustryRepository;

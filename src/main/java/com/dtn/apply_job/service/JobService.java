@@ -1,5 +1,6 @@
 package com.dtn.apply_job.service;
 
+import com.dtn.apply_job.common.response.ResultPaginationDTO;
 import com.dtn.apply_job.common.validator.DateRangeValidator;
 import com.dtn.apply_job.domain.Company;
 import com.dtn.apply_job.domain.Job;
@@ -9,7 +10,6 @@ import com.dtn.apply_job.domain.request.job.ReqCreateJobDTO;
 import com.dtn.apply_job.domain.request.job.ReqUpdateJobDTO;
 import com.dtn.apply_job.domain.response.job.ResJobDTO;
 import com.dtn.apply_job.domain.response.job.ResUpdateJobDTO;
-import com.dtn.apply_job.domain.response.user.ResultPaginationDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.exception.InvalidDateRangeException;
 import com.dtn.apply_job.repository.CompanyRepository;
@@ -190,6 +190,23 @@ public class JobService {
         Job currentJob = jobRepository.findById(id)
                 .orElseThrow(() -> new IdInvalidException("Job doesn't exist!"));
         jobRepository.delete(currentJob);
+    }
+
+    public List<ResJobDTO> handleCreateJobs(List<ReqCreateJobDTO> reqDTOs) throws IdInvalidException, InvalidDateRangeException {
+        if (reqDTOs == null || reqDTOs.isEmpty()) {
+            throw new IdInvalidException("Job list must not be empty");
+        }
+
+        List<ResJobDTO> results = new ArrayList<>(reqDTOs.size());
+        for (int i = 0; i < reqDTOs.size(); i++) {
+            try {
+                results.add(handleCreateJob(reqDTOs.get(i)));
+            } catch (IdInvalidException | InvalidDateRangeException ex) {
+                throw new IdInvalidException("Job at index " + i + " is invalid: " + ex.getMessage());
+            }
+        }
+
+        return results;
     }
 
     // Hàm Converter Dùng Chung (Giúp code cực kỳ Clean)

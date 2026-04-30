@@ -1,8 +1,8 @@
 package com.dtn.apply_job.controller;
 
 import com.dtn.apply_job.common.annotation.ApiMessage;
+import com.dtn.apply_job.common.response.ResultPaginationDTO;
 import com.dtn.apply_job.domain.Industry;
-import com.dtn.apply_job.domain.response.user.ResultPaginationDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.service.IndustryService;
 import com.turkraft.springfilter.boot.Filter;
