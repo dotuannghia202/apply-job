@@ -31,4 +31,8 @@ public class ResUpdateJobDTO {
     private String companyName;
     private String specializationName;
     List<String> skills;
+
+    private List<String> benefits;
+
+    private String workingHours;
 }

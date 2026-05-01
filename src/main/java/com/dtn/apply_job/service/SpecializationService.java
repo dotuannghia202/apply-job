@@ -4,6 +4,7 @@ import com.dtn.apply_job.common.response.ResultPaginationDTO;
 import com.dtn.apply_job.domain.Industry;
 import com.dtn.apply_job.domain.Specialization;
 import com.dtn.apply_job.domain.request.specialization.ReqCreateSpecializationDTO;
+import com.dtn.apply_job.domain.response.specialization.ResSpecializationByIndustryId;
 import com.dtn.apply_job.domain.response.specialization.ResSpecializationDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.exception.NameExistedException;
@@ -136,6 +137,18 @@ public class SpecializationService {
         resultPaginationDTO.setResult(specializationDTOs);
 
         return resultPaginationDTO;
+    }
+
+    public List<ResSpecializationByIndustryId> handleGetSpecializationsByIndustryId(long industryId) throws IdInvalidException {
+        if (industryId <= 0) {
+            throw new IdInvalidException("Industry id is invalid");
+        }
+
+        if (!this.industryRepository.existsById(industryId)) {
+            throw new IdInvalidException("Industry id not found");
+        }
+
+        return this.specializationRepository.findAllByIndustryIdProjected(industryId);
     }
 
     private ResSpecializationDTO convertToResSpecializationDTO(Specialization specialization) {

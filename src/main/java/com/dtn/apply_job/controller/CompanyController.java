@@ -14,6 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Setter
 @Getter
 @RestController
@@ -30,6 +32,12 @@ public class CompanyController {
     public ResponseEntity<RestRespon<Company>> createCompany(@Valid @RequestBody Company company) {
         Company newCompany = this.companyService.handleCreateCompany(company);
         return ResponseEntity.status(HttpStatus.CREATED).body(null);
+    }
+
+    @PostMapping("/companies/batch")
+    public ResponseEntity<List<Company>> createCompanies(@Valid @RequestBody List<Company> companies) {
+        List<Company> newCompanies = this.companyService.handleCreateCompanies(companies);
+        return ResponseEntity.status(HttpStatus.CREATED).body(newCompanies);
     }
 
     @GetMapping("/companies")

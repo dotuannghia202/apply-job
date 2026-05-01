@@ -31,6 +31,13 @@ public class CompanyService {
         return this.companyRepository.save(company);
     }
 
+    public List<Company> handleCreateCompanies(List<Company> companies) {
+        if (companies == null || companies.isEmpty()) {
+            return List.of();
+        }
+        return this.companyRepository.saveAll(companies);
+    }
+
     public ResultPaginationDTO handleGetAllCompany(Specification spec, Pageable pageable) {
 
         Page<Company> companyPage = this.companyRepository.findAll(spec, pageable);

@@ -76,6 +76,8 @@ public class JobService {
         job.setDescription(reqDTO.getDescription());
         job.setStartDate(reqDTO.getStartDate());
         job.setEndDate(reqDTO.getEndDate());
+        job.setBenefits(reqDTO.getBenefits());
+        job.setWorkingHours(reqDTO.getWorkingHours());
 
 
         // Gắn quan hệ
@@ -152,6 +154,8 @@ public class JobService {
         currentJob.setStartDate(reqDTO.getStartDate());
         currentJob.setEndDate(reqDTO.getEndDate());
         currentJob.setActive(reqDTO.getIsActive());
+        currentJob.setBenefits(reqDTO.getBenefits());
+        currentJob.setWorkingHours(reqDTO.getWorkingHours());
 
         // 3. KIỂM TRA VÀ CẬP NHẬT COMPANY
         // Dùng == giúp so sánh ID nhanh chóng, nếu ID không đổi thì không cần chọc xuống DB tìm lại
@@ -224,6 +228,8 @@ public class JobService {
         dto.setActive(job.getActive());
         dto.setCreatedAt(job.getCreatedAt());
         dto.setCreatedBy(job.getCreatedBy());
+        dto.setBenefits(job.getBenefits());
+        dto.setWorkingHours(job.getWorkingHours());
 
         // Lấy danh sách kỹ năng dạng String
         if (job.getSkills() != null) {
@@ -267,6 +273,8 @@ public class JobService {
         dto.setActive(Boolean.TRUE.equals(job.getActive()));
         dto.setUpdatedAt(job.getUpdatedAt());
         dto.setUpdatedBy(job.getUpdatedBy());
+        dto.setBenefits(job.getBenefits());
+        dto.setWorkingHours(job.getWorkingHours());
 
         if (job.getCompany() != null) {
             dto.setCompanyName(job.getCompany().getName());

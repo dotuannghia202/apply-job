@@ -43,6 +43,10 @@ public class ReqCreateJobDTO {
     // Nếu null thì BE tự set mặc định = true khi create.
     private Boolean active;
 
+    private List<String> benefits;
+
+    private String workingHours;
+
     @NotNull(message = "Company ID must not be null!")
     private Long companyId;
 

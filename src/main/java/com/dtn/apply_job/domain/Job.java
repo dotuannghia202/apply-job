@@ -89,6 +89,17 @@ public class Job {
     @JoinColumn(name = "specialization_id")
     private Specialization specialization;
 
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+            name = "job_benefits",
+            joinColumns = @JoinColumn(name = "job_id", nullable = false)
+    )
+    @Column(name = "benefits", length = 255)
+    private List<String> benefits;
+
+    @Column(name = "working_hour", length = 255)
+    private String workingHours;
+
     @PrePersist
     public void handleBeforeCreate() {
         if (this.active == null) {
@@ -104,4 +115,3 @@ public class Job {
         this.updatedAt = Instant.now();
     }
 }
-

@@ -32,6 +32,10 @@ public class ResJobDTO {
     private String updatedBy;
     private List<String> skills;
 
+    private List<String> benefits;
+
+    private String workingHours;
+
     private CompanyInfo company;
     private SpecializationInfo specialization;
 

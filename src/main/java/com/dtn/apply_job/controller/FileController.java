@@ -49,7 +49,7 @@ public class FileController {
 
         // 2. Validate đuôi file (Chỉ cho phép Ảnh và PDF)
         String fileName = file.getOriginalFilename();
-        List<String> allowedExtensions = Arrays.asList("jpg", "jpeg", "png", "gif", "pdf");
+        List<String> allowedExtensions = Arrays.asList("jpg", "jpeg", "png", "gif", "pdf", "svg", "webp", "avif");
         boolean isValid = allowedExtensions.stream().anyMatch(i -> fileName.toLowerCase().endsWith(i));
 
         if (!isValid) {

@@ -36,6 +36,10 @@ public class ReqUpdateJobDTO {
 
     private Boolean isActive;
 
+    private List<String> benefits;
+
+    private String workingHours;
+
     private Long companyId;
 
     private Long specializationId;

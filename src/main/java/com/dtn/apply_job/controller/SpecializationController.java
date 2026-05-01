@@ -4,6 +4,7 @@ import com.dtn.apply_job.common.annotation.ApiMessage;
 import com.dtn.apply_job.common.response.ResultPaginationDTO;
 import com.dtn.apply_job.domain.Specialization;
 import com.dtn.apply_job.domain.request.specialization.ReqCreateSpecializationDTO;
+import com.dtn.apply_job.domain.response.specialization.ResSpecializationByIndustryId;
 import com.dtn.apply_job.domain.response.specialization.ResSpecializationDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.service.SpecializationService;
@@ -15,6 +16,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -55,6 +58,15 @@ public class SpecializationController {
             Pageable pageable
     ) {
         ResultPaginationDTO result = this.specializationService.handleGetAllSpecializations(spec, pageable);
+        return ResponseEntity.status(HttpStatus.OK).body(result);
+    }
+
+    @GetMapping("/specializations/by-industry/{industryId}")
+    @ApiMessage("Fetch specializations by industry id")
+    public ResponseEntity<List<ResSpecializationByIndustryId>> getSpecializationsByIndustryId(
+            @PathVariable long industryId
+    ) throws IdInvalidException {
+        List<ResSpecializationByIndustryId> result = this.specializationService.handleGetSpecializationsByIndustryId(industryId);
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
 
