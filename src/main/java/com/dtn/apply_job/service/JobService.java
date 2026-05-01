@@ -119,16 +119,27 @@ public class JobService {
             Pageable pageable,
             String location,
             List<String> levels,
-            Long specializationId,
+            List<Long> specializationIds,
             String name,
             String skill,
             Boolean active
     ) throws IdInvalidException {
         Set<LevelEnum> levelEnums = parseLevelEnums(levels);
-        Specification<Job> filterSpec = buildJobFilterSpec(location, levelEnums, specializationId, name, skill, active);
+        List<Long> normalizedSpecIds = normalizeIds(specializationIds);
+        Specification<Job> filterSpec = buildJobFilterSpec(location, levelEnums, normalizedSpecIds, name, skill, active);
         Specification<Job> combinedSpec = spec == null ? filterSpec : spec.and(filterSpec);
 
         return handleGetAllJobs(combinedSpec, pageable);
+    }
+
+    private List<Long> normalizeIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        return ids.stream()
+                .filter(id -> id != null && id > 0)
+                .distinct()
+                .toList();
     }
 
     public ResJobDTO handleGetJobById(long id) throws IdInvalidException {
@@ -292,7 +303,7 @@ public class JobService {
     private Specification<Job> buildJobFilterSpec(
             String location,
             Set<LevelEnum> levels,
-            Long specializationId,
+            List<Long> specializationIds,
             String name,
             String skill,
             Boolean active
@@ -307,8 +318,8 @@ public class JobService {
             if (hasText(name)) {
                 predicates.add(cb.like(cb.lower(root.get("name")), "%" + name.trim().toLowerCase() + "%"));
             }
-            if (specializationId != null) {
-                predicates.add(cb.equal(root.get("specialization").get("id"), specializationId));
+            if (specializationIds != null && !specializationIds.isEmpty()) {
+                predicates.add(root.get("specialization").get("id").in(specializationIds));
             }
             if (active != null) {
                 predicates.add(cb.equal(root.get("active"), active));

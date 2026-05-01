@@ -63,7 +63,7 @@ public class JobController {
             Pageable pageable,
             @RequestParam(required = false) String location,
             @RequestParam(required = false) List<String> levels,
-            @RequestParam(required = false) Long specialization,
+            @RequestParam(required = false) List<Long> specialization,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String skill,
             @RequestParam(required = false) Boolean active
