@@ -29,6 +29,7 @@ public class ResLoginDTO {
         private String email;
         private String name;
         private List<String> roles;
+        private String avatarUrl;
     }
 
     @Setter

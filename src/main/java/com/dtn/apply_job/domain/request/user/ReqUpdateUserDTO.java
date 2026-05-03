@@ -15,6 +15,7 @@ public class ReqUpdateUserDTO {
 
     @NotBlank(message = "Name must not be blank!")
     private String name;
+    private String avatarUrl;
     private int age;
     private GenderEnum gender;
     private String address;

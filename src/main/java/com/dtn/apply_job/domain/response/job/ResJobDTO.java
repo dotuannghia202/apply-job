@@ -35,6 +35,7 @@ public class ResJobDTO {
     private List<String> benefits;
 
     private String workingHours;
+    private Boolean isSaved;
 
     private CompanyInfo company;
     private SpecializationInfo specialization;

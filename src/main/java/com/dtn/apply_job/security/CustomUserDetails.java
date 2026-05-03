@@ -11,6 +11,7 @@ public class CustomUserDetails implements UserDetails {
     private final String email;
     private final String fullName;
     private final String password;
+    private final String avatarUrl;
     private final Collection<? extends GrantedAuthority> authorities;
 
     public CustomUserDetails(
@@ -18,12 +19,14 @@ public class CustomUserDetails implements UserDetails {
             String email,
             String fullName,
             String password,
+            String avatarUrl,
             Collection<? extends GrantedAuthority> authorities
     ) {
         this.id = id;
         this.email = email;
         this.fullName = fullName;
         this.password = password;
+        this.avatarUrl = avatarUrl;
         this.authorities = authorities;
     }
 
@@ -33,6 +36,10 @@ public class CustomUserDetails implements UserDetails {
 
     public String getFullName() {
         return fullName;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
     }
 
     @Override

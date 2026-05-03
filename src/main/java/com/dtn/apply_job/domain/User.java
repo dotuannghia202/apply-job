@@ -30,6 +30,8 @@ public class User {
     @NotBlank(message = "Email is not blank")
     private String email;
 
+    private String avatarUrl;
+
     private Integer age;
 
 
@@ -65,6 +67,14 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles = new HashSet<>();
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "saved_jobs", // Hibernate sẽ tự động tạo bảng này
+            joinColumns = @JoinColumn(name = "candidate_id"),
+            inverseJoinColumns = @JoinColumn(name = "job_id")
+    )
+    private Set<Job> savedJobs = new HashSet<>();
 
     @PrePersist
     public void handleBeforeCreate() {

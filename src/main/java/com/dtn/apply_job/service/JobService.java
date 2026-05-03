@@ -2,33 +2,28 @@ package com.dtn.apply_job.service;
 
 import com.dtn.apply_job.common.response.ResultPaginationDTO;
 import com.dtn.apply_job.common.validator.DateRangeValidator;
-import com.dtn.apply_job.domain.Company;
-import com.dtn.apply_job.domain.Job;
-import com.dtn.apply_job.domain.Skill;
-import com.dtn.apply_job.domain.Specialization;
+import com.dtn.apply_job.domain.*;
 import com.dtn.apply_job.domain.request.job.ReqCreateJobDTO;
 import com.dtn.apply_job.domain.request.job.ReqUpdateJobDTO;
 import com.dtn.apply_job.domain.response.job.ResJobDTO;
 import com.dtn.apply_job.domain.response.job.ResUpdateJobDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.exception.InvalidDateRangeException;
-import com.dtn.apply_job.repository.CompanyRepository;
-import com.dtn.apply_job.repository.JobRepository;
-import com.dtn.apply_job.repository.SkillRepository;
-import com.dtn.apply_job.repository.SpecializationRepository;
+import com.dtn.apply_job.repository.*;
+import com.dtn.apply_job.security.SecurityUtil;
 import com.dtn.apply_job.util.constant.enums.LevelEnum;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,13 +32,15 @@ public class JobService {
     private final CompanyRepository companyRepository;
     private final SpecializationRepository specializationRepository;
     private final SkillRepository skillRepository;
+    private final UserRepository userRepository;
 
     public JobService(JobRepository jobRepository, CompanyRepository companyRepository,
-                      SpecializationRepository specializationRepository, SkillRepository skillRepository) {
+                      SpecializationRepository specializationRepository, SkillRepository skillRepository, UserRepository userRepository) {
         this.jobRepository = jobRepository;
         this.companyRepository = companyRepository;
         this.specializationRepository = specializationRepository;
         this.skillRepository = skillRepository;
+        this.userRepository = userRepository;
     }
 
     public ResJobDTO handleCreateJob(ReqCreateJobDTO reqDTO) throws IdInvalidException, InvalidDateRangeException {
@@ -91,14 +88,15 @@ public class JobService {
         Job savedJob = jobRepository.save(job);
 
         // 5. Trả về Response DTO
-        return convertToResJobDTO(savedJob);
+
+        return convertToResJobDTO(savedJob, Collections.emptySet());
     }
 
     public ResultPaginationDTO handleGetAllJobs(Specification<Job> spec, Pageable pageable) {
         Page<Job> pageJob = jobRepository.findAll(spec, pageable);
-
+        Set<Long> savedJobIds = getSavedJobIdsForCurrentUser();
         List<ResJobDTO> listJobDTO = pageJob.getContent().stream()
-                .map(this::convertToResJobDTO)
+                .map(job -> convertToResJobDTO(job, savedJobIds))
                 .collect(Collectors.toList());
 
         ResultPaginationDTO rs = new ResultPaginationDTO();
@@ -119,33 +117,40 @@ public class JobService {
             Pageable pageable,
             String location,
             List<String> levels,
-            List<Long> specializationIds,
+            Long specializationId,
+            String companyName,
+            Double maxSalary,
             String name,
+            String keyword,
             String skill,
             Boolean active
     ) throws IdInvalidException {
         Set<LevelEnum> levelEnums = parseLevelEnums(levels);
-        List<Long> normalizedSpecIds = normalizeIds(specializationIds);
-        Specification<Job> filterSpec = buildJobFilterSpec(location, levelEnums, normalizedSpecIds, name, skill, active);
+
+        Specification<Job> filterSpec = buildJobFilterSpec(
+                location, levelEnums, specializationId, companyName,
+                maxSalary, name, keyword, skill, active
+        );
         Specification<Job> combinedSpec = spec == null ? filterSpec : spec.and(filterSpec);
 
-        return handleGetAllJobs(combinedSpec, pageable);
+        Pageable effectivePageable = pageable;
+        if (maxSalary != null && pageable.getSort().isUnsorted()) {
+            effectivePageable = PageRequest.of(
+                    pageable.getPageNumber(),
+                    pageable.getPageSize(),
+                    Sort.by(Sort.Direction.DESC, "salary")
+            );
+        }
+
+        return handleGetAllJobs(combinedSpec, effectivePageable);
     }
 
-    private List<Long> normalizeIds(List<Long> ids) {
-        if (ids == null || ids.isEmpty()) {
-            return List.of();
-        }
-        return ids.stream()
-                .filter(id -> id != null && id > 0)
-                .distinct()
-                .toList();
-    }
 
     public ResJobDTO handleGetJobById(long id) throws IdInvalidException {
         Job job = jobRepository.findById(id)
                 .orElseThrow(() -> new IdInvalidException("Job doesn't exist!"));
-        return convertToResJobDTO(job);
+        Set<Long> savedJobIds = getSavedJobIdsForCurrentUser();
+        return convertToResJobDTO(job, savedJobIds);
     }
 
     public ResUpdateJobDTO handleUpdateJob(long id, ReqUpdateJobDTO reqDTO) throws IdInvalidException {
@@ -225,7 +230,7 @@ public class JobService {
     }
 
     // Hàm Converter Dùng Chung (Giúp code cực kỳ Clean)
-    private ResJobDTO convertToResJobDTO(Job job) {
+    private ResJobDTO convertToResJobDTO(Job job, Set<Long> savedJobIds) {
         ResJobDTO dto = new ResJobDTO();
         dto.setId(job.getId());
         dto.setName(job.getName());
@@ -267,6 +272,12 @@ public class JobService {
             dto.setSpecialization(specInfo);
         }
 
+        if (savedJobIds != null && savedJobIds.contains(job.getId())) {
+            dto.setIsSaved(true);
+        } else {
+            dto.setIsSaved(false);
+        }
+
         return dto;
     }
 
@@ -303,8 +314,11 @@ public class JobService {
     private Specification<Job> buildJobFilterSpec(
             String location,
             Set<LevelEnum> levels,
-            List<Long> specializationIds,
+            Long specializationId,
+            String companyName,
+            Double maxSalary,
             String name,
+            String keyword,
             String skill,
             Boolean active
     ) {
@@ -318,8 +332,24 @@ public class JobService {
             if (hasText(name)) {
                 predicates.add(cb.like(cb.lower(root.get("name")), "%" + name.trim().toLowerCase() + "%"));
             }
-            if (specializationIds != null && !specializationIds.isEmpty()) {
-                predicates.add(root.get("specialization").get("id").in(specializationIds));
+            if (hasText(companyName)) {
+                predicates.add(cb.like(
+                        cb.lower(root.get("company").get("name")),
+                        "%" + companyName.trim().toLowerCase() + "%"
+                ));
+            }
+            // Ô search chung: khớp tên job HOẶC tên công ty
+            if (hasText(keyword)) {
+                String pattern = "%" + keyword.trim().toLowerCase() + "%";
+                Predicate byJobName = cb.like(cb.lower(root.get("name")), pattern);
+                Predicate byCompanyName = cb.like(cb.lower(root.get("company").get("name")), pattern);
+                predicates.add(cb.or(byJobName, byCompanyName));
+            }
+            if (specializationId != null && specializationId > 0) {
+                predicates.add(cb.equal(root.get("specialization").get("id"), specializationId));
+            }
+            if (maxSalary != null && maxSalary > 0) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("salary"), maxSalary));
             }
             if (active != null) {
                 predicates.add(cb.equal(root.get("active"), active));
@@ -363,7 +393,61 @@ public class JobService {
         return result;
     }
 
+    @Transactional // Bắt buộc có khi xử lý Lazy Collection
+    public boolean toggleSavedJob(Long jobId) throws Exception {
+        // 1. Lấy user đang đăng nhập
+        String email = SecurityUtil.getCurrentUser()
+                .orElseThrow(() -> new IdInvalidException("Login please!"));
+        User candidate = userRepository.findByEmail(email);
+        if (candidate == null) {
+            throw new IdInvalidException("User not found!");
+        }
+        // 2. Tìm Job
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new IdInvalidException("Job doesn't exist!"));
+
+        // 3. Logic Toggle siêu sạch (Không cần query CSDL lần 2)
+        boolean isAlreadySaved = candidate.getSavedJobs().contains(job);
+
+        if (isAlreadySaved) {
+            // Nếu đã có trong danh sách -> Xóa đi (Bỏ lưu)
+            candidate.getSavedJobs().remove(job);
+        } else {
+            // Nếu chưa có -> Thêm vào danh sách (Lưu)
+            candidate.getSavedJobs().add(job);
+        }
+
+        // 4. Lưu User lại (Hibernate sẽ tự động Insert/Delete ở bảng trung gian saved_jobs)
+        userRepository.save(candidate);
+
+        // Trả về trạng thái MỚI (True = Đã lưu, False = Đã bỏ lưu)
+        return !isAlreadySaved;
+    }
+
     private boolean hasText(String value) {
         return value != null && !value.trim().isEmpty();
+    }
+
+    private Set<Long> getSavedJobIdsForCurrentUser() {
+        Set<Long> savedJobIds = new java.util.HashSet<>();
+
+        try {
+            // Lấy email người dùng đang đăng nhập
+            String email = SecurityUtil.getCurrentUser().orElse("");
+
+            if (!email.isBlank()) {
+                User userOpt = userRepository.findByEmail(email);
+                if (userOpt != null) {
+                    // Trích xuất mảng ID từ danh sách SavedJobs của User
+                    savedJobIds = userOpt.getSavedJobs().stream()
+                            .map(Job::getId)
+                            .collect(Collectors.toSet());
+                }
+            }
+        } catch (Exception e) {
+            // Bỏ qua nếu là khách vãng lai (Guest) chưa đăng nhập
+        }
+
+        return savedJobIds;
     }
 }

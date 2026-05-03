@@ -13,6 +13,7 @@ import com.dtn.apply_job.exception.EmailExistedException;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.exception.InvalidRequestException;
 import com.dtn.apply_job.repository.CompanyRepository;
+import com.dtn.apply_job.repository.JobRepository;
 import com.dtn.apply_job.repository.RoleRepository;
 import com.dtn.apply_job.repository.UserRepository;
 import com.dtn.apply_job.util.constant.enums.ERole;
@@ -32,12 +33,14 @@ public class UserService {
     private final UserRepository userRepository;
     private final CompanyRepository companyRepository;
     private final RoleRepository roleRepository;
+    private final JobRepository jobRepository;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, CompanyRepository companyRepository, RoleRepository roleRepository) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, CompanyRepository companyRepository, RoleRepository roleRepository, JobRepository jobRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.companyRepository = companyRepository;
         this.roleRepository = roleRepository;
+        this.jobRepository = jobRepository;
     }
 
     public ResultPaginationDTO getAllUsers(Specification<User> spec, Pageable pageable) {
@@ -49,7 +52,9 @@ public class UserService {
             userDTO.setId(user.getId());
             userDTO.setName(user.getName());
             userDTO.setEmail(user.getEmail());
+            userDTO.setAvatarUrl(user.getAvatarUrl());
             userDTO.setAge(user.getAge());
+            userDTO.setGender(user.getGender() != null ? user.getGender().toString() : null);
             userDTO.setAddress(user.getAddress());
             userDTO.setActive(user.getIsActive());
             userDTO.setCreatedAt(user.getCreatedAt());
@@ -151,6 +156,7 @@ public class UserService {
             ResUserDTO resUserDTO = new ResUserDTO();
             resUserDTO.setId(optionalUser.get().getId());
             resUserDTO.setName(optionalUser.get().getName());
+            resUserDTO.setAvatarUrl(optionalUser.get().getAvatarUrl());
             resUserDTO.setEmail(optionalUser.get().getEmail());
             resUserDTO.setAge(optionalUser.get().getAge());
             resUserDTO.setGender(optionalUser.get().getGender().toString());
@@ -189,6 +195,7 @@ public class UserService {
         User currentUser = (User) optionalUser.get();
 
         currentUser.setName(reqUser.getName());
+        currentUser.setAvatarUrl(reqUser.getAvatarUrl());
         currentUser.setAge(reqUser.getAge());
         currentUser.setGender(reqUser.getGender());
         currentUser.setAddress(reqUser.getAddress());
@@ -224,6 +231,7 @@ public class UserService {
         resUpdateDTO.setId(updatedUser.getId());
         resUpdateDTO.setName(updatedUser.getName());
         resUpdateDTO.setEmail(updatedUser.getEmail());
+        resUpdateDTO.setAvatarUrl(updatedUser.getAvatarUrl());
         resUpdateDTO.setAge(updatedUser.getAge());
         resUpdateDTO.setGender(updatedUser.getGender() != null ? updatedUser.getGender().toString() : null);
         resUpdateDTO.setAddress(updatedUser.getAddress());
@@ -266,4 +274,6 @@ public class UserService {
     public Optional<List<User>> handleGetUserByCompany(Company company) {
         return this.userRepository.findByCompany(company);
     }
+
+
 }

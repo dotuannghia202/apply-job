@@ -10,6 +10,7 @@ import com.dtn.apply_job.domain.response.user.ResUpdateUserDTO;
 import com.dtn.apply_job.domain.response.user.ResUserDTO;
 import com.dtn.apply_job.exception.EmailExistedException;
 import com.dtn.apply_job.exception.IdInvalidException;
+import com.dtn.apply_job.service.JobService;
 import com.dtn.apply_job.service.UserService;
 import com.turkraft.springfilter.boot.Filter;
 import org.springframework.data.domain.Pageable;
@@ -24,12 +25,13 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final JobService jobService;
 
 
-    public UserController(UserService userService, PasswordEncoder passwordEncoder) {
+    public UserController(UserService userService, PasswordEncoder passwordEncoder, JobService jobService) {
 
         this.userService = userService;
-
+        this.jobService = jobService;
     }
 
     @GetMapping("/users")
@@ -73,5 +75,13 @@ public class UserController {
     public ResponseEntity<ResUpdateUserDTO> updateUser(@PathVariable long id, @RequestBody ReqUpdateUserDTO user) throws IdInvalidException {
         ResUpdateUserDTO result = this.userService.handleUpdateUser(id, user);
         return ResponseEntity.ok().body(result);
+    }
+
+    @PostMapping("/{jobId}/save")
+
+    @ApiMessage("On/off jobs saved status for current user")
+    public ResponseEntity<Boolean> toggleSaveJob(@PathVariable Long jobId) throws Exception {
+        boolean isSaved = jobService.toggleSavedJob(jobId);
+        return ResponseEntity.ok(isSaved);
     }
 }

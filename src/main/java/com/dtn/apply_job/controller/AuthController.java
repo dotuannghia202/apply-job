@@ -137,6 +137,7 @@ public class AuthController {
                 currentUser.getEmail(),
                 currentUser.getName(),
                 currentUser.getPassword(),
+                currentUser.getAvatarUrl(),
                 securityUtil.buildAuthorities(currentUser) // nếu bạn chưa có hàm này thì xem ghi chú bên dưới
         );
 
@@ -212,6 +213,7 @@ public class AuthController {
         userLogin.setId(userDetails.getId());
         userLogin.setEmail(userDetails.getUsername());
         userLogin.setName(userDetails.getFullName());
+        userLogin.setAvatarUrl(userDetails.getAvatarUrl());
         userLogin.setRoles(roles);
         return userLogin;
     }
