@@ -1,8 +1,9 @@
 package com.dtn.apply_job.controller;
 
-import com.dtn.apply_job.common.response.RestRespon;
 import com.dtn.apply_job.common.response.ResultPaginationDTO;
 import com.dtn.apply_job.domain.Company;
+import com.dtn.apply_job.domain.request.company.ReqCreateCompanyDTO;
+import com.dtn.apply_job.domain.response.company.ResCreateCompanyDTO;
 import com.dtn.apply_job.service.CompanyService;
 import com.turkraft.springfilter.boot.Filter;
 import jakarta.validation.Valid;
@@ -29,9 +30,9 @@ public class CompanyController {
     }
 
     @PostMapping("/companies")
-    public ResponseEntity<RestRespon<Company>> createCompany(@Valid @RequestBody Company company) {
-        Company newCompany = this.companyService.handleCreateCompany(company);
-        return ResponseEntity.status(HttpStatus.CREATED).body(null);
+    public ResponseEntity<ResCreateCompanyDTO> createCompany(@Valid @RequestBody ReqCreateCompanyDTO company) {
+        ResCreateCompanyDTO newCompany = this.companyService.handleCreateCompany(company);
+        return ResponseEntity.status(HttpStatus.CREATED).body(newCompany);
     }
 
     @PostMapping("/companies/batch")
