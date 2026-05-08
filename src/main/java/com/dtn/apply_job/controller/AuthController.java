@@ -22,12 +22,10 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
@@ -80,17 +78,17 @@ public class AuthController {
         // 6. Lưu refresh token vào DB
         userService.handleUpdateUserToken(refreshToken, userDetails.getUsername());
 
-        List<String> roles = userDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList());
+        // 7. LẤY FULL THÔNG TIN USER TỪ DB ĐỂ LẤY ĐƯỢC COMPANY
+        User currentUser = userService.handleGetUserByUsername(userDetails.getUsername());
 
-        // 7. Build response
-        ResLoginDTO response = buildLoginResponse(userDetails, accessToken, refreshToken, roles);
+        ResLoginDTO response = new ResLoginDTO();
+        response.setAccessToken(accessToken);
+        // Tận dụng hàm buildUserLogin(User user) đã có sẵn ở dưới để tự động map cả Roles và Company
+        response.setUserLogin(buildUserLogin(currentUser));
 
-        // 8. Set refresh token vào httpOnly cookie
+        // 6. Set cookie
         ResponseCookie responseCookie = buildRefreshTokenCookie(refreshToken);
 
-        // 9. Trả response + cookie
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, responseCookie.toString())
                 .body(response);
@@ -196,27 +194,6 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(null);
     }
 
-    private ResLoginDTO buildLoginResponse(
-            CustomUserDetails userDetails,
-            String accessToken,
-            String refreshToken,
-            List<String> roles) {
-        ResLoginDTO response = new ResLoginDTO();
-        response.setAccessToken(accessToken);
-
-        response.setUserLogin(buildUserLogin(userDetails, roles));
-        return response;
-    }
-
-    private ResLoginDTO.UserLogin buildUserLogin(CustomUserDetails userDetails, List<String> roles) {
-        ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin();
-        userLogin.setId(userDetails.getId());
-        userLogin.setEmail(userDetails.getUsername());
-        userLogin.setName(userDetails.getFullName());
-        userLogin.setAvatarUrl(userDetails.getAvatarUrl());
-        userLogin.setRoles(roles);
-        return userLogin;
-    }
 
     private ResLoginDTO.UserLogin buildUserLogin(User user) {
         ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin();
@@ -226,6 +203,13 @@ public class AuthController {
         userLogin.setRoles(user.getRoles().stream()
                 .map(role -> role.getName().name())
                 .collect(Collectors.toList()));
+
+        if (user.getCompany() != null) {
+            ResLoginDTO.UserLogin.CompanyInfo companyInfo = new ResLoginDTO.UserLogin.CompanyInfo();
+            companyInfo.setId(user.getCompany().getId());
+            companyInfo.setName(user.getCompany().getName());
+            userLogin.setCompany(companyInfo);
+        }
         return userLogin;
     }
 

@@ -30,6 +30,16 @@ public class ResLoginDTO {
         private String name;
         private List<String> roles;
         private String avatarUrl;
+
+        private CompanyInfo company;
+
+        @Getter
+        @Setter
+        public static class CompanyInfo {
+            private long id;
+            private String name;
+
+        }
     }
 
     @Setter
@@ -39,5 +49,4 @@ public class ResLoginDTO {
     public static class UserGetAccount {
         private UserLogin user;
     }
-
 }

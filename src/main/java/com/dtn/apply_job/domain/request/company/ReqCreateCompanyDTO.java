@@ -17,5 +17,6 @@ public class ReqCreateCompanyDTO {
     @NotBlank(message = "Field address is required!")
     private String address;
 
+    @NotBlank(message = "Field logo is required!")
     private String logo;
 }
