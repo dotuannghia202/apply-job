@@ -8,43 +8,34 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 
-@Setter
 @Getter
+@Setter
 public class ResJobDTO {
-
-    private long id;
+    private Long id;
     private String name;
     private String location;
-    private Double salary;
-    private int quantity;
+    private Double minSalary;
+    private Double maxSalary;
+    private Integer quantity;
     private Set<LevelEnum> levels;
     private String description;
-
+    private List<String> requirements;
     private Instant startDate;
-
     private Instant endDate;
-    private boolean active;
-
+    private Boolean active;
     private Instant createdAt;
     private String createdBy;
-
-    private Instant updatedAt;
-    private String updatedBy;
-    private List<String> skills;
-
     private List<String> benefits;
-
     private String workingHours;
-    private Boolean isSaved;
-
+    private List<String> skills;
     private CompanyInfo company;
     private SpecializationInfo specialization;
+    private Boolean isSaved;
 
-    // Inner Classes
     @Getter
     @Setter
     public static class CompanyInfo {
-        private long id;
+        private Long id;
         private String name;
         private String logo;
     }
@@ -52,7 +43,7 @@ public class ResJobDTO {
     @Getter
     @Setter
     public static class SpecializationInfo {
-        private long id;
+        private Long id;
         private String name;
     }
 }

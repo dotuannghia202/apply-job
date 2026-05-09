@@ -20,15 +20,21 @@ public class ReqCreateJobDTO {
     @NotBlank(message = "Location must not be left blank!")
     private String location;
 
-    @NotNull(message = "Salary must not be null!")
-    @PositiveOrZero(message = "Salary must be greater than or equal to 0!")
-    private Double salary;
+    @NotNull(message = "Min salary must not be null!")
+    @PositiveOrZero(message = "Min salary must be greater than or equal to 0!")
+    private Double minSalary;
+
+    @NotNull(message = "Max salary must not be null!")
+    @PositiveOrZero(message = "Max salary must be greater than or equal to 0!")
+    private Double maxSalary;
 
     @NotNull(message = "Quantity must not be null!")
     @Positive(message = "Quantity must be greater than 0!")
     private Integer quantity;
 
     private String description;
+
+    private List<String> requirements;
 
     @NotEmpty(message = "Levels must not be empty!")
     private Set<@NotNull(message = "Level must not be null!") LevelEnum> levels;
@@ -57,4 +63,12 @@ public class ReqCreateJobDTO {
     private List<@NotNull(message = "Skill ID must not be null!")
     @Positive(message = "Skill ID must be greater than 0!")
             Long> skillIds;
+
+    @AssertTrue(message = "Max salary must be greater than or equal to min salary!")
+    public boolean isSalaryRangeValid() {
+        if (minSalary == null || maxSalary == null) {
+            return true;
+        }
+        return maxSalary >= minSalary;
+    }
 }

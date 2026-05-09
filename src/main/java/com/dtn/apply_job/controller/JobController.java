@@ -65,6 +65,7 @@ public class JobController {
             @RequestParam(required = false) List<String> levels,
             @RequestParam(required = false) Long specialization,
             @RequestParam(required = false) String company,
+            @RequestParam(required = false) Double minSalary,
             @RequestParam(required = false) Double maxSalary,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String keyword,
@@ -72,7 +73,7 @@ public class JobController {
             @RequestParam(required = false) Boolean active
     ) throws IdInvalidException {
         ResultPaginationDTO result = this.jobService.handleGetAllJobsWithFilters(
-                spec, pageable, location, levels, specialization, company, maxSalary, name, keyword, skill, active);
+                spec, pageable, location, levels, specialization, company, minSalary, maxSalary, name, keyword, skill, active);
         return ResponseEntity.ok().body(result);
     }
 

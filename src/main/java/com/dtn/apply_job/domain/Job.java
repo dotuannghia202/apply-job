@@ -33,8 +33,11 @@ public class Job {
 
     private String location;
 
-    @Column(nullable = false)
-    private Double salary;
+    @Column(name = "min_salary")
+    private Double minSalary;
+
+    @Column(name = "max_salary")
+    private Double maxSalary;
 
     @Column(nullable = false)
     private Integer quantity;
@@ -56,6 +59,14 @@ public class Job {
 
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+            name = "job_requirements",
+            joinColumns = @JoinColumn(name = "job_id", nullable = false)
+    )
+    @Column(name = "requirement", length = 500)
+    private List<String> requirements;
 
     private Instant startDate;
     private Instant endDate;
@@ -94,7 +105,7 @@ public class Job {
             name = "job_benefits",
             joinColumns = @JoinColumn(name = "job_id", nullable = false)
     )
-    @Column(name = "benefits", length = 255)
+    @Column(name = "benefit", length = 255)
     private List<String> benefits;
 
     @Column(name = "working_hour", length = 255)

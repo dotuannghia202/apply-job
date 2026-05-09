@@ -67,10 +67,12 @@ public class JobService {
         Job job = new Job();
         job.setName(reqDTO.getName());
         job.setLocation(reqDTO.getLocation());
-        job.setSalary(reqDTO.getSalary());
+        job.setMinSalary(reqDTO.getMinSalary());
+        job.setMaxSalary(reqDTO.getMaxSalary());
         job.setQuantity(reqDTO.getQuantity());
         job.setLevels(reqDTO.getLevels());
         job.setDescription(reqDTO.getDescription());
+        job.setRequirements(reqDTO.getRequirements());
         job.setStartDate(reqDTO.getStartDate());
         job.setEndDate(reqDTO.getEndDate());
         job.setBenefits(reqDTO.getBenefits());
@@ -119,6 +121,7 @@ public class JobService {
             List<String> levels,
             Long specializationId,
             String companyName,
+            Double minSalary,
             Double maxSalary,
             String name,
             String keyword,
@@ -129,16 +132,16 @@ public class JobService {
 
         Specification<Job> filterSpec = buildJobFilterSpec(
                 location, levelEnums, specializationId, companyName,
-                maxSalary, name, keyword, skill, active
+                minSalary, maxSalary, name, keyword, skill, active
         );
         Specification<Job> combinedSpec = spec == null ? filterSpec : spec.and(filterSpec);
 
         Pageable effectivePageable = pageable;
-        if (maxSalary != null && pageable.getSort().isUnsorted()) {
+        if ((minSalary != null || maxSalary != null) && pageable.getSort().isUnsorted()) {
             effectivePageable = PageRequest.of(
                     pageable.getPageNumber(),
                     pageable.getPageSize(),
-                    Sort.by(Sort.Direction.DESC, "salary")
+                    Sort.by(Sort.Direction.DESC, "maxSalary")
             );
         }
 
@@ -162,10 +165,12 @@ public class JobService {
         DateRangeValidator.validate(reqDTO.getStartDate(), reqDTO.getEndDate());
         currentJob.setName(reqDTO.getName());
         currentJob.setLocation(reqDTO.getLocation());
-        currentJob.setSalary(reqDTO.getSalary());
+        currentJob.setMinSalary(reqDTO.getMinSalary());
+        currentJob.setMaxSalary(reqDTO.getMaxSalary());
         currentJob.setQuantity(reqDTO.getQuantity());
         currentJob.setLevels(reqDTO.getLevels()); // Sửa thành level (số ít)
         currentJob.setDescription(reqDTO.getDescription());
+        currentJob.setRequirements(reqDTO.getRequirements());
 
         currentJob.setStartDate(reqDTO.getStartDate());
         currentJob.setEndDate(reqDTO.getEndDate());
@@ -235,10 +240,12 @@ public class JobService {
         dto.setId(job.getId());
         dto.setName(job.getName());
         dto.setLocation(job.getLocation());
-        dto.setSalary(job.getSalary());
+        dto.setMinSalary(job.getMinSalary());
+        dto.setMaxSalary(job.getMaxSalary());
         dto.setQuantity(job.getQuantity());
         dto.setLevels(job.getLevels());
         dto.setDescription(job.getDescription());
+        dto.setRequirements(job.getRequirements());
         dto.setStartDate(job.getStartDate());
         dto.setEndDate(job.getEndDate());
         dto.setActive(job.getActive());
@@ -286,10 +293,12 @@ public class JobService {
         dto.setId(job.getId());
         dto.setName(job.getName());
         dto.setLocation(job.getLocation());
-        dto.setSalary(job.getSalary());
+        dto.setMinSalary(job.getMinSalary());
+        dto.setMaxSalary(job.getMaxSalary());
         dto.setQuantity(job.getQuantity());
         dto.setLevels(job.getLevels());
         dto.setDescription(job.getDescription());
+        dto.setRequirements(job.getRequirements());
         dto.setStartDate(job.getStartDate());
         dto.setEndDate(job.getEndDate());
         dto.setActive(Boolean.TRUE.equals(job.getActive()));
@@ -316,6 +325,7 @@ public class JobService {
             Set<LevelEnum> levels,
             Long specializationId,
             String companyName,
+            Double minSalary,
             Double maxSalary,
             String name,
             String keyword,
@@ -348,8 +358,12 @@ public class JobService {
             if (specializationId != null && specializationId > 0) {
                 predicates.add(cb.equal(root.get("specialization").get("id"), specializationId));
             }
+            // Lọc theo khoảng lương: Job phù hợp khi khoảng lương của job giao với khoảng filter
+            if (minSalary != null && minSalary > 0) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("maxSalary"), minSalary));
+            }
             if (maxSalary != null && maxSalary > 0) {
-                predicates.add(cb.lessThanOrEqualTo(root.get("salary"), maxSalary));
+                predicates.add(cb.lessThanOrEqualTo(root.get("minSalary"), maxSalary));
             }
             if (active != null) {
                 predicates.add(cb.equal(root.get("active"), active));

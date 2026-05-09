@@ -77,17 +77,16 @@ public class UserController {
         return ResponseEntity.ok().body(result);
     }
 
-    @PostMapping("/{jobId}/save")
-
+    @PostMapping("/users/save-job/{jobId}")
     @ApiMessage("On/off jobs saved status for current user")
     public ResponseEntity<Boolean> toggleSaveJob(@PathVariable Long jobId) throws Exception {
         boolean isSaved = jobService.toggleSavedJob(jobId);
         return ResponseEntity.ok(isSaved);
     }
 
-    @PutMapping("/assign-company")
+    @PutMapping("/users/assign-company/{companyId}")
     @ApiMessage("Assign company for employer")
-    public ResponseEntity<Void> assignCompany(@RequestBody Long companyId) throws Exception {
+    public ResponseEntity<Void> assignCompany(@PathVariable Long companyId) throws Exception {
         userService.assignCompanyToCurrentUser(companyId);
         return ResponseEntity.ok().body(null);
     }
