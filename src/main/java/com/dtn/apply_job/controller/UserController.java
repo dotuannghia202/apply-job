@@ -84,4 +84,11 @@ public class UserController {
         boolean isSaved = jobService.toggleSavedJob(jobId);
         return ResponseEntity.ok(isSaved);
     }
+
+    @PutMapping("/assign-company")
+    @ApiMessage("Assign company for employer")
+    public ResponseEntity<Void> assignCompany(@RequestBody Long companyId) throws Exception {
+        userService.assignCompanyToCurrentUser(companyId);
+        return ResponseEntity.ok().body(null);
+    }
 }

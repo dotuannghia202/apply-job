@@ -16,12 +16,14 @@ import com.dtn.apply_job.repository.CompanyRepository;
 import com.dtn.apply_job.repository.JobRepository;
 import com.dtn.apply_job.repository.RoleRepository;
 import com.dtn.apply_job.repository.UserRepository;
+import com.dtn.apply_job.security.SecurityUtil;
 import com.dtn.apply_job.util.constant.enums.ERole;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -275,5 +277,27 @@ public class UserService {
         return this.userRepository.findByCompany(company);
     }
 
+    @Transactional
 
+    public void assignCompanyToCurrentUser(Long companyId) throws Exception {
+        // 1. Lấy user đang đăng nhập từ Token (Tuyệt đối không lấy ID từ URL để tránh hack)
+        String email = SecurityUtil.getCurrentUser()
+                .orElseThrow(() -> new IdInvalidException("Please login!!"));
+        User currentUser = userRepository.findByEmail(email);
+
+        // 2. Tìm Công ty theo ID người dùng gửi lên
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new IdInvalidException("Company doesn't exist!"));
+
+        // 3. Gắn công ty vào User
+        currentUser.setCompany(company);
+
+
+        // 5. Lưu vào Database
+        User updatedUser = userRepository.save(currentUser);
+
+        // Trả về DTO
+        // (Bạn dùng lại đoạn code mapping User sang ResUpdateUserDTO ở các bài trước nhé)
+        return;
+    }
 }

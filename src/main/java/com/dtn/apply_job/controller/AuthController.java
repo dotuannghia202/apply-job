@@ -200,6 +200,7 @@ public class AuthController {
         userLogin.setId(user.getId());
         userLogin.setEmail(user.getEmail());
         userLogin.setName(user.getName());
+        userLogin.setAvatarUrl(user.getAvatarUrl());
         userLogin.setRoles(user.getRoles().stream()
                 .map(role -> role.getName().name())
                 .collect(Collectors.toList()));

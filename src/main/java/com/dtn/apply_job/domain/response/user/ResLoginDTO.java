@@ -13,7 +13,7 @@ import java.util.List;
 @Getter
 public class ResLoginDTO {
 
-    @JsonProperty("access_token")
+    
     private String accessToken;
 
     @JsonProperty("user")
