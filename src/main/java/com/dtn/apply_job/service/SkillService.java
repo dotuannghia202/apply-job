@@ -57,9 +57,16 @@ public class SkillService {
         return this.skillRepository.findById(id).get();
     }
 
-    public ResultPaginationDTO handleGetAllSkills(Specification<Skill> spec, Pageable pageable) {
+    public ResultPaginationDTO handleGetAllSkills(Specification<Skill> spec, Pageable pageable, String name) {
 
-        Page<Skill> skillPage = this.skillRepository.findAll(spec, pageable);
+        Specification<Skill> combinedSpec = spec;
+        if (hasText(name)) {
+            Specification<Skill> nameSpec = (root, query, cb) ->
+                    cb.like(cb.lower(root.get("name")), "%" + name.trim().toLowerCase() + "%");
+            combinedSpec = (combinedSpec == null) ? nameSpec : combinedSpec.and(nameSpec);
+        }
+
+        Page<Skill> skillPage = this.skillRepository.findAll(combinedSpec, pageable);
 
         ResultPaginationDTO resultPaginationDTO = new ResultPaginationDTO();
         ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
@@ -73,6 +80,10 @@ public class SkillService {
 
         return resultPaginationDTO;
 
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 
     public void handleDeleteSkill(Long id) {

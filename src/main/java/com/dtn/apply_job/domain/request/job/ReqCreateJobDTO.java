@@ -32,8 +32,10 @@ public class ReqCreateJobDTO {
     @Positive(message = "Quantity must be greater than 0!")
     private Integer quantity;
 
+    @NotBlank(message = "Description must not be left blank!")
     private String description;
 
+    @NotBlank(message = "Requirements must not be left blank!")
     private List<String> requirements;
 
     @NotEmpty(message = "Levels must not be empty!")
