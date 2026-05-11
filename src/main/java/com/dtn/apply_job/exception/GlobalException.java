@@ -14,9 +14,11 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.time.Instant;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 @ControllerAdvice
 public class GlobalException {
@@ -60,10 +62,14 @@ public class GlobalException {
 
         RestRespon<Object> res = new RestRespon<>();
         res.setStatusCode(HttpStatus.BAD_REQUEST.value());
-        res.setMessage(ex.getBody().getDetail());
+        res.setError(ex.getClass().getSimpleName());
 
-        List<String> errors = fieldErrors.stream().map(f -> f.getDefaultMessage()).collect(Collectors.toList());
-        res.setMessage(errors.size() > 1 ? errors : errors.get(0));
+        Map<String, String> errors = new HashMap<>();
+        for (FieldError fieldError : fieldErrors) {
+            errors.put(fieldError.getField(), fieldError.getDefaultMessage());
+        }
+
+        res.setMessage(errors);
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
 
@@ -104,27 +110,43 @@ public class GlobalException {
         res.setStatusCode(HttpStatus.BAD_REQUEST.value());
         res.setError(ex.getClass().getSimpleName());
 
-        // Khởi tạo câu báo lỗi mặc định
-        String errorMessage = "Invalid input data!";
+        Map<String, Object> errorBody = new HashMap<>();
+        errorBody.put("message", "Invalid input data");
 
-        // Đào sâu để lấy nguyên nhân gốc (Bắt lỗi sai giá trị Enum)
         Throwable cause = ex.getCause();
         if (cause instanceof InvalidFormatException invalidFormatException) {
-            // Kiểm tra xem trường bị lỗi có phải là Enum hay không
-            if (invalidFormatException.getTargetType() != null && invalidFormatException.getTargetType().isEnum()) {
-                // Lấy tên trường bị lỗi (VD: "name" hoặc "role")
-                String fieldName = invalidFormatException.getPath().get(0).getFieldName();
-                // Lấy danh sách giá trị hợp lệ (VD:[ROLE_ADMIN, ROLE_EMPLOYER])
-                String allowedValues = Arrays.toString(invalidFormatException.getTargetType().getEnumConstants());
+            String fieldName = null;
+            if (invalidFormatException.getPath() != null && !invalidFormatException.getPath().isEmpty()) {
+                fieldName = invalidFormatException.getPath().get(0).getFieldName();
+            }
 
-                // Format lại câu báo lỗi tiếng Việt thật dễ hiểu
-                errorMessage = String.format("Invalid value for the '%s' field. Only the following values are accepted: %s",
-                        fieldName, allowedValues);
+            if (invalidFormatException.getTargetType() != null && invalidFormatException.getTargetType().isEnum()) {
+                String allowedValues = Arrays.toString(invalidFormatException.getTargetType().getEnumConstants());
+                errorBody.put("field", fieldName);
+                errorBody.put("message", String.format(
+                        "Invalid value for '%s'. Allowed values: %s",
+                        fieldName,
+                        allowedValues
+                ));
+            } else if (Instant.class.equals(invalidFormatException.getTargetType())) {
+                errorBody.put("field", fieldName);
+                errorBody.put("message", String.format(
+                        "Invalid value for '%s'. Expected ISO-8601 datetime, e.g. 2026-05-11T00:00:00Z",
+                        fieldName
+                ));
+            } else {
+                errorBody.put("field", fieldName);
+                errorBody.put("message", String.format(
+                        "Invalid value for '%s'. Expected type: %s",
+                        fieldName,
+                        invalidFormatException.getTargetType() != null
+                                ? invalidFormatException.getTargetType().getSimpleName()
+                                : "unknown"
+                ));
             }
         }
 
-        // Gán câu báo lỗi vào RestRespon của bạn
-        res.setMessage(errorMessage);
+        res.setMessage(errorBody);
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
     }

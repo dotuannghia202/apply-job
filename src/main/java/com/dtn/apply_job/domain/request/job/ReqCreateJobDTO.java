@@ -35,8 +35,8 @@ public class ReqCreateJobDTO {
     @NotBlank(message = "Description must not be left blank!")
     private String description;
 
-    @NotBlank(message = "Requirements must not be left blank!")
-    private List<String> requirements;
+    @NotEmpty(message = "Requirements must not be empty!")
+    private List<@NotBlank(message = "Requirement must not be blank!") String> requirements;
 
     @NotEmpty(message = "Levels must not be empty!")
     private Set<@NotNull(message = "Level must not be null!") LevelEnum> levels;
