@@ -16,7 +16,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -41,6 +44,7 @@ public class ResumeController {
     }
 
     @GetMapping("/resumes/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @ApiMessage("Fetch resume by Id")
     public ResponseEntity<ResResumeDTO> getResume(@PathVariable long id) throws IdInvalidException {
         ResResumeDTO resume = this.resumeService.handleGetResumeById(id);
@@ -48,6 +52,7 @@ public class ResumeController {
     }
 
     @GetMapping("/resumes")
+    @PreAuthorize("hasRole('ADMIN')")
     @ApiMessage("Fetch all resumes")
     public ResponseEntity<ResultPaginationDTO> getAllResumes(
             @Filter Specification<Resume> spec,
@@ -55,6 +60,15 @@ public class ResumeController {
     ) {
         ResultPaginationDTO result = this.resumeService.handleGetAllResumes(spec, pageable);
         return ResponseEntity.status(HttpStatus.OK).body(result);
+    }
+
+
+    @GetMapping("/my-cvs")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    @ApiMessage("Get your Cv-list successfully!")
+    public ResponseEntity<List<ResResumeDTO>> getMyResumes() throws IdInvalidException {
+        List<ResResumeDTO> result = resumeService.handleGetMyResumes();
+        return ResponseEntity.ok(result);
     }
 
     @DeleteMapping("/resumes/{id}")

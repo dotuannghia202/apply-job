@@ -4,7 +4,7 @@ import com.dtn.apply_job.util.constant.enums.ApplicationStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = "applications")
@@ -44,11 +44,11 @@ public class Application {
     private String coverLetter;
 
     @Column(name = "applied_at")
-    private LocalDateTime appliedAt;
+    private Instant appliedAt;
 
     // Hàm tự động gán ngày nộp lúc Insert dữ liệu
     @PrePersist
     protected void onCreate() {
-        appliedAt = LocalDateTime.now();
+        appliedAt = Instant.now();
     }
 }

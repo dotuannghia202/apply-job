@@ -14,6 +14,7 @@ import com.dtn.apply_job.repository.ResumeRepository;
 import com.dtn.apply_job.repository.SkillRepository;
 import com.dtn.apply_job.repository.SpecializationRepository;
 import com.dtn.apply_job.repository.UserRepository;
+import com.dtn.apply_job.security.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -115,6 +116,22 @@ public class ResumeService {
 
         return resultPaginationDTO;
     }
+
+    public List<ResResumeDTO> handleGetMyResumes() throws IdInvalidException {
+        String email = SecurityUtil.getCurrentUser()
+                .orElseThrow(() -> new IdInvalidException("Vui lòng đăng nhập để xem CV!"));
+
+        User currentUser = this.userRepository.findByEmail(email);
+        if (currentUser == null) {
+            throw new IdInvalidException("Tài khoản không tồn tại!");
+        }
+
+        List<Resume> myResumes = this.resumeRepository.findByCandidateAndActiveTrue(currentUser);
+        return myResumes.stream()
+                .map(this::convertToResResumeDTO)
+                .collect(Collectors.toList());
+    }
+
 
     public void handleDeleteResume(long id) throws IdInvalidException {
         Resume currentResume = this.resumeRepository.findById(id)
