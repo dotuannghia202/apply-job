@@ -20,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -35,10 +36,40 @@ public class ResumeService {
     private final SkillRepository skillRepository;
     private final SpecializationRepository specializationRepository;
 
+    @Transactional
     public ResResumeDTO handleCreateResume(ReqCreateResumeDTO req) throws IdInvalidException {
+        String email = SecurityUtil.getCurrentUser()
+                .orElseThrow(() -> new IdInvalidException("Vui lòng đăng nhập để tạo CV!"));
+        User currentUser = userRepository.findByEmail(email);
+        if (currentUser == null) {
+            throw new IdInvalidException("Tài khoản không tồn tại!");
+        }
+
         Resume resume = new Resume();
-        applyRequestToEntity(resume, req.getCandidateId(), req.getFileName(), req.getFileUrl(), req.getParsedText(),
-                req.getActive(), req.getSkillIds(), req.getSpecializationId());
+        resume.setCandidate(currentUser);
+        resume.setFileName(req.getFileName());
+        resume.setFileUrl(req.getFileUrl());
+        resume.setParsedText(req.getParsedText());
+        resume.setActive(true);
+
+        if (req.getSkillIds() != null && !req.getSkillIds().isEmpty()) {
+            List<Skill> skills = this.skillRepository.findByIdIn(req.getSkillIds());
+            if (skills.size() != req.getSkillIds().size()) {
+                throw new IdInvalidException("Some skill ids are invalid");
+            }
+            resume.setSkills(skills);
+        } else {
+            resume.setSkills(Collections.emptyList());
+        }
+
+        if (req.getSpecializationId() != null) {
+            Specialization specialization = this.specializationRepository.findById(req.getSpecializationId())
+                    .orElseThrow(() -> new IdInvalidException("Specialization id not found"));
+            resume.setSpecialization(specialization);
+        } else {
+            resume.setSpecialization(null);
+        }
+
         resume.setCreatedAt(Instant.now());
 
         Resume savedResume = this.resumeRepository.save(resume);
@@ -46,10 +77,7 @@ public class ResumeService {
     }
 
     public ResUpdateResumeDTO handleUpdateResume(long id, ReqUpdateResumeDTO reqDTO) throws IdInvalidException {
-        // ... (Đoạn check User sở hữu CV giống như đã hướng dẫn trước đây) ...
-
-        Resume currentResume = resumeRepository.findById(id)
-                .orElseThrow(() -> new IdInvalidException("Resume id not found"));
+        Resume currentResume = getResumeAndCheckPermission(id);
 
         if (reqDTO.getFileName() != null) {
             currentResume.setFileName(reqDTO.getFileName());
@@ -91,9 +119,15 @@ public class ResumeService {
         return convertToResUpdateResumeDTO(updatedResume);
     }
 
-    public ResResumeDTO handleGetResumeById(long id) throws IdInvalidException {
-        Resume resume = this.resumeRepository.findById(id)
-                .orElseThrow(() -> new IdInvalidException("Resume id not found!"));
+    @Transactional
+    public void handleSoftDeleteResume(long id) throws IdInvalidException {
+        Resume currentResume = getResumeAndCheckPermission(id);
+        currentResume.setActive(false);
+        resumeRepository.save(currentResume);
+    }
+
+    public ResResumeDTO handleGetResumeById(long id) throws Exception {
+        Resume resume = getResumeAndCheckPermission(id);
         return convertToResResumeDTO(resume);
     }
 
@@ -119,11 +153,11 @@ public class ResumeService {
 
     public List<ResResumeDTO> handleGetMyResumes() throws IdInvalidException {
         String email = SecurityUtil.getCurrentUser()
-                .orElseThrow(() -> new IdInvalidException("Vui lòng đăng nhập để xem CV!"));
+                .orElseThrow(() -> new IdInvalidException("Please log in to view your CV!"));
 
         User currentUser = this.userRepository.findByEmail(email);
         if (currentUser == null) {
-            throw new IdInvalidException("Tài khoản không tồn tại!");
+            throw new IdInvalidException("Account doesn't exist! Please register first!");
         }
 
         List<Resume> myResumes = this.resumeRepository.findByCandidateAndActiveTrue(currentUser);
@@ -132,49 +166,25 @@ public class ResumeService {
                 .collect(Collectors.toList());
     }
 
+    private Resume getResumeAndCheckPermission(long resumeId) throws IdInvalidException {
+        Resume resume = resumeRepository.findById(resumeId)
+                .orElseThrow(() -> new IdInvalidException("CV không tồn tại trong hệ thống!"));
 
-    public void handleDeleteResume(long id) throws IdInvalidException {
-        Resume currentResume = this.resumeRepository.findById(id)
-                .orElseThrow(() -> new IdInvalidException("Resume id not found!"));
-        this.resumeRepository.delete(currentResume);
-    }
-
-    private void applyRequestToEntity(
-            Resume resume,
-            Long candidateId,
-            String fileName,
-            String fileUrl,
-            String parsedText,
-            Boolean active,
-            List<Long> skillIds,
-            Long specializationId
-    ) throws IdInvalidException {
-        User candidate = this.userRepository.findById(candidateId)
-                .orElseThrow(() -> new IdInvalidException("Candidate id not found"));
-
-        resume.setCandidate(candidate);
-        resume.setFileName(fileName);
-        resume.setFileUrl(fileUrl);
-        resume.setParsedText(parsedText);
-        resume.setActive(Boolean.TRUE.equals(active));
-
-        if (skillIds != null && !skillIds.isEmpty()) {
-            List<Skill> skills = this.skillRepository.findByIdIn(skillIds);
-            if (skills.size() != skillIds.size()) {
-                throw new IdInvalidException("Some skill ids are invalid");
-            }
-            resume.setSkills(skills);
-        } else {
-            resume.setSkills(Collections.emptyList());
+        String currentUserEmail = SecurityUtil.getCurrentUser()
+                .orElseThrow(() -> new IdInvalidException("Vui lòng đăng nhập!"));
+        User currentUser = userRepository.findByEmail(currentUserEmail);
+        if (currentUser == null) {
+            throw new IdInvalidException("Tài khoản không tồn tại!");
         }
 
-        if (specializationId != null) {
-            Specialization specialization = this.specializationRepository.findById(specializationId)
-                    .orElseThrow(() -> new IdInvalidException("Specialization id not found"));
-            resume.setSpecialization(specialization);
-        } else {
-            resume.setSpecialization(null);
+        boolean isAdmin = currentUser.getRoles().stream()
+                .anyMatch(role -> role.getName().name().equals("ROLE_ADMIN"));
+
+        if (!isAdmin && !resume.getCandidate().getEmail().equals(currentUserEmail)) {
+            throw new IdInvalidException("Bạn không có quyền thao tác trên CV của người khác!");
         }
+
+        return resume;
     }
 
     private ResResumeDTO convertToResResumeDTO(Resume resume) {

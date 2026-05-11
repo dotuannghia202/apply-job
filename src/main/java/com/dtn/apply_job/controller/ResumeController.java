@@ -29,13 +29,15 @@ public class ResumeController {
     private final ResumeService resumeService;
 
     @PostMapping("/resumes")
+    @PreAuthorize("hasAnyRole('CANDIDATE', 'ADMIN')")
     @ApiMessage("Create resume")
-    public ResponseEntity<ResResumeDTO> createResume(@Valid @RequestBody ReqCreateResumeDTO req) throws IdInvalidException {
+    public ResponseEntity<ResResumeDTO> createResume(@Valid @RequestBody ReqCreateResumeDTO req) throws Exception {
         ResResumeDTO newResume = this.resumeService.handleCreateResume(req);
         return ResponseEntity.status(HttpStatus.CREATED).body(newResume);
     }
 
     @PutMapping("/resumes/{id}")
+    @PreAuthorize("hasAnyRole('CANDIDATE', 'ADMIN')")
     @ApiMessage("Update resume")
     public ResponseEntity<ResUpdateResumeDTO> updateResume(@PathVariable long id, @Valid @RequestBody ReqUpdateResumeDTO req)
             throws Exception {
@@ -44,9 +46,9 @@ public class ResumeController {
     }
 
     @GetMapping("/resumes/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('CANDIDATE', 'ADMIN')")
     @ApiMessage("Fetch resume by Id")
-    public ResponseEntity<ResResumeDTO> getResume(@PathVariable long id) throws IdInvalidException {
+    public ResponseEntity<ResResumeDTO> getResumeById(@PathVariable long id) throws Exception {
         ResResumeDTO resume = this.resumeService.handleGetResumeById(id);
         return ResponseEntity.status(HttpStatus.OK).body(resume);
     }
@@ -72,9 +74,10 @@ public class ResumeController {
     }
 
     @DeleteMapping("/resumes/{id}")
-    @ApiMessage("Delete resume")
+    @PreAuthorize("hasAnyRole('CANDIDATE', 'ADMIN')")
+    @ApiMessage("Delete resume successfully!")
     public ResponseEntity<Void> deleteResume(@PathVariable long id) throws IdInvalidException {
-        this.resumeService.handleDeleteResume(id);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        resumeService.handleSoftDeleteResume(id);
+        return ResponseEntity.ok().build();
     }
 }
