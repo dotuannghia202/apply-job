@@ -126,7 +126,8 @@ public class ApplicationService {
     }
 
     // 3. LẤY DANH SÁCH (Read All) - Tự động Lọc theo Role
-    public ResultPaginationDTO handleGetAllApps(Specification<Application> spec, Pageable pageable) throws Exception {
+    public ResultPaginationDTO handleGetAllApps(Specification<Application> spec, Pageable pageable,
+                                                String status) throws Exception {
         String email = SecurityUtil.getCurrentUser().orElseThrow();
         User currentUser = userRepository.findByEmail(email);
 
@@ -149,6 +150,17 @@ public class ApplicationService {
             Specification<Application> candSpec = (root, query, cb) ->
                     cb.equal(root.get("resume").get("candidate").get("id"), currentUser.getId());
             roleSpec = spec == null ? candSpec : spec.and(candSpec);
+        }
+
+        if (status != null && !status.trim().isEmpty()) {
+            com.dtn.apply_job.util.constant.enums.ApplicationStatus statusEnum;
+            try {
+                statusEnum = com.dtn.apply_job.util.constant.enums.ApplicationStatus.valueOf(status.trim().toUpperCase());
+            } catch (IllegalArgumentException ex) {
+                throw new IdInvalidException("Invalid status: " + status);
+            }
+            Specification<Application> statusSpec = (root, query, cb) -> cb.equal(root.get("status"), statusEnum);
+            roleSpec = roleSpec == null ? statusSpec : roleSpec.and(statusSpec);
         }
 
         Page<Application> pageData = applicationRepository.findAll(roleSpec, pageable);

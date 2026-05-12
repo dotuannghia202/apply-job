@@ -42,8 +42,10 @@ public class ApplicationController {
     @PreAuthorize("hasAnyRole('CANDIDATE', 'EMPLOYER', 'ADMIN')")
     public ResponseEntity<ResultPaginationDTO> getAll(
             @Filter Specification<Application> spec,
-            Pageable pageable) throws Exception {
-        return ResponseEntity.ok(applicationService.handleGetAllApps(spec, pageable));
+            Pageable pageable,
+            @RequestParam(required = false) String status
+    ) throws Exception {
+        return ResponseEntity.ok(applicationService.handleGetAllApps(spec, pageable, status));
     }
 
     @GetMapping("/{id}")
