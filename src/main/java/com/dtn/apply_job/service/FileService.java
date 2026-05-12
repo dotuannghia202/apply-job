@@ -1,7 +1,6 @@
 package com.dtn.apply_job.service;
 
 import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.stereotype.Service;
@@ -37,19 +36,36 @@ public class FileService {
             throw new IllegalArgumentException("File is not blank!");
         }
 
-        // Tạo option lưu vào folder trên Cloudinary
-        Map<String, Object> uploadOptions = ObjectUtils.asMap(
-                "folder", "apply_job/" + folder,
-                "resource_type", "auto" // Tự động nhận diện image hoặc raw (pdf)
-        );
+        String originalFilename = file.getOriginalFilename();
+        String extension = "";
+        String nameWithoutExt = "file";
 
-        // Upload và lấy URL an toàn
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf(".") + 1).toLowerCase();
+            nameWithoutExt = originalFilename.substring(0, originalFilename.lastIndexOf("."));
+        }
+
+        Map<String, Object> uploadOptions = new java.util.HashMap<>();
+        uploadOptions.put("folder", "apply_job/" + folder);
+
+        // Cấu hình linh hoạt cho từng loại file
+        if ("pdf".equals(extension)) {
+            // ĐỐI VỚI PDF:
+            // 1. Phải khai báo là 'raw'
+            uploadOptions.put("resource_type", "raw");
+            // 2. PHẢI CÓ .pdf trong public_id để Cloudinary biết nó là PDF
+            uploadOptions.put("public_id", nameWithoutExt + "_" + System.currentTimeMillis() + ".pdf");
+        } else {
+            // ĐỐI VỚI ẢNH:
+            // 1. Dùng 'auto' (sẽ được Cloudinary hiểu là 'image')
+            uploadOptions.put("resource_type", "auto");
+            // 2. Không cần đuôi mở rộng trong public_id vì Cloudinary tự quản lý format
+            uploadOptions.put("public_id", nameWithoutExt + "_" + System.currentTimeMillis());
+        }
+
         Map uploadResult = cloudinary.uploader().upload(file.getBytes(), uploadOptions);
         return uploadResult.get("secure_url").toString();
-    }
-
-
-    // =========================================================================
+    }    // =========================================================================
     // OPTION 2: UPLOAD VÀO LOCAL SERVER (CODE CŨ CỦA BẠN - GIỮ LẠI LÀM BACKUP)
     // =========================================================================
 

@@ -13,7 +13,7 @@ public class ResApplicationDTO {
     private ApplicationStatus status;
     private Double matchScore; // Điểm AI
     private String coverLetter;
-
+    private Boolean hasCoverLetter;
 
     private Instant appliedAt;
 
@@ -28,6 +28,8 @@ public class ResApplicationDTO {
         private Long id;
         private String name;
         private String companyName;
+        private String location;
+        private String companyLogo;
     }
 
     @Getter

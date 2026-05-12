@@ -4,7 +4,7 @@ import com.dtn.apply_job.common.annotation.ApiMessage;
 import com.dtn.apply_job.domain.response.file.ResUploadFileDTO;
 import com.dtn.apply_job.exception.FileUploadException;
 import com.dtn.apply_job.service.FileService;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -22,16 +22,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1")
+@RequiredArgsConstructor
 public class FileController {
-
-    @Value("${devgay.upload-file.base-uri}")
-    private String baseUri;
 
     private final FileService fileService;
 
-    public FileController(FileService fileService) {
-        this.fileService = fileService;
-    }
 
     // =========================================================
     // API UPLOAD LÊN CLOUDINARY (DÙNG CHO LUỒNG CHÍNH HIỆN TẠI)

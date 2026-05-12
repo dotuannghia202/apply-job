@@ -266,12 +266,15 @@ public class ApplicationService {
         dto.setStatus(app.getStatus());
         dto.setMatchScore(app.getMatchScore());
         dto.setCoverLetter(app.getCoverLetter());
+        dto.setHasCoverLetter(app.getCoverLetter() != null && !app.getCoverLetter().trim().isEmpty());
         dto.setAppliedAt(app.getAppliedAt());
 
         ResApplicationDTO.JobInfo jobInfo = new ResApplicationDTO.JobInfo();
         jobInfo.setId(app.getJob().getId());
         jobInfo.setName(app.getJob().getName());
         jobInfo.setCompanyName(app.getJob().getCompany().getName());
+        jobInfo.setLocation(app.getJob().getLocation());
+        jobInfo.setCompanyLogo(app.getJob().getCompany().getLogo());
         dto.setJob(jobInfo);
 
         ResApplicationDTO.ResumeInfo resumeInfo = new ResApplicationDTO.ResumeInfo();
