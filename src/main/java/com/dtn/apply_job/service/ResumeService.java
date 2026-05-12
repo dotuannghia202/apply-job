@@ -168,20 +168,20 @@ public class ResumeService {
 
     private Resume getResumeAndCheckPermission(long resumeId) throws IdInvalidException {
         Resume resume = resumeRepository.findById(resumeId)
-                .orElseThrow(() -> new IdInvalidException("CV không tồn tại trong hệ thống!"));
+                .orElseThrow(() -> new IdInvalidException("CV doesn't exist!"));
 
         String currentUserEmail = SecurityUtil.getCurrentUser()
-                .orElseThrow(() -> new IdInvalidException("Vui lòng đăng nhập!"));
+                .orElseThrow(() -> new IdInvalidException("Please log in to view this CV!"));
         User currentUser = userRepository.findByEmail(currentUserEmail);
         if (currentUser == null) {
-            throw new IdInvalidException("Tài khoản không tồn tại!");
+            throw new IdInvalidException("Account doesn't exist! Please register first!");
         }
 
         boolean isAdmin = currentUser.getRoles().stream()
-                .anyMatch(role -> role.getName().name().equals("ROLE_ADMIN"));
+                .anyMatch(role -> role.getName().name().equals("ADMIN"));
 
         if (!isAdmin && !resume.getCandidate().getEmail().equals(currentUserEmail)) {
-            throw new IdInvalidException("Bạn không có quyền thao tác trên CV của người khác!");
+            throw new IdInvalidException("You don't have permission to view this CV! Only the owner can view it!");
         }
 
         return resume;
