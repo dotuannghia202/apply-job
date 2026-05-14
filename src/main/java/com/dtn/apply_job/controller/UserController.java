@@ -5,6 +5,7 @@ import com.dtn.apply_job.common.response.ResultPaginationDTO;
 import com.dtn.apply_job.domain.User;
 import com.dtn.apply_job.domain.request.user.ReqCreateUserDTO;
 import com.dtn.apply_job.domain.request.user.ReqUpdateUserDTO;
+import com.dtn.apply_job.domain.request.user.ReqUpdateUserRoleDTO;
 import com.dtn.apply_job.domain.response.user.ResCreateUserDTO;
 import com.dtn.apply_job.domain.response.user.ResUpdateUserDTO;
 import com.dtn.apply_job.domain.response.user.ResUserDTO;
@@ -13,10 +14,12 @@ import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.service.JobService;
 import com.dtn.apply_job.service.UserService;
 import com.turkraft.springfilter.boot.Filter;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -89,5 +92,16 @@ public class UserController {
     public ResponseEntity<Void> assignCompany(@PathVariable Long companyId) throws Exception {
         userService.assignCompanyToCurrentUser(companyId);
         return ResponseEntity.ok().body(null);
+    }
+
+    @PutMapping("users/{id}/roles")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_CANDIDATE', 'ROLE_EMPLOYER')")
+    @ApiMessage("User permissions update successful!")
+    public ResponseEntity<ResUpdateUserDTO> updateUserRoles(
+            @PathVariable("id") long targetUserId,
+            @Valid @RequestBody ReqUpdateUserRoleDTO reqDTO) throws Exception {
+
+        ResUpdateUserDTO result = userService.handleUpdateUserRoles(targetUserId, reqDTO);
+        return ResponseEntity.ok(result);
     }
 }

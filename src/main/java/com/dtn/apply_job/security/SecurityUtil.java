@@ -55,7 +55,7 @@ public class SecurityUtil {
         CustomUserDetails userDetails = extractCustomUserDetails(authentication);
 
         Instant now = Instant.now();
-        Instant validity = now.plus(this.accessTokenExpiration, ChronoUnit.SECONDS);
+        Instant validity = now.plus(this.accessTokenExpiration, ChronoUnit.MILLIS);
 
         List<String> permissions = authentication.getAuthorities()
                 .stream()
@@ -87,7 +87,7 @@ public class SecurityUtil {
         CustomUserDetails userDetails = extractCustomUserDetails(authentication);
 
         Instant now = Instant.now();
-        Instant validity = now.plus(this.refreshTokenExpiration, ChronoUnit.SECONDS);
+        Instant validity = now.plus(this.refreshTokenExpiration, ChronoUnit.MILLIS);
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuedAt(now)

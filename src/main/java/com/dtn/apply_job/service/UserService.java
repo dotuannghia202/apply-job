@@ -6,6 +6,7 @@ import com.dtn.apply_job.domain.Role;
 import com.dtn.apply_job.domain.User;
 import com.dtn.apply_job.domain.request.user.ReqCreateUserDTO;
 import com.dtn.apply_job.domain.request.user.ReqUpdateUserDTO;
+import com.dtn.apply_job.domain.request.user.ReqUpdateUserRoleDTO;
 import com.dtn.apply_job.domain.response.user.ResCreateUserDTO;
 import com.dtn.apply_job.domain.response.user.ResUpdateUserDTO;
 import com.dtn.apply_job.domain.response.user.ResUserDTO;
@@ -229,28 +230,7 @@ public class UserService {
 
         User updatedUser = this.userRepository.save(currentUser);
 
-        ResUpdateUserDTO resUpdateDTO = new ResUpdateUserDTO();
-        resUpdateDTO.setId(updatedUser.getId());
-        resUpdateDTO.setName(updatedUser.getName());
-        resUpdateDTO.setEmail(updatedUser.getEmail());
-        resUpdateDTO.setAvatarUrl(updatedUser.getAvatarUrl());
-        resUpdateDTO.setAge(updatedUser.getAge());
-        resUpdateDTO.setGender(updatedUser.getGender() != null ? updatedUser.getGender().toString() : null);
-        resUpdateDTO.setAddress(updatedUser.getAddress());
-        resUpdateDTO.setRoles(updatedUser.getRoles().stream()
-                .map(role -> role.getName().name())
-                .toList());
-        resUpdateDTO.setIsActive(updatedUser.getIsActive());
-        resUpdateDTO.setUpdatedAt(updatedUser.getUpdatedAt());
-        resUpdateDTO.setUpdatedBy(updatedUser.getUpdatedBy());
-
-        if (updatedUser.getCompany() != null) {
-            ResUpdateUserDTO.CompanyUser companyUser = new ResUpdateUserDTO.CompanyUser();
-            companyUser.setId(updatedUser.getCompany().getId());
-            companyUser.setName(updatedUser.getCompany().getName());
-            resUpdateDTO.setCompany(companyUser);
-        }
-        return resUpdateDTO;
+        return convertToResUpdateUserDTO(updatedUser);
     }
 
     public User handleGetUserByUsername(String email) {
@@ -278,7 +258,6 @@ public class UserService {
     }
 
     @Transactional
-
     public void assignCompanyToCurrentUser(Long companyId) throws Exception {
         // 1. Lấy user đang đăng nhập từ Token (Tuyệt đối không lấy ID từ URL để tránh hack)
         String email = SecurityUtil.getCurrentUser()
@@ -299,5 +278,81 @@ public class UserService {
         // Trả về DTO
         // (Bạn dùng lại đoạn code mapping User sang ResUpdateUserDTO ở các bài trước nhé)
         return;
+    }
+
+    // Nhớ import org.springframework.security.access.AccessDeniedException;
+
+    @Transactional
+    public ResUpdateUserDTO handleUpdateUserRoles(long targetUserId, ReqUpdateUserRoleDTO reqDTO) throws Exception {
+
+        // 1. LẤY THÔNG TIN NGƯỜI ĐANG THỰC HIỆN HÀNH ĐỘNG GỌI API
+        String email = SecurityUtil.getCurrentUser().orElseThrow();
+        User currentUser = userRepository.findByEmail(email);
+
+        // Kiểm tra xem người gọi API có phải là ADMIN không?
+        boolean isAdmin = currentUser.getRoles().stream()
+                .anyMatch(r -> r.getName().name().equals("ROLE_ADMIN"));
+
+        // ========================================================
+        // RÀO CẢN 1: CHỐNG LỖI IDOR (XEM TRỘM/SỬA TRỘM)
+        // Nếu KHÔNG phải Admin, và ID muốn sửa KHÁC VỚI ID của chính mình -> Chặn!
+        // ========================================================
+        if (!isAdmin && currentUser.getId() != targetUserId) {
+            throw new Exception("Security Error: You do not have permission to change other people's access rights!");
+        }
+
+        // ========================================================
+        // RÀO CẢN 2: CHỐNG LEO THANG ĐẶC QUYỀN (PRIVILEGE ESCALATION)
+        // Nếu ứng viên cố tình gửi JSON chứa ["ROLE_ADMIN"] để hack hệ thống -> Chặn!
+        // ========================================================
+        if (!isAdmin) {
+            boolean wantsAdminRole = reqDTO.getRoles().contains(ERole.ADMIN); // Đổi thành ERole.ADMIN tùy Enum của bạn
+            if (wantsAdminRole) {
+                throw new Exception("Security Error: You do not have permission to change other people's access rights!");
+            }
+        }
+
+        // 3. LẤY USER MỤC TIÊU CẦN SỬA QUYỀN TỪ DB
+        User targetUser = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new IdInvalidException("User not found!"));
+
+        // 4. THỰC HIỆN XÓA QUYỀN CŨ VÀ CẬP NHẬT QUYỀN MỚI
+        targetUser.getRoles().clear();
+        for (ERole roleName : reqDTO.getRoles()) {
+            Role role = roleRepository.findByName(roleName)
+                    .orElseThrow(() -> new IdInvalidException("Invalid permissions: " + roleName));
+            targetUser.getRoles().add(role);
+        }
+
+        // 5. LƯU VÀO DATABASE VÀ TRẢ VỀ DTO
+        User updatedUser = userRepository.save(targetUser);
+
+        // 6. (Sử dụng lại hàm convert Entity -> DTO mà bạn đã có sẵn)
+        return convertToResUpdateUserDTO(updatedUser);
+    }
+
+    private ResUpdateUserDTO convertToResUpdateUserDTO(User updatedUser) {
+        ResUpdateUserDTO resUpdateDTO = new ResUpdateUserDTO();
+        resUpdateDTO.setId(updatedUser.getId());
+        resUpdateDTO.setName(updatedUser.getName());
+        resUpdateDTO.setEmail(updatedUser.getEmail());
+        resUpdateDTO.setAvatarUrl(updatedUser.getAvatarUrl());
+        resUpdateDTO.setAge(updatedUser.getAge());
+        resUpdateDTO.setGender(updatedUser.getGender() != null ? updatedUser.getGender().toString() : null);
+        resUpdateDTO.setAddress(updatedUser.getAddress());
+        resUpdateDTO.setRoles(updatedUser.getRoles().stream()
+                .map(role -> role.getName().name())
+                .toList());
+        resUpdateDTO.setIsActive(updatedUser.getIsActive());
+        resUpdateDTO.setUpdatedAt(updatedUser.getUpdatedAt());
+        resUpdateDTO.setUpdatedBy(updatedUser.getUpdatedBy());
+
+        if (updatedUser.getCompany() != null) {
+            ResUpdateUserDTO.CompanyUser companyUser = new ResUpdateUserDTO.CompanyUser();
+            companyUser.setId(updatedUser.getCompany().getId());
+            companyUser.setName(updatedUser.getCompany().getName());
+            resUpdateDTO.setCompany(companyUser);
+        }
+        return resUpdateDTO;
     }
 }
