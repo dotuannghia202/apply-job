@@ -272,6 +272,8 @@ public class ApplicationService {
         ResApplicationDTO.JobInfo jobInfo = new ResApplicationDTO.JobInfo();
         jobInfo.setId(app.getJob().getId());
         jobInfo.setName(app.getJob().getName());
+        jobInfo.setMinSalary(app.getJob().getMinSalary());
+        jobInfo.setMaxSalary(app.getJob().getMaxSalary());
         jobInfo.setCompanyName(app.getJob().getCompany().getName());
         jobInfo.setLocation(app.getJob().getLocation());
         jobInfo.setCompanyLogo(app.getJob().getCompany().getLogo());

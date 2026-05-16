@@ -27,6 +27,8 @@ public class ResApplicationDTO {
     public static class JobInfo {
         private Long id;
         private String name;
+        private Double minSalary;
+        private Double maxSalary;
         private String companyName;
         private String location;
         private String companyLogo;
