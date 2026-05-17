@@ -20,6 +20,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -163,10 +164,12 @@ public class JobService {
         return convertToResJobDTO(job, savedJobIds, appliedJobIds);
     }
 
-    public ResUpdateJobDTO handleUpdateJob(long id, ReqUpdateJobDTO reqDTO) throws IdInvalidException {
+    public ResUpdateJobDTO handleUpdateJob(long id, ReqUpdateJobDTO reqDTO) throws Exception {
         // 1. Tìm Job hiện tại trong DB
         Job currentJob = jobRepository.findById(id)
                 .orElseThrow(() -> new IdInvalidException("Job doesn't exist!"));
+
+        checkJobOwnership(currentJob);
 
         // 2. GHI ĐÈ TRỰC TIẾP CÁC TRƯỜNG THÔNG THƯỜNG (Theo chuẩn PUT)
         DateRangeValidator.validate(reqDTO.getStartDate(), reqDTO.getEndDate());
@@ -218,9 +221,10 @@ public class JobService {
         return convertToResUpdateJobDTO(updatedJob);
     }
 
-    public void handleDeleteJob(long id) throws IdInvalidException {
+    public void handleDeleteJob(long id) throws Exception {
         Job currentJob = jobRepository.findById(id)
                 .orElseThrow(() -> new IdInvalidException("Job doesn't exist!"));
+        checkJobOwnership(currentJob);
         jobRepository.delete(currentJob);
     }
 
@@ -541,5 +545,94 @@ public class JobService {
         if (minSalary != null && maxSalary != null && maxSalary < minSalary) {
             throw new InputMismatchException("Max salary must be greater than or equal to min salary!");
         }
+    }
+
+    // Nhớ import: import org.springframework.security.access.AccessDeniedException;
+
+    private void checkJobOwnership(Job job) throws Exception {
+        // 1. Lấy user đang đăng nhập
+        String email = SecurityUtil.getCurrentUser().orElseThrow(() -> new IdInvalidException("Login please!"));
+        User currentUser = userRepository.findByEmail(email);
+
+        // 2. Nếu là ADMIN -> Cho phép làm mọi thứ
+        boolean isAdmin = currentUser.getRoles().stream()
+                .anyMatch(r -> r.getName().name().equals("ROLE_ADMIN") || r.getName().name().equals("ADMIN"));
+        if (isAdmin) return;
+
+        // 3. Nếu là EMPLOYER -> Bắt buộc phải check xem Job này có thuộc Công ty của họ không?
+        boolean isEmployer = currentUser.getRoles().stream()
+                .anyMatch(r -> r.getName().name().equals("ROLE_EMPLOYER") || r.getName().name().equals("EMPLOYER"));
+
+        if (isEmployer) {
+            if (currentUser.getCompany() == null) {
+                throw new AccessDeniedException("You haven't joined any company yet!");
+            }
+            if (job.getCompany().getId() != currentUser.getCompany().getId()) {
+                throw new AccessDeniedException("Security Error: You do not have permission to edit/delete job postings from other companies!");
+            }
+        }
+    }
+
+    public ResultPaginationDTO handleGetJobsByCurrentHr(Specification<Job> spec, Pageable pageable) throws Exception {
+        // Lấy HR đang đăng nhập
+        String email = SecurityUtil.getCurrentUser().orElseThrow(() -> new IdInvalidException("Login please!"));
+        User currentHr = userRepository.findByEmail(email);
+
+        if (currentHr.getCompany() == null) {
+            throw new IdInvalidException("You haven't joined any company yet!");
+        }
+
+        // Lấy ID công ty của HR này
+        long companyId = currentHr.getCompany().getId();
+
+        // TẠO CÂU LỆNH SQL ÉP BUỘC: WHERE company_id = ?
+        Specification<Job> companySpec = (root, query, cb) -> cb.equal(root.get("company").get("id"), companyId);
+
+        // Nối điều kiện của Công ty với các điều kiện Lọc (Tên, Lương...) mà HR muốn tìm
+        Specification<Job> finalSpec = spec == null ? companySpec : spec.and(companySpec);
+
+        // Tận dụng lại hàm GetAll của bạn (truyền cái finalSpec vào là xong)
+        return handleGetAllJobs(finalSpec, pageable);
+    }
+
+    // Hàm mới: Dành riêng cho HR lọc danh sách job của công ty họ
+    public ResultPaginationDTO handleGetJobsByCurrentHrWithFilters(
+            Specification<Job> spec,
+            Pageable pageable,
+            String location,
+            List<String> levels,
+            Long specializationId,
+            String companyName,
+            Double minSalary,
+            Double maxSalary,
+            String name,
+            String keyword,
+            String skill,
+            Boolean active
+    ) throws Exception {
+
+        // 1. KIỂM TRA BẢO MẬT VÀ LẤY ID CÔNG TY
+        String email = SecurityUtil.getCurrentUser()
+                .orElseThrow(() -> new IdInvalidException("Vui lòng đăng nhập!"));
+        User currentHr = userRepository.findByEmail(email);
+
+        if (currentHr.getCompany() == null) {
+            throw new IdInvalidException("Bạn chưa gia nhập công ty nào!");
+        }
+        long companyId = currentHr.getCompany().getId();
+
+        // 2. TẠO LỚP GIÁP BẢO MẬT: Bắt buộc Job phải thuộc về công ty này
+        Specification<Job> securitySpec = (root, query, cb) ->
+                cb.equal(root.get("company").get("id"), companyId);
+
+        // 3. NỐI LỚP GIÁP VÀO CÁI SPECIFICATION MÀ FRONTEND GỬI LÊN
+        Specification<Job> securedSpec = (spec == null) ? securitySpec : spec.and(securitySpec);
+
+        // 4. TÁI SỬ DỤNG LẠI HÀM LỌC "KHỔNG LỒ" CỦA BẠN (Tái sử dụng 100% code cũ)
+        // Lưu ý: Truyền securedSpec vào thay vì spec ban đầu
+        return handleGetAllJobsWithFilters(
+                securedSpec, pageable, location, levels, specializationId,
+                companyName, minSalary, maxSalary, name, keyword, skill, active
+        );
     }
 }

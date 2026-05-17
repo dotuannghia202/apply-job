@@ -73,4 +73,15 @@ public class ApplicationController {
 
         return ResponseEntity.ok(applicationService.handleUpdateAppByCandidate(id, reqDTO));
     }
+
+    @GetMapping("/hr") // Đường dẫn: GET /api/v1/applications/hr
+    @PreAuthorize("hasAnyRole('EMPLOYER', 'ADMIN')") // Chặn luôn CANDIDATE từ ngoài cửa
+    @ApiMessage("Fetch applications for HR and Admin")
+    public ResponseEntity<ResultPaginationDTO> getApplicationsForHr(
+            @Filter Specification<Application> spec,
+            Pageable pageable) throws Exception {
+
+        ResultPaginationDTO result = applicationService.handleGetApplicationsForHrAndAdmin(spec, pageable);
+        return ResponseEntity.ok(result);
+    }
 }

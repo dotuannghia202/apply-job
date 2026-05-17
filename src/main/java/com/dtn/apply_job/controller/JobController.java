@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -46,11 +47,11 @@ public class JobController {
         return ResponseEntity.status(HttpStatus.CREATED).body(newJobs);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{id:\\d+}")
     @ApiMessage("Update a job")
     public ResponseEntity<ResUpdateJobDTO> updateJob(
             @PathVariable long id,
-            @Valid @RequestBody ReqUpdateJobDTO reqDTO) throws IdInvalidException {
+            @Valid @RequestBody ReqUpdateJobDTO reqDTO) throws Exception {
         // Service của bạn cũng cần sửa lại để trả về ResJobDTO nhé
         ResUpdateJobDTO updatedJob = this.jobService.handleUpdateJob(id, reqDTO);
         return ResponseEntity.ok().body(updatedJob);
@@ -77,18 +78,44 @@ public class JobController {
         return ResponseEntity.ok().body(result);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     @ApiMessage("Fetch job by id")
     public ResponseEntity<ResJobDTO> getJobById(@PathVariable long id) throws IdInvalidException {
         ResJobDTO dto = this.jobService.handleGetJobById(id);
         return ResponseEntity.ok().body(dto);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:\\d+}")
     @ApiMessage("Delete a job")
-    public ResponseEntity<Void> deleteJob(@PathVariable long id) throws IdInvalidException {
+    public ResponseEntity<Void> deleteJob(@PathVariable long id) throws Exception {
         this.jobService.handleDeleteJob(id);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/hr")
+    @PreAuthorize("hasRole('EMPLOYER')") // Chỉ HR mới được vào
+    @ApiMessage("Fetch job from your company")
+    public ResponseEntity<ResultPaginationDTO> getJobsByCurrentHr(
+            @Filter Specification<Job> spec,
+            Pageable pageable,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) List<String> levels,
+            @RequestParam(required = false) Long specialization,
+            @RequestParam(required = false) String company,
+            @RequestParam(required = false) Double minSalary,
+            @RequestParam(required = false) Double maxSalary,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String skill,
+            @RequestParam(required = false) Boolean active
+    ) throws Exception {
+
+        ResultPaginationDTO result = this.jobService.handleGetJobsByCurrentHrWithFilters(
+                spec, pageable, location, levels, specialization, company,
+                minSalary, maxSalary, name, keyword, skill, active);
+
+        return ResponseEntity.ok().body(result);
+    }
+
 }
 

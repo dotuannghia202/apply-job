@@ -20,10 +20,12 @@ import com.dtn.apply_job.security.SecurityUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ApplicationService {
@@ -299,5 +301,63 @@ public class ApplicationService {
         dto.setId(app.getId());
         dto.setStatus(app.getStatus());
         return dto;
+    }
+
+    // Nhớ import org.springframework.security.access.AccessDeniedException;
+
+    public ResultPaginationDTO handleGetApplicationsForHrAndAdmin(Specification<Application> spec, Pageable pageable) throws Exception {
+
+        // 1. LẤY THÔNG TIN USER ĐANG ĐĂNG NHẬP
+        String email = SecurityUtil.getCurrentUser()
+                .orElseThrow(() -> new IdInvalidException("Login please!"));
+        User currentUser = userRepository.findByEmail(email);
+
+        boolean isAdmin = currentUser.getRoles().stream()
+                .anyMatch(r -> r.getName().name().equals("ROLE_ADMIN") || r.getName().name().equals("ADMIN"));
+
+        boolean isEmployer = currentUser.getRoles().stream()
+                .anyMatch(r -> r.getName().name().equals("ROLE_EMPLOYER") || r.getName().name().equals("EMPLOYER"));
+
+        if (!isAdmin && !isEmployer) {
+            throw new AccessDeniedException("You do not have permission to view this list!");
+        }
+
+        Specification<Application> finalSpec = spec;
+
+        // 2. NẾU LÀ HR -> ÉP ĐIỀU KIỆN CHỈ LẤY ĐƠN CỦA CÔNG TY MÌNH
+        if (isEmployer && !isAdmin) {
+            if (currentUser.getCompany() == null) {
+                throw new IdInvalidException("You haven't joined any company yet!");
+            }
+            long companyId = currentUser.getCompany().getId();
+
+            // SQL: WHERE application.job.company.id = ?
+            Specification<Application> securitySpec = (root, query, cb) ->
+                    cb.equal(root.get("job").get("company").get("id"), companyId);
+
+            // Nối "lớp giáp bảo mật" vào bộ lọc của Frontend
+            finalSpec = (spec == null) ? securitySpec : spec.and(securitySpec);
+        }
+
+        // 3. THỰC THI TRUY VẤN CÓ PHÂN TRANG (Kèm bộ lọc)
+        Page<Application> pageApp = applicationRepository.findAll(finalSpec, pageable);
+
+        // 4. CHUYỂN ĐỔI SANG DTO (Sử dụng hàm convertToResAppDTO đã viết ở các bài trước)
+        List<ResApplicationDTO> listAppDTO = pageApp.getContent().stream()
+                .map(this::convertToResAppDTO)
+                .collect(Collectors.toList());
+
+        // 5. ĐÓNG GÓI RESULT PAGINATION
+        ResultPaginationDTO rs = new ResultPaginationDTO();
+        ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
+        meta.setPage(pageApp.getNumber() + 1);
+        meta.setPageSize(pageApp.getSize());
+        meta.setPages(pageApp.getTotalPages());
+        meta.setTotal(pageApp.getTotalElements());
+
+        rs.setMeta(meta);
+        rs.setResult(listAppDTO);
+
+        return rs;
     }
 }
