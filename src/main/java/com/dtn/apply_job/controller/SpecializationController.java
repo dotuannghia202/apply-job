@@ -55,9 +55,10 @@ public class SpecializationController {
     @ApiMessage("Fetch all specializations")
     public ResponseEntity<ResultPaginationDTO> getAllSpecializations(
             @Filter Specification<Specialization> spec,
-            Pageable pageable
+            Pageable pageable,
+            @RequestParam(required = false) String name
     ) {
-        ResultPaginationDTO result = this.specializationService.handleGetAllSpecializations(spec, pageable);
+        ResultPaginationDTO result = this.specializationService.handleGetAllSpecializations(spec, pageable, name);
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
 

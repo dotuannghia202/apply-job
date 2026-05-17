@@ -111,8 +111,15 @@ public class SpecializationService {
         return result;
     }
 
-    public ResultPaginationDTO handleGetAllSpecializations(Specification<Specialization> spec, Pageable pageable) {
-        Page<Specialization> specializationPage = this.specializationRepository.findAll(spec, pageable);
+    public ResultPaginationDTO handleGetAllSpecializations(Specification<Specialization> spec, Pageable pageable, String name) {
+        Specification<Specialization> finalSpec = spec;
+        if (hasText(name)) {
+            Specification<Specialization> nameSpec = (root, query, cb) ->
+                    cb.like(cb.lower(root.get("name")), "%" + name.trim().toLowerCase() + "%");
+            finalSpec = finalSpec == null ? nameSpec : finalSpec.and(nameSpec);
+        }
+
+        Page<Specialization> specializationPage = this.specializationRepository.findAll(finalSpec, pageable);
         List<ResSpecializationDTO> specializationDTOs = specializationPage.getContent()
                 .stream()
                 .map(this::convertToResSpecializationDTO)
@@ -166,6 +173,10 @@ public class SpecializationService {
         }
 
         return dto;
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 
     public void handleDeleteSpecialization(long id) throws IdInvalidException {
