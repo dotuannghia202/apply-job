@@ -31,6 +31,7 @@ public class ResJobDTO {
     private CompanyInfo company;
     private SpecializationInfo specialization;
     private Boolean isSaved;
+    private Boolean isApplied;
 
     @Getter
     @Setter

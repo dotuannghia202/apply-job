@@ -33,14 +33,17 @@ public class JobService {
     private final SpecializationRepository specializationRepository;
     private final SkillRepository skillRepository;
     private final UserRepository userRepository;
+    private final ApplicationRepository applicationRepository;
 
     public JobService(JobRepository jobRepository, CompanyRepository companyRepository,
-                      SpecializationRepository specializationRepository, SkillRepository skillRepository, UserRepository userRepository) {
+                      SpecializationRepository specializationRepository, SkillRepository skillRepository,
+                      UserRepository userRepository, ApplicationRepository applicationRepository) {
         this.jobRepository = jobRepository;
         this.companyRepository = companyRepository;
         this.specializationRepository = specializationRepository;
         this.skillRepository = skillRepository;
         this.userRepository = userRepository;
+        this.applicationRepository = applicationRepository;
     }
 
     public ResJobDTO handleCreateJob(ReqCreateJobDTO reqDTO) throws IdInvalidException, InvalidDateRangeException {
@@ -91,14 +94,15 @@ public class JobService {
 
         // 5. Trả về Response DTO
 
-        return convertToResJobDTO(savedJob, Collections.emptySet());
+        return convertToResJobDTO(savedJob, Collections.emptySet(), Collections.emptySet());
     }
 
     public ResultPaginationDTO handleGetAllJobs(Specification<Job> spec, Pageable pageable) {
         Page<Job> pageJob = jobRepository.findAll(spec, pageable);
         Set<Long> savedJobIds = getSavedJobIdsForCurrentUser();
+        Set<Long> appliedJobIds = getAppliedJobIdsForCurrentUser();
         List<ResJobDTO> listJobDTO = pageJob.getContent().stream()
-                .map(job -> convertToResJobDTO(job, savedJobIds))
+                .map(job -> convertToResJobDTO(job, savedJobIds, appliedJobIds))
                 .collect(Collectors.toList());
 
         ResultPaginationDTO rs = new ResultPaginationDTO();
@@ -130,6 +134,8 @@ public class JobService {
     ) throws IdInvalidException {
         Set<LevelEnum> levelEnums = parseLevelEnums(levels);
 
+        validateSalaryFilter(minSalary, maxSalary);
+
         Specification<Job> filterSpec = buildJobFilterSpec(
                 location, levelEnums, specializationId, companyName,
                 minSalary, maxSalary, name, keyword, skill, active
@@ -153,7 +159,8 @@ public class JobService {
         Job job = jobRepository.findById(id)
                 .orElseThrow(() -> new IdInvalidException("Job doesn't exist!"));
         Set<Long> savedJobIds = getSavedJobIdsForCurrentUser();
-        return convertToResJobDTO(job, savedJobIds);
+        Set<Long> appliedJobIds = getAppliedJobIdsForCurrentUser();
+        return convertToResJobDTO(job, savedJobIds, appliedJobIds);
     }
 
     public ResUpdateJobDTO handleUpdateJob(long id, ReqUpdateJobDTO reqDTO) throws IdInvalidException {
@@ -235,7 +242,7 @@ public class JobService {
     }
 
     // Hàm Converter Dùng Chung (Giúp code cực kỳ Clean)
-    private ResJobDTO convertToResJobDTO(Job job, Set<Long> savedJobIds) {
+    private ResJobDTO convertToResJobDTO(Job job, Set<Long> savedJobIds, Set<Long> appliedJobIds) {
         ResJobDTO dto = new ResJobDTO();
         dto.setId(job.getId());
         dto.setName(job.getName());
@@ -284,6 +291,9 @@ public class JobService {
         } else {
             dto.setIsSaved(false);
         }
+
+        // MAP IS_APPLIED
+        dto.setIsApplied(appliedJobIds != null && appliedJobIds.contains(job.getId()));
 
         return dto;
     }
@@ -359,11 +369,14 @@ public class JobService {
                 predicates.add(cb.equal(root.get("specialization").get("id"), specializationId));
             }
             // Lọc theo khoảng lương: Job phù hợp khi khoảng lương của job giao với khoảng filter
-            if (minSalary != null && minSalary > 0) {
-                predicates.add(cb.greaterThanOrEqualTo(root.get("maxSalary"), minSalary));
+            // 1. Nếu chỉ truyền minSalary: Tìm các job có lương tối thiểu >= minSalary
+            if (minSalary != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("minSalary"), minSalary));
             }
-            if (maxSalary != null && maxSalary > 0) {
-                predicates.add(cb.lessThanOrEqualTo(root.get("minSalary"), maxSalary));
+
+            // 2. Nếu chỉ truyền maxSalary: Tìm các job có lương tối đa <= maxSalary
+            if (maxSalary != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("maxSalary"), maxSalary));
             }
             if (active != null) {
                 predicates.add(cb.equal(root.get("active"), active));
@@ -463,5 +476,70 @@ public class JobService {
         }
 
         return savedJobIds;
+    }
+
+    public ResultPaginationDTO handleGetSavedJobs(Pageable pageable) throws IdInvalidException {
+        // 1. Lấy thông tin user hiện tại
+        String email = SecurityUtil.getCurrentUser()
+                .orElseThrow(() -> new IdInvalidException("Login to continue!"));
+
+        // 2. Chọc xuống DB lấy danh sách Job phân trang
+        Page<Job> pageJob = jobRepository.findSavedJobsByUserEmail(email, pageable);
+
+        // 3. Đổ dữ liệu sang DTO
+        // Vì đây là danh sách "Việc làm ĐÃ LƯU", nên ta không cần gọi hàm getSavedJobIdsForCurrentUser()
+        // mà truyền thẳng 1 Set rỗng, sau đó ép cứng dto.setIsSaved(true) ở bên dưới.
+        Set<Long> appliedJobIds = getAppliedJobIdsForCurrentUser();
+        List<ResJobDTO> listJobDTO = pageJob.getContent().stream()
+                .map(job -> {
+                    ResJobDTO dto = convertToResJobDTO(job, Collections.emptySet(), appliedJobIds);
+                    dto.setIsSaved(true); // Ép cứng luôn là true
+                    return dto;
+                })
+                .collect(Collectors.toList());
+
+        // 4. Build cục Pagination
+        ResultPaginationDTO rs = new ResultPaginationDTO();
+        ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
+        meta.setPage(pageJob.getNumber() + 1);
+        meta.setPageSize(pageJob.getSize());
+        meta.setPages(pageJob.getTotalPages());
+        meta.setTotal(pageJob.getTotalElements());
+
+        rs.setMeta(meta);
+        rs.setResult(listJobDTO);
+
+        return rs;
+    }
+
+    // Hàm hỗ trợ: Lấy danh sách ID các công việc mà user hiện tại ĐÃ ỨNG TUYỂN
+    private java.util.Set<Long> getAppliedJobIdsForCurrentUser() {
+        java.util.Set<Long> appliedJobIds = new java.util.HashSet<>();
+        try {
+            String email = SecurityUtil.getCurrentUser().orElse("");
+            if (!email.isBlank()) {
+                User user = userRepository.findByEmail(email);
+                if (user != null) {
+                    appliedJobIds = new HashSet<>(applicationRepository.findAppliedJobIdsByCandidate(user));
+                }
+            }
+        } catch (Exception e) {
+        }
+
+        return appliedJobIds;
+    }
+
+    private void validateSalaryFilter(Double minSalary, Double maxSalary) throws InputMismatchException {
+        if (minSalary != null && minSalary < 0) {
+            throw new InputMismatchException("Min salary must be greater than or equal to 0!");
+        }
+
+        if (maxSalary != null && maxSalary < 0) {
+            throw new InputMismatchException("Max salary must be greater than or equal to 0!");
+        }
+
+        if (minSalary != null && maxSalary != null && maxSalary < minSalary) {
+            throw new InputMismatchException("Max salary must be greater than or equal to min salary!");
+        }
     }
 }

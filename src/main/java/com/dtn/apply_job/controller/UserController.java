@@ -104,4 +104,12 @@ public class UserController {
         ResUpdateUserDTO result = userService.handleUpdateUserRoles(targetUserId, reqDTO);
         return ResponseEntity.ok(result);
     }
+
+    @GetMapping("/saved-jobs")
+    @PreAuthorize("hasRole('CANDIDATE')") // Chặn HR
+    @ApiMessage("Fetch jobs is saved")
+    public ResponseEntity<ResultPaginationDTO> getMySavedJobs(Pageable pageable) throws Exception {
+        ResultPaginationDTO result = jobService.handleGetSavedJobs(pageable);
+        return ResponseEntity.ok(result);
+    }
 }
