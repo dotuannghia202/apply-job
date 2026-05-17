@@ -49,8 +49,9 @@ public class ResumeService {
         resume.setCandidate(currentUser);
         resume.setFileName(req.getFileName());
         resume.setFileUrl(req.getFileUrl());
-        resume.setParsedText(req.getParsedText());
         resume.setActive(true);
+
+        resume.setParsedText(null);
 
         if (req.getSkillIds() != null && !req.getSkillIds().isEmpty()) {
             List<Skill> skills = this.skillRepository.findByIdIn(req.getSkillIds());
