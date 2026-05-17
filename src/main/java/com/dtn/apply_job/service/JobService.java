@@ -190,14 +190,17 @@ public class JobService {
 
         // 3. KIỂM TRA VÀ CẬP NHẬT COMPANY
         // Dùng == giúp so sánh ID nhanh chóng, nếu ID không đổi thì không cần chọc xuống DB tìm lại
-        if (currentJob.getCompany().getId() != reqDTO.getCompanyId()) {
+        if (reqDTO.getCompanyId() != null && !Objects.equals(currentJob.getCompany().getId(), reqDTO.getCompanyId())) {
             Company company = companyRepository.findById(reqDTO.getCompanyId())
                     .orElseThrow(() -> new IdInvalidException("Company doesn't exist!"));
             currentJob.setCompany(company);
         }
 
         // 4. KIỂM TRA VÀ CẬP NHẬT SPECIALIZATION
-        if (currentJob.getSpecialization().getId() != reqDTO.getSpecializationId()) {
+        Long currentSpecializationId = currentJob.getSpecialization() != null
+                ? currentJob.getSpecialization().getId()
+                : null;
+        if (reqDTO.getSpecializationId() != null && !Objects.equals(currentSpecializationId, reqDTO.getSpecializationId())) {
             Specialization specialization = specializationRepository.findById(reqDTO.getSpecializationId())
                     .orElseThrow(() -> new IdInvalidException("Specialization doesn't exist!"));
             currentJob.setSpecialization(specialization);
