@@ -5,10 +5,12 @@ import com.dtn.apply_job.common.response.ResultPaginationDTO;
 import com.dtn.apply_job.domain.Job;
 import com.dtn.apply_job.domain.request.job.ReqCreateJobDTO;
 import com.dtn.apply_job.domain.request.job.ReqUpdateJobDTO;
+import com.dtn.apply_job.domain.response.job.ReqGenerateJdDTO;
 import com.dtn.apply_job.domain.response.job.ResJobDTO;
 import com.dtn.apply_job.domain.response.job.ResUpdateJobDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.exception.InvalidDateRangeException;
+import com.dtn.apply_job.service.AiPythonService;
 import com.dtn.apply_job.service.JobService;
 import com.turkraft.springfilter.boot.Filter;
 import jakarta.validation.Valid;
@@ -26,9 +28,11 @@ import java.util.List;
 public class JobController {
 
     private final JobService jobService;
+    private final AiPythonService aiPythonService;
 
-    public JobController(JobService jobService) {
+    public JobController(JobService jobService, AiPythonService aiPythonService) {
         this.jobService = jobService;
+        this.aiPythonService = aiPythonService;
     }
 
     @PostMapping
@@ -115,6 +119,19 @@ public class JobController {
                 minSalary, maxSalary, name, keyword, skill, active);
 
         return ResponseEntity.ok().body(result);
+    }
+
+    // Tạo 1 API độc lập riêng cho chức năng Gen JD
+    @PostMapping("/generate-jd-ai")
+    @PreAuthorize("hasRole('EMPLOYER')")
+    @ApiMessage("Tự động sinh JD bằng AI thành công")
+    public ResponseEntity<String> generateJdByAi(@RequestBody ReqGenerateJdDTO reqDTO) throws Exception {
+
+        // Gọi Service
+        String generatedContent = aiPythonService.generateJdFromPython(reqDTO);
+
+        // Trả về đoạn văn bản đó cho ReactJS (Nó sẽ tự bọc vào RestRespon)
+        return ResponseEntity.ok(generatedContent);
     }
 
 }

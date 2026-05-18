@@ -28,4 +28,6 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
 
     @Query("SELECT j FROM User u JOIN u.savedJobs j WHERE u.email = :email")
     Page<Job> findSavedJobsByUserEmail(@Param("email") String email, Pageable pageable);
+
+    long countByCompany_IdAndActiveTrue(Long companyId);
 }

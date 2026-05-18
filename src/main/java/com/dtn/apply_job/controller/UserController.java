@@ -6,6 +6,7 @@ import com.dtn.apply_job.domain.User;
 import com.dtn.apply_job.domain.request.user.ReqCreateUserDTO;
 import com.dtn.apply_job.domain.request.user.ReqUpdateUserDTO;
 import com.dtn.apply_job.domain.request.user.ReqUpdateUserRoleDTO;
+import com.dtn.apply_job.domain.response.employer.ResHrDashboardStatsDTO;
 import com.dtn.apply_job.domain.response.user.ResCreateUserDTO;
 import com.dtn.apply_job.domain.response.user.ResUpdateUserDTO;
 import com.dtn.apply_job.domain.response.user.ResUserDTO;
@@ -110,6 +111,14 @@ public class UserController {
     @ApiMessage("Fetch jobs is saved")
     public ResponseEntity<ResultPaginationDTO> getMySavedJobs(Pageable pageable) throws Exception {
         ResultPaginationDTO result = jobService.handleGetSavedJobs(pageable);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/hr/dashboard-stats")
+    @PreAuthorize("hasRole('EMPLOYER')")
+    @ApiMessage("Get stats for dashboard employer")
+    public ResponseEntity<ResHrDashboardStatsDTO> getHrDashboardStats() throws Exception {
+        ResHrDashboardStatsDTO result = userService.getHrDashboardStats();
         return ResponseEntity.ok(result);
     }
 }

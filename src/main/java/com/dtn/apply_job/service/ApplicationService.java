@@ -33,13 +33,15 @@ public class ApplicationService {
     private final UserRepository userRepository;
     private final JobRepository jobRepository;
     private final ResumeRepository resumeRepository;
+    private final AiPythonService aiPythonService;
 
 
-    public ApplicationService(ApplicationRepository applicationRepository, UserRepository userRepository, JobRepository jobRepository, ResumeRepository resumeRepository) {
+    public ApplicationService(ApplicationRepository applicationRepository, UserRepository userRepository, JobRepository jobRepository, ResumeRepository resumeRepository, AiPythonService aiPythonService) {
         this.applicationRepository = applicationRepository;
         this.userRepository = userRepository;
         this.jobRepository = jobRepository;
         this.resumeRepository = resumeRepository;
+        this.aiPythonService = aiPythonService;
     }
 
     // HÀM KIỂM TRA QUYỀN TRUY CẬP (CHỐNG LỖI IDOR)
@@ -113,6 +115,18 @@ public class ApplicationService {
         application.setMatchScore(null);
 
         Application savedApp = applicationRepository.save(application);
+
+        // KÍCH HOẠT AI CHẠY NGẦM SAU KHI LƯU DB
+        // 1. Gộp Job Description và Requirements thành 1 khối Text để AI đọc
+        String jobTextForAI = "";
+        if (job.getDescription() != null) jobTextForAI += job.getDescription() + "\n";
+        if (job.getRequirements() != null) jobTextForAI += job.getRequirements();
+
+        // 2. Lấy Text của CV đã được Python bóc tách từ trước
+        String cvTextForAI = resume.getParsedText();
+
+        // 3. Gọi Service chạy ngầm
+        aiPythonService.calculateMatchScoreAsync(savedApp.getId(), jobTextForAI, cvTextForAI);
 
         ResCreateApplicationDTO res = new ResCreateApplicationDTO();
         res.setId(savedApp.getId());

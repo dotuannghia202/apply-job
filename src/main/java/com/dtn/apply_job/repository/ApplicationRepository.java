@@ -32,4 +32,13 @@ public interface ApplicationRepository extends JpaRepository<Application, Long>,
 
     @EntityGraph(attributePaths = {"job", "job.company", "resume", "resume.candidate"})
     Optional<Application> findById(Long id);
+
+    long countByJob_Company_Id(Long companyId);
+
+    // Tính điểm AI trung bình của công ty đó (Bỏ qua các đơn chưa có điểm)
+    @Query("SELECT AVG(a.matchScore) FROM Application a WHERE a.job.company.id = :companyId AND a.matchScore IS NOT NULL")
+    Double getAverageMatchScoreByCompanyId(Long companyId);
+
+    // Đếm số người ứng tuyển vào 1 công việc cụ thể (Dùng cho Bước 2 bên dưới)
+    long countByJob_Id(Long jobId);
 }

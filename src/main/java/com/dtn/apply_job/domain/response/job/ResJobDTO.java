@@ -32,6 +32,7 @@ public class ResJobDTO {
     private SpecializationInfo specialization;
     private Boolean isSaved;
     private Boolean isApplied;
+    private long applicantCount;
 
     @Getter
     @Setter

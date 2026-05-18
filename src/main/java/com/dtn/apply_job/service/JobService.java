@@ -302,6 +302,9 @@ public class JobService {
         // MAP IS_APPLIED
         dto.setIsApplied(appliedJobIds != null && appliedJobIds.contains(job.getId()));
 
+        long applicants = applicationRepository.countByJob_Id(job.getId());
+        dto.setApplicantCount(applicants);
+
         return dto;
     }
 

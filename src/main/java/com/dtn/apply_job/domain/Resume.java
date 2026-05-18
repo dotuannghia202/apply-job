@@ -50,6 +50,8 @@ public class Resume {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "specialization_id")
+
+    
     private Specialization specialization;
 
     @Column(name = "created_at", updatable = false)

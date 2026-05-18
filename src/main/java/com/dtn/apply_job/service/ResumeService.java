@@ -35,11 +35,12 @@ public class ResumeService {
     private final UserRepository userRepository;
     private final SkillRepository skillRepository;
     private final SpecializationRepository specializationRepository;
+    private final AiPythonService aiPythonService;
 
     @Transactional
     public ResResumeDTO handleCreateResume(ReqCreateResumeDTO req) throws IdInvalidException {
         String email = SecurityUtil.getCurrentUser()
-                .orElseThrow(() -> new IdInvalidException("Vui lòng đăng nhập để tạo CV!"));
+                .orElseThrow(() -> new IdInvalidException("Please login to create a CV!"));
         User currentUser = userRepository.findByEmail(email);
         if (currentUser == null) {
             throw new IdInvalidException("Tài khoản không tồn tại!");
@@ -74,6 +75,7 @@ public class ResumeService {
         resume.setCreatedAt(Instant.now());
 
         Resume savedResume = this.resumeRepository.save(resume);
+        aiPythonService.processCvTextAsync(savedResume.getId(), savedResume.getFileUrl());
         return convertToResResumeDTO(savedResume);
     }
 
