@@ -4,8 +4,9 @@ import com.dtn.apply_job.common.annotation.ApiMessage;
 import com.dtn.apply_job.common.response.ResultPaginationDTO;
 import com.dtn.apply_job.domain.Job;
 import com.dtn.apply_job.domain.request.job.ReqCreateJobDTO;
+import com.dtn.apply_job.domain.request.job.ReqGenerateJdDTO;
 import com.dtn.apply_job.domain.request.job.ReqUpdateJobDTO;
-import com.dtn.apply_job.domain.response.job.ReqGenerateJdDTO;
+import com.dtn.apply_job.domain.response.job.ResGenerateJdDTO;
 import com.dtn.apply_job.domain.response.job.ResJobDTO;
 import com.dtn.apply_job.domain.response.job.ResUpdateJobDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
@@ -122,13 +123,13 @@ public class JobController {
     }
 
     // Tạo 1 API độc lập riêng cho chức năng Gen JD
-    @PostMapping("/generate-jd-ai")
-    @PreAuthorize("hasRole('EMPLOYER')")
+    @PostMapping("/generate-jd")
+    @PreAuthorize("hasAnyRole('EMPLOYER', 'ADMIN')")
     @ApiMessage("Tự động sinh JD bằng AI thành công")
-    public ResponseEntity<String> generateJdByAi(@RequestBody ReqGenerateJdDTO reqDTO) throws Exception {
+    public ResponseEntity<ResGenerateJdDTO> generateJdByAi(@RequestBody ReqGenerateJdDTO reqDTO) throws Exception {
 
         // Gọi Service
-        String generatedContent = aiPythonService.generateJdFromPython(reqDTO);
+        ResGenerateJdDTO generatedContent = aiPythonService.generateJdFromPython(reqDTO);
 
         // Trả về đoạn văn bản đó cho ReactJS (Nó sẽ tự bọc vào RestRespon)
         return ResponseEntity.ok(generatedContent);

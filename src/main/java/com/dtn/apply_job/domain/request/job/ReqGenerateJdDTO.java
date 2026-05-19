@@ -1,4 +1,4 @@
-package com.dtn.apply_job.domain.response.job;
+package com.dtn.apply_job.domain.request.job;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -9,7 +9,7 @@ import lombok.Setter;
 public class ReqGenerateJdDTO {
     private String title;
     private String skills;
-    private String location;
-    private String experience;
+    private String companyCulture;
+    private String levels;
 }
 

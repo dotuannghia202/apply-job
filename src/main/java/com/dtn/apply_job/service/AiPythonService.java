@@ -2,7 +2,8 @@ package com.dtn.apply_job.service;
 
 import com.dtn.apply_job.domain.Application;
 import com.dtn.apply_job.domain.Resume;
-import com.dtn.apply_job.domain.response.job.ReqGenerateJdDTO;
+import com.dtn.apply_job.domain.request.job.ReqGenerateJdDTO;
+import com.dtn.apply_job.domain.response.job.ResGenerateJdDTO;
 import com.dtn.apply_job.repository.ApplicationRepository;
 import com.dtn.apply_job.repository.ResumeRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,8 +15,11 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class AiPythonService {
@@ -28,6 +32,9 @@ public class AiPythonService {
 
     @Value("${python.ai.match-path}")
     private String matchScorePath;
+
+    @Value("${python.ai.generate-jd-path}")
+    private String generateJdPath;
 
     private final ResumeRepository resumeRepository;
     private final RestTemplate restTemplate;
@@ -123,15 +130,15 @@ public class AiPythonService {
     }
 
     // LƯU Ý: Không có @Async ở đây
-    public String generateJdFromPython(ReqGenerateJdDTO reqDTO) throws Exception {
-        String pythonApiUrl = "http://localhost:8000/api/v1/ai/generate-jd";
+    public ResGenerateJdDTO generateJdFromPython(ReqGenerateJdDTO reqDTO) throws Exception {
+        String pythonApiUrl = pythonAiBaseUrl + generateJdPath;
 
         // Map DTO sang Map JSON để gửi đi
         Map<String, String> requestBody = new HashMap<>();
         requestBody.put("title", reqDTO.getTitle());
         requestBody.put("skills", reqDTO.getSkills());
-        requestBody.put("location", reqDTO.getLocation());
-        requestBody.put("experience", reqDTO.getExperience());
+        requestBody.put("levels", reqDTO.getLevels());
+        requestBody.put("company_culture", reqDTO.getCompanyCulture());
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -140,11 +147,64 @@ public class AiPythonService {
         ResponseEntity<Map> response = restTemplate.postForEntity(pythonApiUrl, requestEntity, Map.class);
         Map<String, Object> responseBody = response.getBody();
 
-        if (responseBody != null && (Integer) responseBody.get("status_code") == 200) {
-            Map<String, Object> data = (Map<String, Object>) responseBody.get("data");
-            return (String) data.get("generated_jd"); // Trả về đoạn văn bản
-        } else {
+        if (responseBody == null) {
+            throw new Exception("Python AI returned empty response body");
+        }
+
+        Object statusCodeObj = responseBody.get("status_code");
+        int statusCode = convertToInt(statusCodeObj);
+
+        if (statusCode != 200) {
             throw new Exception("Lỗi từ Python AI: " + responseBody.get("error"));
         }
+
+        Object dataObj = responseBody.get("data");
+        if (!(dataObj instanceof Map<?, ?> data)) {
+            throw new Exception("Invalid Python AI response: data must be an object");
+        }
+
+        Object generatedJdObj = data.get("generated_jd");
+        if (!(generatedJdObj instanceof Map<?, ?> generatedJd)) {
+            throw new Exception("Invalid Python AI response: generated_jd must be an object");
+        }
+
+        ResGenerateJdDTO result = new ResGenerateJdDTO();
+
+        result.setDescription(
+                generatedJd.get("description") != null
+                        ? generatedJd.get("description").toString()
+                        : ""
+        );
+
+        result.setRequirements(toStringList(generatedJd.get("requirements")));
+        result.setBenefits(toStringList(generatedJd.get("benefits")));
+
+        return result;
+    }
+
+    private int convertToInt(Object value) throws Exception {
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+
+        if (value instanceof String str) {
+            return Integer.parseInt(str);
+        }
+
+        throw new Exception("Invalid status_code from Python AI: " + value);
+    }
+
+    private List<String> toStringList(Object value) {
+        if (value == null) {
+            return Collections.emptyList();
+        }
+
+        if (value instanceof List<?> list) {
+            return list.stream()
+                    .map(String::valueOf)
+                    .collect(Collectors.toList());
+        }
+
+        return List.of(String.valueOf(value));
     }
 }
