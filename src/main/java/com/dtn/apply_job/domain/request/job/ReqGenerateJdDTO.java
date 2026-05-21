@@ -9,7 +9,7 @@ import lombok.Setter;
 public class ReqGenerateJdDTO {
     private String title;
     private String skills;
-    private String companyCulture;
+    
     private String levels;
 }
 

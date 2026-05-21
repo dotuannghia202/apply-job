@@ -70,16 +70,14 @@ public class JobController {
             @RequestParam(required = false) String location,
             @RequestParam(required = false) List<String> levels,
             @RequestParam(required = false) Long specialization,
-            @RequestParam(required = false) String company,
-            @RequestParam(required = false) Double minSalary,
-            @RequestParam(required = false) Double maxSalary,
             @RequestParam(required = false) String name,
-            @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String skill,
-            @RequestParam(required = false) Boolean active
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) Integer sortCreatedAt
     ) throws IdInvalidException {
         ResultPaginationDTO result = this.jobService.handleGetAllJobsWithFilters(
-                spec, pageable, location, levels, specialization, company, minSalary, maxSalary, name, keyword, skill, active);
+                spec, pageable, location, levels, specialization,
+                null, null, null, name, null, skill, active, sortCreatedAt);
         return ResponseEntity.ok().body(result);
     }
 
@@ -112,12 +110,13 @@ public class JobController {
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String skill,
-            @RequestParam(required = false) Boolean active
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) Integer sortCreatedAt
     ) throws Exception {
 
         ResultPaginationDTO result = this.jobService.handleGetJobsByCurrentHrWithFilters(
                 spec, pageable, location, levels, specialization, company,
-                minSalary, maxSalary, name, keyword, skill, active);
+                minSalary, maxSalary, name, keyword, skill, active, sortCreatedAt);
 
         return ResponseEntity.ok().body(result);
     }
@@ -136,4 +135,3 @@ public class JobController {
     }
 
 }
-

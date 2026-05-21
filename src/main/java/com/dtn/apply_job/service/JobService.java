@@ -99,7 +99,8 @@ public class JobService {
     }
 
     public ResultPaginationDTO handleGetAllJobs(Specification<Job> spec, Pageable pageable) {
-        Page<Job> pageJob = jobRepository.findAll(spec, pageable);
+        Pageable effectivePageable = applyCreatedAtSort(pageable, null);
+        Page<Job> pageJob = jobRepository.findAll(spec, effectivePageable);
         Set<Long> savedJobIds = getSavedJobIdsForCurrentUser();
         Set<Long> appliedJobIds = getAppliedJobIdsForCurrentUser();
         List<ResJobDTO> listJobDTO = pageJob.getContent().stream()
@@ -131,7 +132,8 @@ public class JobService {
             String name,
             String keyword,
             String skill,
-            Boolean active
+            Boolean active,
+            Integer sortCreatedAt
     ) throws IdInvalidException {
         Set<LevelEnum> levelEnums = parseLevelEnums(levels);
 
@@ -143,11 +145,11 @@ public class JobService {
         );
         Specification<Job> combinedSpec = spec == null ? filterSpec : spec.and(filterSpec);
 
-        Pageable effectivePageable = pageable;
-        if ((minSalary != null || maxSalary != null) && pageable.getSort().isUnsorted()) {
+        Pageable effectivePageable = applyCreatedAtSort(pageable, sortCreatedAt);
+        if ((minSalary != null || maxSalary != null) && effectivePageable.getSort().isUnsorted()) {
             effectivePageable = PageRequest.of(
-                    pageable.getPageNumber(),
-                    pageable.getPageSize(),
+                    effectivePageable.getPageNumber(),
+                    effectivePageable.getPageSize(),
                     Sort.by(Sort.Direction.DESC, "maxSalary")
             );
         }
@@ -614,7 +616,8 @@ public class JobService {
             String name,
             String keyword,
             String skill,
-            Boolean active
+            Boolean active,
+            Integer sortCreatedAt
     ) throws Exception {
 
         // 1. KIỂM TRA BẢO MẬT VÀ LẤY ID CÔNG TY
@@ -638,7 +641,16 @@ public class JobService {
         // Lưu ý: Truyền securedSpec vào thay vì spec ban đầu
         return handleGetAllJobsWithFilters(
                 securedSpec, pageable, location, levels, specializationId,
-                companyName, minSalary, maxSalary, name, keyword, skill, active
+                companyName, minSalary, maxSalary, name, keyword, skill, active, sortCreatedAt
         );
+    }
+
+    private Pageable applyCreatedAtSort(Pageable pageable, Integer sortCreatedAt) {
+        boolean requestAsc = sortCreatedAt != null && sortCreatedAt > 0;
+        if (sortCreatedAt == null && pageable.getSort().isSorted()) {
+            return pageable;
+        }
+        Sort.Direction direction = requestAsc ? Sort.Direction.ASC : Sort.Direction.DESC;
+        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(direction, "createdAt"));
     }
 }

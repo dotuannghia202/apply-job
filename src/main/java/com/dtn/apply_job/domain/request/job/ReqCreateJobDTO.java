@@ -53,6 +53,7 @@ public class ReqCreateJobDTO {
 
     private List<String> benefits;
 
+    @NotBlank(message = "Working hours must not be left blank!")
     private String workingHours;
 
     @NotNull(message = "Company ID must not be null!")
