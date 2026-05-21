@@ -79,9 +79,10 @@ public class ApplicationController {
     @ApiMessage("Fetch applications for HR and Admin")
     public ResponseEntity<ResultPaginationDTO> getApplicationsForHr(
             @Filter Specification<Application> spec,
-            Pageable pageable) throws Exception {
+            Pageable pageable,
+            @RequestParam(required = false) String status) throws Exception {
 
-        ResultPaginationDTO result = applicationService.handleGetApplicationsForHrAndAdmin(spec, pageable);
+        ResultPaginationDTO result = applicationService.handleGetApplicationsForHrAndAdmin(spec, pageable, status);
         return ResponseEntity.ok(result);
     }
 }

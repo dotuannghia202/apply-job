@@ -1,12 +1,7 @@
 package com.dtn.apply_job.domain.request.job;
 
 import com.dtn.apply_job.util.constant.enums.LevelEnum;
-import jakarta.validation.constraints.AssertTrue;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.PositiveOrZero;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -43,7 +38,6 @@ public class ReqUpdateJobDTO {
     @NotNull(message = "End date must not be null!")
     private Instant endDate;
 
-    private Boolean isActive;
 
     private List<String> benefits;
 

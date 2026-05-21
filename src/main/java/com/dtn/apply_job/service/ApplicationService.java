@@ -169,12 +169,7 @@ public class ApplicationService {
         }
 
         if (status != null && !status.trim().isEmpty()) {
-            com.dtn.apply_job.util.constant.enums.ApplicationStatus statusEnum;
-            try {
-                statusEnum = com.dtn.apply_job.util.constant.enums.ApplicationStatus.valueOf(status.trim().toUpperCase());
-            } catch (IllegalArgumentException ex) {
-                throw new IdInvalidException("Invalid status: " + status);
-            }
+            com.dtn.apply_job.util.constant.enums.ApplicationStatus statusEnum = parseStatus(status);
             Specification<Application> statusSpec = (root, query, cb) -> cb.equal(root.get("status"), statusEnum);
             roleSpec = roleSpec == null ? statusSpec : roleSpec.and(statusSpec);
         }
@@ -319,7 +314,7 @@ public class ApplicationService {
 
     // Nhớ import org.springframework.security.access.AccessDeniedException;
 
-    public ResultPaginationDTO handleGetApplicationsForHrAndAdmin(Specification<Application> spec, Pageable pageable) throws Exception {
+    public ResultPaginationDTO handleGetApplicationsForHrAndAdmin(Specification<Application> spec, Pageable pageable, String status) throws Exception {
 
         // 1. LẤY THÔNG TIN USER ĐANG ĐĂNG NHẬP
         String email = SecurityUtil.getCurrentUser()
@@ -338,6 +333,12 @@ public class ApplicationService {
 
         Specification<Application> finalSpec = spec;
 
+        if (status != null && !status.trim().isEmpty()) {
+            com.dtn.apply_job.util.constant.enums.ApplicationStatus statusEnum = parseStatus(status);
+            Specification<Application> statusSpec = (root, query, cb) -> cb.equal(root.get("status"), statusEnum);
+            finalSpec = finalSpec == null ? statusSpec : finalSpec.and(statusSpec);
+        }
+
         // 2. NẾU LÀ HR -> ÉP ĐIỀU KIỆN CHỈ LẤY ĐƠN CỦA CÔNG TY MÌNH
         if (isEmployer && !isAdmin) {
             if (currentUser.getCompany() == null) {
@@ -350,7 +351,7 @@ public class ApplicationService {
                     cb.equal(root.get("job").get("company").get("id"), companyId);
 
             // Nối "lớp giáp bảo mật" vào bộ lọc của Frontend
-            finalSpec = (spec == null) ? securitySpec : spec.and(securitySpec);
+            finalSpec = (finalSpec == null) ? securitySpec : finalSpec.and(securitySpec);
         }
 
         // 3. THỰC THI TRUY VẤN CÓ PHÂN TRANG (Kèm bộ lọc)
@@ -373,5 +374,13 @@ public class ApplicationService {
         rs.setResult(listAppDTO);
 
         return rs;
+    }
+
+    private com.dtn.apply_job.util.constant.enums.ApplicationStatus parseStatus(String status) throws IdInvalidException {
+        try {
+            return com.dtn.apply_job.util.constant.enums.ApplicationStatus.valueOf(status.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new IdInvalidException("Invalid status: " + status);
+        }
     }
 }

@@ -89,6 +89,7 @@ public class JobController {
     }
 
     @DeleteMapping("/{id:\\d+}")
+    @PreAuthorize("hasAnyRole('EMPLOYER', 'ADMIN')") // Chỉ HR và Admin mới được xóa
     @ApiMessage("Delete a job")
     public ResponseEntity<Void> deleteJob(@PathVariable long id) throws Exception {
         this.jobService.handleDeleteJob(id);

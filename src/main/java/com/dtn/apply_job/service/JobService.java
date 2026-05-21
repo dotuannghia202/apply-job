@@ -186,7 +186,7 @@ public class JobService {
 
         currentJob.setStartDate(reqDTO.getStartDate());
         currentJob.setEndDate(reqDTO.getEndDate());
-        currentJob.setActive(reqDTO.getIsActive());
+        
         currentJob.setBenefits(reqDTO.getBenefits());
         currentJob.setWorkingHours(reqDTO.getWorkingHours());
 
@@ -230,7 +230,8 @@ public class JobService {
         Job currentJob = jobRepository.findById(id)
                 .orElseThrow(() -> new IdInvalidException("Job doesn't exist!"));
         checkJobOwnership(currentJob);
-        jobRepository.delete(currentJob);
+        currentJob.setActive(false);
+        jobRepository.save(currentJob);
     }
 
     public List<ResJobDTO> handleCreateJobs(List<ReqCreateJobDTO> reqDTOs) throws IdInvalidException, InvalidDateRangeException {
