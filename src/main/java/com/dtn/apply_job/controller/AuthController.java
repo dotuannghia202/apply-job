@@ -2,6 +2,7 @@ package com.dtn.apply_job.controller;
 
 import com.dtn.apply_job.common.annotation.ApiMessage;
 import com.dtn.apply_job.domain.User;
+import com.dtn.apply_job.domain.request.auth.ReqForgotPasswordDTO;
 import com.dtn.apply_job.domain.request.auth.ReqRegisterDTO;
 import com.dtn.apply_job.domain.request.user.ReqLoginDTO;
 import com.dtn.apply_job.domain.response.user.ResLoginDTO;
@@ -221,5 +222,12 @@ public class AuthController {
                 .path("/")
                 .maxAge(refreshTokenExpiration / 1000)
                 .build();
+    }
+
+    @PostMapping("/forgot-password")
+    @ApiMessage("Your new password has been sent to your email address!")
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ReqForgotPasswordDTO reqDTO) throws Exception {
+        authService.handleForgotPassword(reqDTO.getEmail());
+        return ResponseEntity.ok().build();
     }
 }

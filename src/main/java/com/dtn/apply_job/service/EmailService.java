@@ -26,4 +26,23 @@ public class EmailService {
 
         mailSender.send(message);
     }
+
+    // 2. HÀM DÙNG KHI NGƯỜI DÙNG QUÊN MẬT KHẨU (HÀM MỚI THÊM)
+    public void sendResetPasswordEmail(String toEmail, String newPassword) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(toEmail);
+        message.setSubject("JobPortal - Yêu cầu Cấp lại Mật khẩu");
+
+        // Nội dung Email chuyên nghiệp đúng ngữ cảnh
+        message.setText(
+                "Xin chào,\n\n" +
+                        "Chúng tôi nhận được yêu cầu cấp lại mật khẩu cho tài khoản liên kết với địa chỉ email này.\n\n" +
+                        "Đây là mật khẩu mới của bạn: " + newPassword + "\n\n" +
+                        "Vui lòng sử dụng mật khẩu này để đăng nhập vào hệ thống. " +
+                        "Sau khi đăng nhập thành công, hãy vào mục 'Hồ sơ cá nhân' để ĐỔI MẬT KHẨU nhằm đảm bảo an toàn cho tài khoản của bạn.\n\n" +
+                        "Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này hoặc liên hệ với bộ phận Hỗ trợ.\n\n" +
+                        "Trân trọng,\nBan quản trị JobPortal."
+        );
+        mailSender.send(message);
+    }
 }

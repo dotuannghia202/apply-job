@@ -3,6 +3,7 @@ package com.dtn.apply_job.controller;
 import com.dtn.apply_job.common.annotation.ApiMessage;
 import com.dtn.apply_job.common.response.ResultPaginationDTO;
 import com.dtn.apply_job.domain.User;
+import com.dtn.apply_job.domain.request.user.ReqChangePasswordDTO;
 import com.dtn.apply_job.domain.request.user.ReqCreateUserDTO;
 import com.dtn.apply_job.domain.request.user.ReqUpdateUserDTO;
 import com.dtn.apply_job.domain.request.user.ReqUpdateUserRoleDTO;
@@ -120,5 +121,13 @@ public class UserController {
     public ResponseEntity<ResHrDashboardStatsDTO> getHrDashboardStats() throws Exception {
         ResHrDashboardStatsDTO result = userService.getHrDashboardStats();
         return ResponseEntity.ok(result);
+    }
+
+    @PutMapping("/change-password")
+    @PreAuthorize("isAuthenticated()") // Anyone logged in can change their password
+    @ApiMessage("Password changed successfully")
+    public ResponseEntity<Void> changePassword(@Valid @RequestBody ReqChangePasswordDTO reqDTO) throws Exception {
+        userService.handleChangePassword(reqDTO);
+        return ResponseEntity.ok().build();
     }
 }

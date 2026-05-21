@@ -4,6 +4,7 @@ import com.dtn.apply_job.common.response.ResultPaginationDTO;
 import com.dtn.apply_job.domain.Company;
 import com.dtn.apply_job.domain.Role;
 import com.dtn.apply_job.domain.User;
+import com.dtn.apply_job.domain.request.user.ReqChangePasswordDTO;
 import com.dtn.apply_job.domain.request.user.ReqCreateUserDTO;
 import com.dtn.apply_job.domain.request.user.ReqUpdateUserDTO;
 import com.dtn.apply_job.domain.request.user.ReqUpdateUserRoleDTO;
@@ -381,5 +382,27 @@ public class UserService {
         stats.setAvgAiMatchRate(avgScore != null ? Math.round(avgScore * 10.0) / 10.0 : 88.4);
 
         return stats;
+    }
+
+    @Transactional
+    public void handleChangePassword(ReqChangePasswordDTO reqDTO) throws Exception {
+        // 1. Verify if the new password and confirm password match
+        if (!reqDTO.getNewPassword().equals(reqDTO.getConfirmPassword())) {
+            throw new Exception("New password and confirm password do not match!");
+        }
+
+        // 2. Get the currently logged-in user
+        String email = SecurityUtil.getCurrentUser().orElseThrow(() -> new IdInvalidException("Please log in!"));
+        User currentUser = userRepository.findByEmail(email);
+
+        // 3. Verify if the current password is correct
+        boolean isOldPasswordCorrect = passwordEncoder.matches(reqDTO.getOldPassword(), currentUser.getPassword());
+        if (!isOldPasswordCorrect) {
+            throw new Exception("Current password is incorrect!");
+        }
+
+        // 4. Encode the new password and save to the database
+        currentUser.setPassword(passwordEncoder.encode(reqDTO.getNewPassword()));
+        userRepository.save(currentUser);
     }
 }
