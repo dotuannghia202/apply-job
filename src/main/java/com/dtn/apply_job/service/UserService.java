@@ -4,10 +4,7 @@ import com.dtn.apply_job.common.response.ResultPaginationDTO;
 import com.dtn.apply_job.domain.Company;
 import com.dtn.apply_job.domain.Role;
 import com.dtn.apply_job.domain.User;
-import com.dtn.apply_job.domain.request.user.ReqChangePasswordDTO;
-import com.dtn.apply_job.domain.request.user.ReqCreateUserDTO;
-import com.dtn.apply_job.domain.request.user.ReqUpdateUserDTO;
-import com.dtn.apply_job.domain.request.user.ReqUpdateUserRoleDTO;
+import com.dtn.apply_job.domain.request.user.*;
 import com.dtn.apply_job.domain.response.employer.ResHrDashboardStatsDTO;
 import com.dtn.apply_job.domain.response.user.ResCreateUserDTO;
 import com.dtn.apply_job.domain.response.user.ResUpdateUserDTO;
@@ -21,6 +18,7 @@ import com.dtn.apply_job.util.constant.enums.ERole;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -151,83 +149,93 @@ public class UserService {
         return resCreatedDTO;
     }
 
+    // Nhớ import cái này ở đầu file nhé:
+    // import org.springframework.security.access.AccessDeniedException;
+
     public ResUserDTO getUserById(long id) throws IdInvalidException {
-        if (!this.userRepository.existsById(id)) {
-            throw new IdInvalidException("User with id " + id + " not found!");
-        }
-        Optional<User> optionalUser = this.userRepository.findById(id);
-        if (optionalUser.isPresent()) {
-            ResUserDTO resUserDTO = new ResUserDTO();
-            resUserDTO.setId(optionalUser.get().getId());
-            resUserDTO.setName(optionalUser.get().getName());
-            resUserDTO.setAvatarUrl(optionalUser.get().getAvatarUrl());
-            resUserDTO.setEmail(optionalUser.get().getEmail());
-            resUserDTO.setAge(optionalUser.get().getAge());
-            resUserDTO.setGender(optionalUser.get().getGender().toString());
-            resUserDTO.setAddress(optionalUser.get().getAddress());
-            resUserDTO.setCreatedAt(optionalUser.get().getCreatedAt());
+        // 1. TÌM USER TRONG DATABASE (Gộp existsById và findById thành 1 câu cho tối ưu)
+        User targetUser = this.userRepository.findById(id)
+                .orElseThrow(() -> new IdInvalidException("User with id " + id + " not found!"));
 
-            if (optionalUser.get().getCompany() != null) {
-                ResUserDTO.CompanyUser companyUser = new ResUserDTO.CompanyUser();
-                companyUser.setId(optionalUser.get().getCompany().getId());
-                companyUser.setName(optionalUser.get().getCompany().getName());
-                resUserDTO.setCompany(companyUser);
-            } else {
-                resUserDTO.setCompany(null);
-            }
+        // =================================================================
+        // 2. RÀO CẢN BẢO MẬT (CHỐNG LỖI IDOR - XEM TRỘM)
+        // =================================================================
+        String email = SecurityUtil.getCurrentUser()
+                .orElseThrow(() -> new AccessDeniedException("Please login!"));
+        User currentUser = userRepository.findByEmail(email);
 
-            return resUserDTO;
+        boolean isAdmin = currentUser.getRoles().stream()
+                .anyMatch(r -> r.getName().name().equals("ROLE_ADMIN") || r.getName().name().equals("ADMIN"));
+
+        // Nếu KHÔNG phải Admin VÀ ID muốn xem KHÁC VỚI ID của chính mình -> CHẶN NGAY LẬP TỨC!
+        if (!isAdmin && currentUser.getId() != id) {
+            throw new AccessDeniedException("Security Error: You do not have permission to view other people's personal information!");
         }
-        return null;
+        // =================================================================
+
+        // 3. ĐỔ DỮ LIỆU SANG DTO VÀ TRẢ VỀ
+        ResUserDTO resUserDTO = new ResUserDTO();
+        resUserDTO.setId(targetUser.getId());
+        resUserDTO.setName(targetUser.getName());
+        resUserDTO.setAvatarUrl(targetUser.getAvatarUrl());
+        resUserDTO.setEmail(targetUser.getEmail());
+        resUserDTO.setAge(targetUser.getAge());
+
+        // Fix lỗi sập Server (NPE) nếu gender đang bị null
+        resUserDTO.setGender(targetUser.getGender() != null ? targetUser.getGender().toString() : null);
+
+        resUserDTO.setAddress(targetUser.getAddress());
+        resUserDTO.setCreatedAt(targetUser.getCreatedAt());
+
+        if (targetUser.getCompany() != null) {
+            ResUserDTO.CompanyUser companyUser = new ResUserDTO.CompanyUser();
+            companyUser.setId(targetUser.getCompany().getId());
+            companyUser.setName(targetUser.getCompany().getName());
+            resUserDTO.setCompany(companyUser);
+        } else {
+            resUserDTO.setCompany(null);
+        }
+
+        return resUserDTO;
     }
 
-    public void deleteUserById(long id) throws IdInvalidException {
-        if (!this.userRepository.existsById(id)) {
-            throw new IdInvalidException("User with id " + id + " not found!");
-        }
-        this.userRepository.deleteById(id);
-        return;
+    @Transactional
+    public void handleUpdateUserStatus(long targetUserId, ReqUpdateUserStatusDTO reqDTO) throws IdInvalidException {
+        // Tìm User cần khóa/mở khóa
+        User targetUser = this.userRepository.findById(targetUserId)
+                .orElseThrow(() -> new IdInvalidException("User not found!"));
+
+        // Cập nhật trạng thái
+        targetUser.setIsActive(reqDTO.getIsActive());
+
+        // Lưu vào DB
+        this.userRepository.save(targetUser);
     }
 
     public ResUpdateUserDTO handleUpdateUser(long id, ReqUpdateUserDTO reqUser) throws IdInvalidException, InvalidRequestException {
 
-        Optional<User> optionalUser = this.userRepository.findById(id);
-        if (!optionalUser.isPresent()) {
-            throw new IdInvalidException("User with id " + id + " not found!");
+        // --- 1. RÀO CẢN BẢO MẬT (CHỐNG LỖI IDOR) ---
+        String email = SecurityUtil.getCurrentUser()
+                .orElseThrow(() -> new IdInvalidException("Please login!"));
+        User loggedInUser = userRepository.findByEmail(email);
+
+        boolean isAdmin = loggedInUser.getRoles().stream()
+                .anyMatch(r -> r.getName().name().equals("ROLE_ADMIN") || r.getName().name().equals("ADMIN"));
+
+        // Nếu KHÔNG phải Admin VÀ đang cố sửa ID của người khác -> CHẶN!
+        if (!isAdmin && loggedInUser.getId() != id) {
+            throw new AccessDeniedException("Security Error: You do not have permission to update other people's information!");
         }
 
-        User currentUser = (User) optionalUser.get();
+        User currentUser = this.userRepository.findById(id)
+                .orElseThrow(() -> new IdInvalidException("User with id " + id + " not found!"));
 
-        currentUser.setName(reqUser.getName());
-        currentUser.setAvatarUrl(reqUser.getAvatarUrl());
-        currentUser.setAge(reqUser.getAge());
-        currentUser.setGender(reqUser.getGender());
-        currentUser.setAddress(reqUser.getAddress());
-        currentUser.setIsActive(reqUser.getIsActive());
-
-        if (reqUser.getCompanyId() != null) {
-            Company company = this.companyRepository.findById(reqUser.getCompanyId())
-                    .orElseThrow(() -> new IdInvalidException("Company doesn't exist!"));
-            currentUser.setCompany(company);
-        }
-
-
-        if (reqUser.getRoles() != null && !reqUser.getRoles().isEmpty()) {
-
-
-            currentUser.getRoles().clear();
-
-
-            for (ERole rName : reqUser.getRoles()) {
-                Role role = this.roleRepository.findByName(rName)
-                        .orElseThrow(() -> new IdInvalidException("Invalid role: " + rName));
-
-
-                currentUser.getRoles().add(role);
-            }
-        } else {
-            throw new InvalidRequestException("Role is required!");
-        }
+        // Cập nhật các trường cơ bản
+        if (reqUser.getName() != null) currentUser.setName(reqUser.getName());
+        if (reqUser.getAvatarUrl() != null) currentUser.setAvatarUrl(reqUser.getAvatarUrl());
+        if (reqUser.getAge() > 0) currentUser.setAge(reqUser.getAge());
+        if (reqUser.getGender() != null) currentUser.setGender(reqUser.getGender());
+        if (reqUser.getAddress() != null) currentUser.setAddress(reqUser.getAddress());
 
         User updatedUser = this.userRepository.save(currentUser);
 
@@ -284,7 +292,7 @@ public class UserService {
     // Nhớ import org.springframework.security.access.AccessDeniedException;
 
     @Transactional
-    public ResUpdateUserDTO handleUpdateUserRoles(long targetUserId, ReqUpdateUserRoleDTO reqDTO) throws Exception {
+    public ResUpdateUserDTO handleUpdateUserRoles(long targetUserId, ReqUpdateUserRoleDTO reqDTO) throws Exception, AccessDeniedException {
 
         // 1. LẤY THÔNG TIN NGƯỜI ĐANG THỰC HIỆN HÀNH ĐỘNG GỌI API
         String email = SecurityUtil.getCurrentUser().orElseThrow();
@@ -309,7 +317,7 @@ public class UserService {
         if (!isAdmin) {
             boolean wantsAdminRole = reqDTO.getRoles().contains(ERole.ADMIN); // Đổi thành ERole.ADMIN tùy Enum của bạn
             if (wantsAdminRole) {
-                throw new Exception("Security Error: You do not have permission to change other people's access rights!");
+                throw new AccessDeniedException("Security Error: You do not have permission to change other people's access rights!");
             }
         }
 

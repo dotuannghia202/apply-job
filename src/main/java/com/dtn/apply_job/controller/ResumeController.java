@@ -29,7 +29,7 @@ public class ResumeController {
     private final ResumeService resumeService;
 
     @PostMapping("/resumes")
-    @PreAuthorize("hasAnyRole('ROLE_CANDIDATE', 'ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('CANDIDATE', 'ADMIN')")
     @ApiMessage("Create resume")
     public ResponseEntity<ResResumeDTO> createResume(@Valid @RequestBody ReqCreateResumeDTO req) throws Exception {
         ResResumeDTO newResume = this.resumeService.handleCreateResume(req);
@@ -37,7 +37,7 @@ public class ResumeController {
     }
 
     @PutMapping("/resumes/{id}")
-    @PreAuthorize("hasAnyRole('ROLE_CANDIDATE', 'ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('CANDIDATE', 'ADMIN')")
     @ApiMessage("Update resume")
     public ResponseEntity<ResUpdateResumeDTO> updateResume(@PathVariable long id, @Valid @RequestBody ReqUpdateResumeDTO req)
             throws Exception {
@@ -46,7 +46,7 @@ public class ResumeController {
     }
 
     @GetMapping("/resumes/{id}")
-    @PreAuthorize("hasAnyRole('ROLE_CANDIDATE', 'ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('CANDIDATE', 'ADMIN')")
     @ApiMessage("Fetch resume by Id")
     public ResponseEntity<ResResumeDTO> getResumeById(@PathVariable long id) throws Exception {
         ResResumeDTO resume = this.resumeService.handleGetResumeById(id);
@@ -54,7 +54,7 @@ public class ResumeController {
     }
 
     @GetMapping("/resumes")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @ApiMessage("Fetch all resumes")
     public ResponseEntity<ResultPaginationDTO> getAllResumes(
             @Filter Specification<Resume> spec,
@@ -66,7 +66,7 @@ public class ResumeController {
 
 
     @GetMapping("/my-cvs")
-    @PreAuthorize("hasRole('ROLE_CANDIDATE')")
+    @PreAuthorize("hasRole('CANDIDATE')")
     @ApiMessage("Get your Cv-list successfully!")
     public ResponseEntity<List<ResResumeDTO>> getMyResumes() throws IdInvalidException {
         List<ResResumeDTO> result = resumeService.handleGetMyResumes();
@@ -74,7 +74,7 @@ public class ResumeController {
     }
 
     @DeleteMapping("/resumes/{id}")
-    @PreAuthorize("hasAnyRole('ROLE_CANDIDATE', 'ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('CANDIDATE', 'ADMIN')")
     @ApiMessage("Delete resume successfully!")
     public ResponseEntity<Void> deleteResume(@PathVariable long id) throws IdInvalidException {
         resumeService.handleSoftDeleteResume(id);

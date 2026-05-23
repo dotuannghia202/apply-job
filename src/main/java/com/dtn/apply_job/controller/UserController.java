@@ -3,10 +3,7 @@ package com.dtn.apply_job.controller;
 import com.dtn.apply_job.common.annotation.ApiMessage;
 import com.dtn.apply_job.common.response.ResultPaginationDTO;
 import com.dtn.apply_job.domain.User;
-import com.dtn.apply_job.domain.request.user.ReqChangePasswordDTO;
-import com.dtn.apply_job.domain.request.user.ReqCreateUserDTO;
-import com.dtn.apply_job.domain.request.user.ReqUpdateUserDTO;
-import com.dtn.apply_job.domain.request.user.ReqUpdateUserRoleDTO;
+import com.dtn.apply_job.domain.request.user.*;
 import com.dtn.apply_job.domain.response.employer.ResHrDashboardStatsDTO;
 import com.dtn.apply_job.domain.response.user.ResCreateUserDTO;
 import com.dtn.apply_job.domain.response.user.ResUpdateUserDTO;
@@ -60,18 +57,23 @@ public class UserController {
     }
 
 
-    @GetMapping("/users/{id}")
+    @GetMapping("/users/{id:\\d+}")
+    @PreAuthorize("isAuthenticated()") // Chỉ cần đã đăng nhập (Quyền nào cũng được)
     @ApiMessage("Fetch user by id")
     public ResponseEntity<ResUserDTO> getUserById(@PathVariable long id) throws IdInvalidException {
         ResUserDTO result = this.userService.getUserById(id);
         return ResponseEntity.ok().body(result);
     }
 
-    @DeleteMapping("/users/{id}")
-    @ApiMessage("Delete user")
-    public ResponseEntity<Void> deleteUserById(@PathVariable long id) throws IdInvalidException {
-        this.userService.deleteUserById(id);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    @PutMapping("/users/{id:\\d+}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    @ApiMessage("Update user status successfully!")
+    public ResponseEntity<Void> updateUserStatus(
+            @PathVariable("id") long targetUserId,
+            @Valid @RequestBody ReqUpdateUserStatusDTO reqDTO) throws Exception {
+
+        userService.handleUpdateUserStatus(targetUserId, reqDTO);
+        return ResponseEntity.ok().build();
     }
 
 
@@ -96,8 +98,8 @@ public class UserController {
         return ResponseEntity.ok().body(null);
     }
 
-    @PutMapping("users/{id}/roles")
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_CANDIDATE', 'ROLE_EMPLOYER')")
+    @PutMapping("users/{id:\\d+}/roles")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CANDIDATE', 'EMPLOYER')")
     @ApiMessage("User permissions update successful!")
     public ResponseEntity<ResUpdateUserDTO> updateUserRoles(
             @PathVariable("id") long targetUserId,
@@ -130,4 +132,5 @@ public class UserController {
         userService.handleChangePassword(reqDTO);
         return ResponseEntity.ok().build();
     }
+
 }
