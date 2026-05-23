@@ -413,4 +413,6 @@ public class UserService {
         currentUser.setPassword(passwordEncoder.encode(reqDTO.getNewPassword()));
         userRepository.save(currentUser);
     }
+
+    
 }
