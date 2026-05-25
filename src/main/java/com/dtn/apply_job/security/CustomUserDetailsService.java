@@ -2,6 +2,7 @@ package com.dtn.apply_job.security;
 
 import com.dtn.apply_job.domain.User;
 import com.dtn.apply_job.service.UserService;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -26,6 +27,11 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         if (user == null) {
             throw new UsernameNotFoundException("User not found with email: " + username);
+        }
+
+        // 🚨 CHỐT CHẶN BẢO MẬT: NẾU TÀI KHOẢN BỊ KHÓA -> NÉM LỖI DisabledException NGAY LẬP TỨC
+        if (user.getIsActive() != null && !user.getIsActive()) {
+            throw new DisabledException("Your account has been locked by the Administrator!");
         }
 
         List<SimpleGrantedAuthority> authorities = user.getRoles().stream()

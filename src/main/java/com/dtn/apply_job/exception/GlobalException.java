@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -149,5 +150,17 @@ public class GlobalException {
         res.setMessage(errorBody);
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
+    }
+
+    @ExceptionHandler(value = {DisabledException.class})
+    public ResponseEntity<RestRespon<Object>> handleDisabledException(DisabledException ex) {
+        RestRespon<Object> res = new RestRespon<>();
+
+        // Dùng mã 403 Forbidden (Bị cấm) là chuẩn nhất cho tài khoản bị khóa
+        res.setStatusCode(HttpStatus.FORBIDDEN.value());
+        res.setError(ex.getClass().getSimpleName());
+        res.setMessage("Your account has been locked. Please contact the Admin!");
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(res);
     }
 }

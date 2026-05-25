@@ -45,4 +45,20 @@ public class EmailService {
         );
         mailSender.send(message);
     }
+
+    public void sendAccountLockedEmail(String toEmail, String name) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(toEmail);
+        message.setSubject("CẢNH BÁO: Tài khoản của bạn đã bị khóa - JobPortal");
+
+        message.setText(
+                "Xin chào " + name + ",\n\n" +
+                        "Chúng tôi xin thông báo rằng tài khoản của bạn trên nền tảng JobPortal đã bị tạm khóa bởi Quản trị viên.\n\n" +
+                        "Lý do: Vi phạm chính sách cộng đồng hoặc phát hiện hoạt động bất thường.\n" +
+                        "Hiện tại, bạn sẽ không thể đăng nhập và sử dụng các dịch vụ của chúng tôi.\n\n" +
+                        "Nếu bạn cho rằng đây là một sự nhầm lẫn, vui lòng liên hệ trực tiếp với bộ phận Hỗ trợ (Support) để được giải quyết.\n\n" +
+                        "Trân trọng,\nBan quản trị JobPortal."
+        );
+        mailSender.send(message);
+    }
 }

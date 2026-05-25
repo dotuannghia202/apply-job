@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.List;
 
 @Setter
 @Getter
@@ -13,7 +14,7 @@ public class ResUserDTO {
     private String name;
     private String email;
     private String avatarUrl;
-    private int age;
+    private Integer age;
     private String gender;
     private String address;
 
@@ -27,10 +28,12 @@ public class ResUserDTO {
 
     private CompanyUser company;
 
+    private List<String> roles;
+
     @Setter
     @Getter
     public static class CompanyUser {
-        private long id;
+        private Long id;
         String name;
     }
 

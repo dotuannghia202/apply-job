@@ -35,14 +35,16 @@ public class UserService {
     private final RoleRepository roleRepository;
     private final JobRepository jobRepository;
     private final ApplicationRepository applicationRepository;
+    private final EmailService emailService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, CompanyRepository companyRepository, RoleRepository roleRepository, JobRepository jobRepository, ApplicationRepository applicationRepository) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, CompanyRepository companyRepository, RoleRepository roleRepository, JobRepository jobRepository, ApplicationRepository applicationRepository, EmailService emailService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.companyRepository = companyRepository;
         this.roleRepository = roleRepository;
         this.jobRepository = jobRepository;
         this.applicationRepository = applicationRepository;
+        this.emailService = emailService;
     }
 
     public ResultPaginationDTO getAllUsers(Specification<User> spec, Pageable pageable) {
@@ -63,6 +65,9 @@ public class UserService {
             userDTO.setUpdatedAt(user.getUpdatedAt());
             userDTO.setCreatedBy(user.getCreatedBy());
             userDTO.setUpdatedBy(user.getUpdatedBy());
+            userDTO.setRoles(user.getRoles().stream()
+                    .map(role -> role.getName().name())
+                    .toList());
 
             if (user.getCompany() != null) {
                 ResUserDTO.CompanyUser companyUserDTO = new ResUserDTO.CompanyUser();
@@ -186,6 +191,9 @@ public class UserService {
 
         resUserDTO.setAddress(targetUser.getAddress());
         resUserDTO.setCreatedAt(targetUser.getCreatedAt());
+        resUserDTO.setRoles(targetUser.getRoles().stream()
+                .map(role -> role.getName().name())
+                .toList());
 
         if (targetUser.getCompany() != null) {
             ResUserDTO.CompanyUser companyUser = new ResUserDTO.CompanyUser();
@@ -201,15 +209,24 @@ public class UserService {
 
     @Transactional
     public void handleUpdateUserStatus(long targetUserId, ReqUpdateUserStatusDTO reqDTO) throws IdInvalidException {
-        // Tìm User cần khóa/mở khóa
         User targetUser = this.userRepository.findById(targetUserId)
-                .orElseThrow(() -> new IdInvalidException("User not found!"));
+                .orElseThrow(() -> new IdInvalidException("The user does not exist!"));
 
-        // Cập nhật trạng thái
-        targetUser.setIsActive(reqDTO.getIsActive());
+        // 1. Lưu lại trạng thái cũ để so sánh
+        boolean wasActive = targetUser.getIsActive();
+        boolean willBeActive = reqDTO.getIsActive();
 
-        // Lưu vào DB
+        // 2. Cập nhật trạng thái mới
+        targetUser.setIsActive(willBeActive);
         this.userRepository.save(targetUser);
+
+        // 3. LOGIC GỬI EMAIL: Chỉ gửi khi trạng thái chuyển từ Mở (true) sang Khóa (false)
+        // Chạy một luồng ngầm (Thread) để không làm chậm thao tác của Admin
+        if (wasActive == true && willBeActive == false) {
+            new Thread(() -> {
+                emailService.sendAccountLockedEmail(targetUser.getEmail(), targetUser.getName());
+            }).start();
+        }
     }
 
     public ResUpdateUserDTO handleUpdateUser(long id, ReqUpdateUserDTO reqUser) throws IdInvalidException, InvalidRequestException {
@@ -414,5 +431,5 @@ public class UserService {
         userRepository.save(currentUser);
     }
 
-    
+
 }
