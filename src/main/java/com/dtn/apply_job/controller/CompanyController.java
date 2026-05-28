@@ -1,10 +1,12 @@
 package com.dtn.apply_job.controller;
 
+import com.dtn.apply_job.common.annotation.ApiMessage;
 import com.dtn.apply_job.common.response.ResultPaginationDTO;
 import com.dtn.apply_job.domain.Company;
 import com.dtn.apply_job.domain.request.company.ReqCreateCompanyDTO;
 import com.dtn.apply_job.domain.response.company.ResCreateCompanyDTO;
 import com.dtn.apply_job.service.CompanyService;
+import com.dtn.apply_job.util.constant.enums.CompanyStatus;
 import com.turkraft.springfilter.boot.Filter;
 import jakarta.validation.Valid;
 import lombok.Getter;
@@ -13,8 +15,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.List;
 
 @Setter
@@ -29,8 +33,9 @@ public class CompanyController {
         this.companyService = companyService;
     }
 
+    @PreAuthorize("hasAnyRole('EMPLOYER', 'ADMIN')") // 🚨 CHỈ USER ĐƯỢC GỌI
     @PostMapping("/companies")
-    public ResponseEntity<ResCreateCompanyDTO> createCompany(@Valid @RequestBody ReqCreateCompanyDTO company) {
+    public ResponseEntity<ResCreateCompanyDTO> createCompany(@Valid @RequestBody ReqCreateCompanyDTO company) throws Exception {
         ResCreateCompanyDTO newCompany = this.companyService.handleCreateCompany(company);
         return ResponseEntity.status(HttpStatus.CREATED).body(newCompany);
     }
@@ -42,11 +47,21 @@ public class CompanyController {
     }
 
     @GetMapping("/companies")
-    public ResponseEntity<ResultPaginationDTO> getAllCompanies(@Filter Specification<Company> spec, Pageable pageable) {
+    @PreAuthorize("hasRole('ADMIN')") // Lưu ý: API này phục vụ Dashboard nên chỉ Admin được gọi
+    @ApiMessage("Fetch all companies with filters")
+    public ResponseEntity<ResultPaginationDTO> getAllCompanies(
+            @Filter Specification<Company> spec,
+            Pageable pageable,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) CompanyStatus status,
+            @RequestParam(required = false) Instant startDate,
+            @RequestParam(required = false) Instant endDate
+    ) {
 
-        ResultPaginationDTO resultPaginationDTO = this.companyService.handleGetAllCompany(spec, pageable);
+        ResultPaginationDTO result = this.companyService.handleGetAllCompanyWithFilters(
+                spec, pageable, name, status, startDate, endDate);
 
-        return ResponseEntity.status(HttpStatus.OK).body(resultPaginationDTO);
+        return ResponseEntity.ok(result);
     }
 
     @PutMapping("/companies/{id}")
@@ -61,5 +76,15 @@ public class CompanyController {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
     }
 
+    @PutMapping("/{id}/approve")
+    @PreAuthorize("hasRole('ADMIN')") // 🚨 CHỈ ADMIN ĐƯỢC GỌI
+    @ApiMessage("Cập nhật trạng thái duyệt công ty thành công")
+    public ResponseEntity<Void> approveCompany(
+            @PathVariable("id") long companyId,
+            @RequestParam("isApproved") boolean isApproved) throws Exception {
+
+        companyService.approveCompany(companyId, isApproved);
+        return ResponseEntity.ok().build();
+    }
 
 }

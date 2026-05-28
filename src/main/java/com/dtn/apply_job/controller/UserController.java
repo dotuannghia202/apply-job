@@ -12,6 +12,7 @@ import com.dtn.apply_job.exception.EmailExistedException;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.service.JobService;
 import com.dtn.apply_job.service.UserService;
+import com.dtn.apply_job.util.constant.enums.ERole;
 import com.turkraft.springfilter.boot.Filter;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
@@ -36,14 +37,18 @@ public class UserController {
         this.jobService = jobService;
     }
 
-    @GetMapping("/users")
+    @GetMapping("/users") // Không cần ghi URL (Tự hiểu là /api/v1/users)
+    @PreAuthorize("hasRole('ADMIN')") // Lưu ý: Lấy danh sách toàn bộ User thì chỉ Admin mới được phép gọi
     @ApiMessage("Fetch all users")
     public ResponseEntity<ResultPaginationDTO> getAllUsers(
-            @Filter Specification<User> spec,
-            Pageable pageable
-    ) {
+            @Filter Specification<User> spec, // Filter mặc định của thư viện
+            Pageable pageable,
+            @RequestParam(required = false) String keyword, // Dùng 1 biến keyword chung cho cả Name và Email
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) ERole role // Lọc theo Enum quyền
+    ) throws Exception {
 
-        ResultPaginationDTO result = this.userService.getAllUsers(spec, pageable);
+        ResultPaginationDTO result = this.userService.getAllUsersWithFilters(spec, pageable, keyword, isActive, role);
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
 

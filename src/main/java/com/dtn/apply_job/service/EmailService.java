@@ -61,4 +61,41 @@ public class EmailService {
         );
         mailSender.send(message);
     }
+
+    // HÀM 3: GỬI EMAIL KHI CÔNG TY ĐƯỢC ADMIN DUYỆT THÀNH CÔNG
+    // ====================================================================
+    public void sendCompanyApprovedEmail(String toEmail, String companyName) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(toEmail);
+        message.setSubject("JobPortal - Hồ sơ doanh nghiệp đã được phê duyệt!");
+
+        message.setText(
+                "Xin chào,\n\n" +
+                        "Chúc mừng! Hồ sơ đăng ký doanh nghiệp của công ty '" + companyName + "' đã được Quản trị viên của chúng tôi phê duyệt thành công.\n\n" +
+                        "Ngay bây giờ, bạn có thể truy cập vào Hệ thống quản trị (Employer Dashboard) để bắt đầu sử dụng các tính năng AI, đăng tải tin tuyển dụng và tìm kiếm những ứng viên tài năng nhất.\n\n" +
+                        "Nếu cần hỗ trợ thêm, vui lòng liên hệ với chúng tôi.\n\n" +
+                        "Trân trọng,\n" +
+                        "Ban quản trị JobPortal."
+        );
+        mailSender.send(message);
+    }
+
+    // ====================================================================
+    // HÀM 4: GỬI EMAIL KHI CÔNG TY BỊ ADMIN TỪ CHỐI (TÙY CHỌN)
+    // ====================================================================
+    public void sendCompanyRejectedEmail(String toEmail, String companyName) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(toEmail);
+        message.setSubject("JobPortal - Thông báo về hồ sơ doanh nghiệp");
+
+        message.setText(
+                "Xin chào,\n\n" +
+                        "Cảm ơn bạn đã đăng ký hồ sơ doanh nghiệp cho công ty '" + companyName + "' trên nền tảng của chúng tôi.\n\n" +
+                        "Tuy nhiên, sau khi xem xét, chúng tôi rất tiếc phải thông báo rằng hồ sơ công ty của bạn hiện chưa đáp ứng đủ các tiêu chuẩn hoặc thông tin chưa rõ ràng để được phê duyệt.\n\n" +
+                        "Vui lòng đăng nhập lại hệ thống, kiểm tra và cập nhật lại thông tin công ty (Tên, Địa chỉ, Mã số thuế, Logo...) sao cho chính xác nhất. Sau khi cập nhật, hệ thống sẽ tự động gửi lại yêu cầu phê duyệt cho Quản trị viên.\n\n" +
+                        "Trân trọng,\n" +
+                        "Ban quản trị JobPortal."
+        );
+        mailSender.send(message);
+    }
 }

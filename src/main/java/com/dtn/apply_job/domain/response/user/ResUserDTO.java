@@ -35,6 +35,7 @@ public class ResUserDTO {
     public static class CompanyUser {
         private Long id;
         String name;
+        String logo;
     }
 
 }

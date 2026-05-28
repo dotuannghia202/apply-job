@@ -15,6 +15,9 @@ import com.dtn.apply_job.exception.InvalidRequestException;
 import com.dtn.apply_job.repository.*;
 import com.dtn.apply_job.security.SecurityUtil;
 import com.dtn.apply_job.util.constant.enums.ERole;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -73,6 +76,7 @@ public class UserService {
                 ResUserDTO.CompanyUser companyUserDTO = new ResUserDTO.CompanyUser();
                 companyUserDTO.setId(user.getCompany().getId());
                 companyUserDTO.setName(user.getCompany().getName());
+                companyUserDTO.setLogo(user.getCompany().getLogo());
                 userDTO.setCompany(companyUserDTO);
             }
 
@@ -199,6 +203,7 @@ public class UserService {
             ResUserDTO.CompanyUser companyUser = new ResUserDTO.CompanyUser();
             companyUser.setId(targetUser.getCompany().getId());
             companyUser.setName(targetUser.getCompany().getName());
+            companyUser.setLogo(targetUser.getCompany().getLogo());
             resUserDTO.setCompany(companyUser);
         } else {
             resUserDTO.setCompany(null);
@@ -431,5 +436,56 @@ public class UserService {
         userRepository.save(currentUser);
     }
 
+    private Specification<User> buildUserFilterSpec(String keyword, Boolean isActive, ERole role) {
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            boolean needsDistinct = false;
 
+            // 1. LỌC THEO TỪ KHÓA (TÌM TÊN HOẶC EMAIL) -> Dùng OR
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                String pattern = "%" + keyword.trim().toLowerCase() + "%";
+                Predicate byName = cb.like(cb.lower(root.get("name")), pattern);
+                Predicate byEmail = cb.like(cb.lower(root.get("email")), pattern);
+                predicates.add(cb.or(byName, byEmail));
+            }
+
+            // 2. LỌC THEO TRẠNG THÁI ACTIVE
+            if (isActive != null) {
+                predicates.add(cb.equal(root.get("isActive"), isActive));
+            }
+
+            // 3. LỌC THEO QUYỀN (ROLE) -> Phải JOIN vào bảng Roles
+            if (role != null) {
+                Join<User, Role> roleJoin = root.join("roles", JoinType.INNER);
+                predicates.add(cb.equal(roleJoin.get("name"), role));
+                needsDistinct = true; // Bật cờ Distinct để tránh bị lặp data do JOIN N-N
+            }
+
+            // Bật DISTINCT nếu có join bảng
+            if (needsDistinct) {
+                query.distinct(true);
+            }
+
+            return predicates.isEmpty() ? cb.conjunction() : cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    // 2. HÀM GỌI API CHO CONTROLLER SỬ DỤNG
+    // =========================================================
+    public ResultPaginationDTO getAllUsersWithFilters(
+            Specification<User> spec,
+            Pageable pageable,
+            String keyword,
+            Boolean isActive,
+            ERole role
+    ) {
+        // Build lớp giáp bộ lọc tùy chỉnh
+        Specification<User> filterSpec = buildUserFilterSpec(keyword, isActive, role);
+
+        // Nối lớp giáp với bộ lọc của Frontend (Nếu có)
+        Specification<User> combinedSpec = spec == null ? filterSpec : spec.and(filterSpec);
+
+        // Gọi hàm getAllUsers CŨ của bạn truyền Specification vào
+        return getAllUsers(combinedSpec, pageable);
+    }
 }

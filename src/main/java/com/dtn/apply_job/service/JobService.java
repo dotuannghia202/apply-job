@@ -11,6 +11,7 @@ import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.exception.InvalidDateRangeException;
 import com.dtn.apply_job.repository.*;
 import com.dtn.apply_job.security.SecurityUtil;
+import com.dtn.apply_job.util.constant.enums.CompanyStatus;
 import com.dtn.apply_job.util.constant.enums.LevelEnum;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
@@ -47,10 +48,14 @@ public class JobService {
         this.applicationRepository = applicationRepository;
     }
 
-    public ResJobDTO handleCreateJob(ReqCreateJobDTO reqDTO) throws IdInvalidException, InvalidDateRangeException {
+    public ResJobDTO handleCreateJob(ReqCreateJobDTO reqDTO) throws IdInvalidException, InvalidDateRangeException, Exception {
         // 1. KIỂM TRA SỰ TỒN TẠI CỦA COMPANY
         Company company = companyRepository.findById(reqDTO.getCompanyId())
                 .orElseThrow(() -> new IdInvalidException("Company doesn't exist!"));
+
+        if (!company.getStatus().equals(CompanyStatus.APPROVED)) {
+            throw new Exception("Hồ sơ Công ty của bạn chưa được Admin phê duyệt. Vui lòng chờ để được đăng tin!");
+        }
 
         // 2. KIỂM TRA SỰ TỒN TẠI CỦA SPECIALIZATION
         Specialization spec = specializationRepository.findById(reqDTO.getSpecializationId())
@@ -186,7 +191,7 @@ public class JobService {
 
         currentJob.setStartDate(reqDTO.getStartDate());
         currentJob.setEndDate(reqDTO.getEndDate());
-        
+
         currentJob.setBenefits(reqDTO.getBenefits());
         currentJob.setWorkingHours(reqDTO.getWorkingHours());
 
@@ -245,6 +250,8 @@ public class JobService {
                 results.add(handleCreateJob(reqDTOs.get(i)));
             } catch (IdInvalidException | InvalidDateRangeException ex) {
                 throw new IdInvalidException("Job at index " + i + " is invalid: " + ex.getMessage());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
         }
 

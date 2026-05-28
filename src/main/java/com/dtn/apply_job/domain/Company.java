@@ -1,6 +1,7 @@
 package com.dtn.apply_job.domain;
 
 import com.dtn.apply_job.security.SecurityUtil;
+import com.dtn.apply_job.util.constant.enums.CompanyStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -22,6 +23,10 @@ public class Company {
 
     @NotBlank(message = "Field name is required!")
     private String name;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private CompanyStatus status = CompanyStatus.PENDING;
 
     @Column(columnDefinition = "TEXT")
     private String description;
