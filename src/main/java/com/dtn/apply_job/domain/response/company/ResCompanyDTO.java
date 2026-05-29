@@ -13,6 +13,8 @@ public class ResCompanyDTO {
     private long id;
     private String name;
     private String logo;
+    private String address;
+    private String description;
 
     // Cột 2: EMPLOYER
     private String employerName;
@@ -21,6 +23,11 @@ public class ResCompanyDTO {
     // Cột 3 & 4: DATES & STATUS
 
     private Instant createdAt;
+
+    
+    private Instant updatedAt;
+
+    private String updatedBy;
 
     private CompanyStatus status;
 }

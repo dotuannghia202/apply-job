@@ -4,6 +4,9 @@ import com.dtn.apply_job.common.annotation.ApiMessage;
 import com.dtn.apply_job.common.response.ResultPaginationDTO;
 import com.dtn.apply_job.domain.Company;
 import com.dtn.apply_job.domain.request.company.ReqCreateCompanyDTO;
+import com.dtn.apply_job.domain.request.company.ReqUpdateCompanyDTO;
+import com.dtn.apply_job.domain.response.company.ResCompanyDTO;
+import com.dtn.apply_job.domain.response.company.ResCompanyStatsDTO;
 import com.dtn.apply_job.domain.response.company.ResCreateCompanyDTO;
 import com.dtn.apply_job.service.CompanyService;
 import com.dtn.apply_job.util.constant.enums.CompanyStatus;
@@ -64,17 +67,20 @@ public class CompanyController {
         return ResponseEntity.ok(result);
     }
 
-    @PutMapping("/companies/{id}")
-    public ResponseEntity<Company> updateCompany(@PathVariable long id, @Valid @RequestBody Company company) {
-        Company companyUpdated = this.companyService.handleUpdateCompany(id, company);
-        return ResponseEntity.status(HttpStatus.OK).body(companyUpdated);
+    @PutMapping("companies/{id}")
+    @PreAuthorize("hasRole('EMPLOYER')")
+    @ApiMessage("Cập nhật thông tin công ty thành công")
+    public ResponseEntity<ResCompanyDTO> updateCompany(
+            @PathVariable long id,
+            @Valid @RequestBody ReqUpdateCompanyDTO reqDTO) throws Exception {
+        return ResponseEntity.ok(companyService.handleUpdateCompany(id, reqDTO));
     }
 
-    @DeleteMapping("/companies/{id}")
-    public ResponseEntity<Void> deleteCompany(@PathVariable long id) {
-        this.companyService.handleDeleteCompany(id);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
-    }
+//    @DeleteMapping("/companies/{id}")
+//    public ResponseEntity<Void> deleteCompany(@PathVariable long id) {
+//        this.companyService.handleDeleteCompany(id);
+//        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
+//    }
 
     @PutMapping("/{id}/approve")
     @PreAuthorize("hasRole('ADMIN')") // 🚨 CHỈ ADMIN ĐƯỢC GỌI
@@ -87,4 +93,30 @@ public class CompanyController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/companies/dashboard-stats")
+    @PreAuthorize("hasRole('ADMIN')")
+    @ApiMessage("Lấy thống kê trạng thái công ty")
+    public ResponseEntity<ResCompanyStatsDTO> getCompanyStats() {
+        return ResponseEntity.ok(companyService.getCompanyDashboardStats());
+    }
+
+    @GetMapping("/my-company")
+    @PreAuthorize("hasRole('EMPLOYER')")
+    @ApiMessage("Lấy hồ sơ công ty của tôi")
+    public ResponseEntity<ResCompanyDTO> getMyCompany() throws Exception {
+        return ResponseEntity.ok(companyService.handleGetMyCompany());
+    }
+    
+
+    // 2. API Đình chỉ / Mở khóa công ty đang hoạt động
+    @PutMapping("/{id}/suspend")
+    @PreAuthorize("hasRole('ADMIN')")
+    @ApiMessage("Cập nhật trạng thái đình chỉ công ty thành công")
+    public ResponseEntity<Void> toggleSuspendCompany(
+            @PathVariable("id") long companyId,
+            @RequestParam("isSuspended") boolean isSuspended) throws Exception {
+
+        companyService.toggleSuspendCompany(companyId, isSuspended);
+        return ResponseEntity.ok().build();
+    }
 }

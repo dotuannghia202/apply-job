@@ -4,7 +4,9 @@ import com.dtn.apply_job.common.response.ResultPaginationDTO;
 import com.dtn.apply_job.domain.Company;
 import com.dtn.apply_job.domain.User;
 import com.dtn.apply_job.domain.request.company.ReqCreateCompanyDTO;
+import com.dtn.apply_job.domain.request.company.ReqUpdateCompanyDTO;
 import com.dtn.apply_job.domain.response.company.ResCompanyDTO;
+import com.dtn.apply_job.domain.response.company.ResCompanyStatsDTO;
 import com.dtn.apply_job.domain.response.company.ResCreateCompanyDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.repository.CompanyRepository;
@@ -17,6 +19,7 @@ import lombok.Setter;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -96,17 +99,30 @@ public class CompanyService {
         return this.companyRepository.saveAll(companies);
     }
 
-    public Company handleUpdateCompany(long id, Company company) {
-        Optional<Company> optionalCompany = this.companyRepository.findById(id);
-        if (optionalCompany.isPresent()) {
-            Company updatedCompany = optionalCompany.get();
-            updatedCompany.setName(company.getName());
-            updatedCompany.setAddress(company.getAddress());
-            updatedCompany.setLogo(company.getLogo());
-            updatedCompany.setDescription(company.getDescription());
-            return this.companyRepository.save(updatedCompany);
+    @Transactional
+    public ResCompanyDTO handleUpdateCompany(long id, ReqUpdateCompanyDTO reqDTO) throws Exception {
+        // 1. Kiểm tra User đang đăng nhập
+        String email = SecurityUtil.getCurrentUser()
+                .orElseThrow(() -> new IdInvalidException("Vui lòng đăng nhập!"));
+        User currentUser = userRepository.findByEmail(email);
+
+        // 2. 🚨 BẢO MẬT IDOR: User này có Công ty không? Và ID công ty có khớp với ID trên URL không?
+        if (currentUser.getCompany() == null || currentUser.getCompany().getId() != id) {
+            throw new AccessDeniedException("Lỗi bảo mật: Bạn không có quyền sửa thông tin công ty của người khác!");
         }
-        return null;
+
+        // 3. Tiến hành cập nhật
+        Company currentCompany = currentUser.getCompany();
+        if (reqDTO.getName() != null) currentCompany.setName(reqDTO.getName());
+        if (reqDTO.getAddress() != null) currentCompany.setAddress(reqDTO.getAddress());
+        if (reqDTO.getDescription() != null) currentCompany.setDescription(reqDTO.getDescription());
+        if (reqDTO.getLogo() != null) currentCompany.setLogo(reqDTO.getLogo());
+
+        // 💡 NGHIỆP VỤ PRO (Tùy chọn): Nếu HR sửa thông tin, đổi trạng thái về PENDING để Admin duyệt lại
+        // currentCompany.setStatus(CompanyStatus.PENDING);
+
+        Company updatedCompany = companyRepository.save(currentCompany);
+        return convertToResCompanyDTO(updatedCompany);
     }
 
     public void handleDeleteCompany(long id) {
@@ -122,8 +138,34 @@ public class CompanyService {
         this.companyRepository.deleteById(id);
     }
 
-    public Optional<Company> handleGetCompanyById(long id) {
-        return this.companyRepository.findById(id);
+    // LẤY CHI TIẾT CÔNG TY (Theo ID)
+    public ResCompanyDTO handleGetCompanyById(long id) throws Exception {
+        Company company = companyRepository.findById(id)
+                .orElseThrow(() -> new IdInvalidException("Công ty không tồn tại!"));
+
+        String email = SecurityUtil.getCurrentUser().orElse("");
+        boolean isAdmin = false;
+        boolean isOwner = false;
+
+        if (!email.isBlank()) {
+            User currentUser = userRepository.findByEmail(email);
+            isAdmin = currentUser.getRoles().stream()
+                    .anyMatch(r -> r.getName().name().equals("ROLE_ADMIN") || r.getName().name().equals("ADMIN"));
+
+            if (currentUser.getCompany() != null && currentUser.getCompany().getId() == id) {
+                isOwner = true;
+            }
+        }
+
+        // 🚨 CHỐNG RÒ RỈ DỮ LIỆU: Nếu công ty chưa duyệt, chỉ Admin và Chủ mới được xem!
+        if (!company.getStatus().name().equals("APPROVED")) {
+            if (!isAdmin && !isOwner) {
+                // Ném 404 để ứng viên tưởng công ty không tồn tại
+                throw new IdInvalidException("Công ty không tồn tại hoặc chưa được phê duyệt!");
+            }
+        }
+
+        return convertToResCompanyDTO(company); // (Bạn dùng hàm mapper của bạn nhé)
     }
 
     @Transactional
@@ -247,5 +289,97 @@ public class CompanyService {
         resultPaginationDTO.setResult(listDTO);
 
         return resultPaginationDTO;
+    }
+
+    public ResCompanyStatsDTO getCompanyDashboardStats() {
+        ResCompanyStatsDTO stats = new ResCompanyStatsDTO();
+
+        stats.setTotalCompanies(companyRepository.count());
+        stats.setPendingApproval(companyRepository.countByStatus(CompanyStatus.PENDING));
+        stats.setApproved(companyRepository.countByStatus(CompanyStatus.APPROVED));
+
+        return stats;
+    }
+
+    public ResCompanyDTO handleGetMyCompany() throws Exception {
+        String email = SecurityUtil.getCurrentUser()
+                .orElseThrow(() -> new IdInvalidException("Vui lòng đăng nhập!"));
+        User currentUser = userRepository.findByEmail(email);
+
+        if (currentUser.getCompany() == null) {
+            throw new IdInvalidException("Bạn chưa có công ty nào!");
+        }
+
+        return convertToResCompanyDTO(currentUser.getCompany());
+    }
+
+    // =======================================================
+    // HÀM MAPPER: CONVERT ENTITY -> DTO
+    // =======================================================
+    private ResCompanyDTO convertToResCompanyDTO(Company company) {
+        ResCompanyDTO dto = new ResCompanyDTO();
+        dto.setId(company.getId());
+        dto.setName(company.getName());
+        dto.setLogo(company.getLogo());
+        dto.setAddress(company.getAddress());
+        dto.setDescription(company.getDescription());
+        dto.setCreatedAt(company.getCreatedAt());
+        dto.setStatus(company.getStatus());
+
+        dto.setUpdatedAt(company.getUpdatedAt());
+        dto.setUpdatedBy(company.getUpdatedBy());
+
+        // Lấy Email người tạo công ty từ Audit Log (@PrePersist đã tự lưu)
+        String creatorEmail = company.getCreatedBy();
+
+        if (creatorEmail != null && !creatorEmail.isBlank()) {
+            // Chọc sang UserRepository để tìm tên của người HR này
+            User creator = userRepository.findByEmail(creatorEmail);
+            if (creator != null) {
+                dto.setEmployerName(creator.getName());
+                dto.setEmployerEmail(creator.getEmail());
+            }
+        }
+
+        return dto;
+    }
+
+    @Transactional
+    public void toggleSuspendCompany(long companyId, boolean isSuspended) throws Exception {
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new IdInvalidException("Công ty không tồn tại!"));
+
+        // Không cho phép đình chỉ công ty chưa được duyệt
+        if (company.getStatus() == CompanyStatus.PENDING || company.getStatus() == CompanyStatus.REJECTED) {
+            throw new Exception("Chỉ có thể đình chỉ các công ty đã được phê duyệt!");
+        }
+
+        // Cập nhật trạng thái
+        if (isSuspended) {
+            company.setStatus(CompanyStatus.SUSPENDED);
+        } else {
+            company.setStatus(CompanyStatus.APPROVED);
+        }
+        companyRepository.save(company);
+
+        // Gửi thông báo cho Chủ công ty
+        Optional<List<User>> optionalUsers = userRepository.findByCompany(company);
+        if (optionalUsers.isPresent() && !optionalUsers.get().isEmpty()) {
+            User primaryEmployer = optionalUsers.get().get(0);
+
+            String title = isSuspended ? "CẢNH BÁO: Đình chỉ hoạt động doanh nghiệp" : "Thông báo: Phục hồi hoạt động doanh nghiệp";
+            String message = isSuspended
+                    ? "Tài khoản công ty " + company.getName() + " của bạn đã bị đình chỉ do vi phạm chính sách nền tảng. Các tin tuyển dụng của bạn sẽ bị ẩn. Vui lòng liên hệ Admin để được hỗ trợ."
+                    : "Tài khoản công ty " + company.getName() + " đã được mở khóa. Bạn có thể tiếp tục hoạt động bình thường.";
+
+            // Bắn Notification (Lưu DB + WebSocket)
+            notificationService.sendToUser(primaryEmployer, title, message);
+
+            // Gửi Email (Có thể tự tạo thêm 2 hàm sendCompanySuspendedEmail và sendCompanyRestoredEmail trong EmailService)
+            // new Thread(() -> {
+            //      if (isSuspended) emailService.sendCompanySuspendedEmail(...);
+            //      else emailService.sendCompanyRestoredEmail(...);
+            // }).start();
+        }
     }
 }
