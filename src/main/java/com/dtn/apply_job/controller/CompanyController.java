@@ -82,7 +82,7 @@ public class CompanyController {
 //        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
 //    }
 
-    @PutMapping("/{id}/approve")
+    @PutMapping("companies/{id}/approve")
     @PreAuthorize("hasRole('ADMIN')") // 🚨 CHỈ ADMIN ĐƯỢC GỌI
     @ApiMessage("Cập nhật trạng thái duyệt công ty thành công")
     public ResponseEntity<Void> approveCompany(
@@ -106,10 +106,10 @@ public class CompanyController {
     public ResponseEntity<ResCompanyDTO> getMyCompany() throws Exception {
         return ResponseEntity.ok(companyService.handleGetMyCompany());
     }
-    
+
 
     // 2. API Đình chỉ / Mở khóa công ty đang hoạt động
-    @PutMapping("/{id}/suspend")
+    @PutMapping("companies/{id}/suspend")
     @PreAuthorize("hasRole('ADMIN')")
     @ApiMessage("Cập nhật trạng thái đình chỉ công ty thành công")
     public ResponseEntity<Void> toggleSuspendCompany(
@@ -118,5 +118,13 @@ public class CompanyController {
 
         companyService.toggleSuspendCompany(companyId, isSuspended);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("companies/{id:\\d+}") // Dùng regex \d+ để tránh xung đột với các URL chữ (vd: /my-company)
+    @ApiMessage("Lấy chi tiết công ty thành công")
+    // Không dùng @PreAuthorize ở đây để Guest (Khách chưa login) cũng xem được
+    public ResponseEntity<ResCompanyDTO> getCompanyById(@PathVariable("id") long id) throws Exception {
+        // Lưu ý: Logic chặn xem công ty PENDING/REJECTED đã được viết kỹ trong Service rồi
+        return ResponseEntity.ok(companyService.handleGetCompanyById(id));
     }
 }

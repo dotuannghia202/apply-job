@@ -1,5 +1,6 @@
 package com.dtn.apply_job.domain;
 
+import com.dtn.apply_job.util.constant.enums.ERole;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,6 +25,15 @@ public class Notification {
 
     @Column(columnDefinition = "TEXT")
     private String message;
+
+    private String type;
+
+    // ID của đối tượng liên quan (VD: ID của Đơn ứng tuyển, ID của Công ty). Có thể null.
+    private Long referenceId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "target_role")
+    private ERole targetRole;
 
     private boolean isRead = false; // Đã đọc hay chưa?
 
