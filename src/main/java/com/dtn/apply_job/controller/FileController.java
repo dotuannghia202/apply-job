@@ -5,15 +5,13 @@ import com.dtn.apply_job.domain.response.file.ResUploadFileDTO;
 import com.dtn.apply_job.exception.FileUploadException;
 import com.dtn.apply_job.service.FileService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.InputStreamResource;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.time.Instant;
@@ -60,34 +58,5 @@ public class FileController {
         return ResponseEntity.ok().body(resUploadFileDTO);
     }
 
-    // =========================================================
-    // API DOWNLOAD TỪ LOCAL (BACKUP CHO CÁC FILE CŨ Ở Ổ CỨNG)
-    // *Lưu ý: Cloudinary dùng link trực tiếp nên không cần API này
-    // =========================================================
-    @GetMapping("/files")
-    @ApiMessage("Down load local file")
-    public ResponseEntity<Resource> download(
-            @RequestParam(name = "fileName", required = false) String fileName,
-            @RequestParam(name = "folder", required = false) String folder)
-            throws FileUploadException, URISyntaxException, FileNotFoundException {
 
-        if (fileName == null || folder == null) {
-            throw new FileUploadException("File name or folder required!");
-        }
-
-        //check file exist (and not a directory)
-        long fileLength = this.fileService.getFileLength(fileName, folder);
-        if (fileLength == 0) {
-            throw new FileUploadException("File with name = " + fileName + " not found!");
-        }
-
-        //download a file
-        InputStreamResource resource = this.fileService.getResource(fileName, folder);
-
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
-                .contentLength(fileLength)
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(resource);
-    }
 }
