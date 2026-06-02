@@ -17,6 +17,7 @@ import com.dtn.apply_job.repository.JobRepository;
 import com.dtn.apply_job.repository.ResumeRepository;
 import com.dtn.apply_job.repository.UserRepository;
 import com.dtn.apply_job.security.SecurityUtil;
+import com.dtn.apply_job.util.constant.enums.ERole;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -34,14 +35,16 @@ public class ApplicationService {
     private final JobRepository jobRepository;
     private final ResumeRepository resumeRepository;
     private final AiPythonService aiPythonService;
+    private final NotificationService notificationService;
 
 
-    public ApplicationService(ApplicationRepository applicationRepository, UserRepository userRepository, JobRepository jobRepository, ResumeRepository resumeRepository, AiPythonService aiPythonService) {
+    public ApplicationService(ApplicationRepository applicationRepository, UserRepository userRepository, JobRepository jobRepository, ResumeRepository resumeRepository, AiPythonService aiPythonService, NotificationService notificationService) {
         this.applicationRepository = applicationRepository;
         this.userRepository = userRepository;
         this.jobRepository = jobRepository;
         this.resumeRepository = resumeRepository;
         this.aiPythonService = aiPythonService;
+        this.notificationService = notificationService;
     }
 
     // HÀM KIỂM TRA QUYỀN TRUY CẬP (CHỐNG LỖI IDOR)
@@ -208,6 +211,49 @@ public class ApplicationService {
 
         app.setStatus(reqDTO.getStatus());
         Application updatedApp = applicationRepository.save(app);
+
+        // BẮT ĐẦU LOGIC BẮN THÔNG BÁO CHO ỨNG VIÊN
+        // =========================================================
+        try {
+            // 1. Tìm ra ai là ứng viên của đơn này và tên công việc là gì
+            User candidate = updatedApp.getResume().getCandidate();
+            String jobTitle = updatedApp.getJob().getName();
+            String statusName = updatedApp.getStatus().name();
+
+            // 2. Tùy chỉnh lời nhắn dựa vào trạng thái (Bạn hãy sửa lại các case cho khớp với Enum của bạn)
+            String title = "Cập nhật trạng thái ứng tuyển";
+            String message = "Đơn ứng tuyển của bạn cho vị trí [" + jobTitle + "] đã chuyển sang trạng thái: " + statusName;
+
+            switch (statusName) {
+                case "APPROVED": // Hoặc ACCEPTED tùy bạn đặt
+                    title = "🎉 Chúc mừng! Đơn ứng tuyển được duyệt";
+                    message = "Nhà tuyển dụng đã duyệt CV của bạn cho vị trí [" + jobTitle + "]. Vui lòng kiểm tra email để xem lịch phỏng vấn.";
+                    break;
+                case "REJECTED":
+                    title = "Cập nhật trạng thái ứng tuyển";
+                    message = "Rất tiếc, đơn ứng tuyển vị trí [" + jobTitle + "] của bạn chưa phù hợp ở thời điểm hiện tại.";
+                    break;
+                case "REVIEWING":
+                    title = "CV đang được xem xét";
+                    message = "Nhà tuyển dụng đang xem xét CV của bạn cho vị trí [" + jobTitle + "].";
+                    break;
+            }
+
+            // 3. Gọi hàm sendToUser (Nhớ import ERole nếu file này chưa có)
+            notificationService.sendToUser(
+                    candidate,
+                    title,
+                    message,
+                    "APPLICATION_STATUS_UPDATED",
+                    updatedApp.getId(),
+                    ERole.CANDIDATE // 👉 Ép thẳng cho ROLE USER (Ứng viên)
+            );
+        } catch (Exception e) {
+            // In lỗi ra console nhưng không làm gián đoạn việc cập nhật trạng thái
+            System.err.println("Lỗi khi gửi thông báo: " + e.getMessage());
+        }
+        // =========================================================
+        // KẾT THÚC LOGIC BẮN THÔNG BÁO
         return convertToResUpdateAppDTO(updatedApp);
     }
 
