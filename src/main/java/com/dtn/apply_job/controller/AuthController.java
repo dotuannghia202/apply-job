@@ -21,6 +21,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -117,7 +118,7 @@ public class AuthController {
     ) throws Exception {
 
         if (refreshToken == null || refreshToken.isBlank()) {
-            throw new IdInvalidException("Refresh token is missing!");
+            throw new BadCredentialsException("Refresh token is missing!");
         }
 
         // 1. Verify refresh token
@@ -220,6 +221,7 @@ public class AuthController {
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
+                .sameSite("None")
                 .maxAge(refreshTokenExpiration / 1000)
                 .build();
     }
