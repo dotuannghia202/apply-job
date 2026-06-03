@@ -135,7 +135,7 @@ public class JobService {
             Double minSalary,
             Double maxSalary,
             String name,
-            String keyword,
+
             String skill,
             Boolean active,
             Integer sortCreatedAt
@@ -146,7 +146,7 @@ public class JobService {
 
         Specification<Job> filterSpec = buildJobFilterSpec(
                 location, levelEnums, specializationId, companyName,
-                minSalary, maxSalary, name, keyword, skill, active
+                minSalary, maxSalary, name, skill, active
         );
         Specification<Job> combinedSpec = spec == null ? filterSpec : spec.and(filterSpec);
 
@@ -358,7 +358,6 @@ public class JobService {
             Double minSalary,
             Double maxSalary,
             String name,
-            String keyword,
             String skill,
             Boolean active
     ) {
@@ -369,32 +368,29 @@ public class JobService {
             if (hasText(location)) {
                 predicates.add(cb.like(cb.lower(root.get("location")), "%" + location.trim().toLowerCase() + "%"));
             }
+
+            // 1. Lọc riêng theo tên công việc (name)
             if (hasText(name)) {
                 predicates.add(cb.like(cb.lower(root.get("name")), "%" + name.trim().toLowerCase() + "%"));
             }
+
+            // 2. Lọc riêng theo tên công ty (companyName)
             if (hasText(companyName)) {
                 predicates.add(cb.like(
                         cb.lower(root.get("company").get("name")),
                         "%" + companyName.trim().toLowerCase() + "%"
                 ));
             }
-            // Ô search chung: khớp tên job HOẶC tên công ty
-            if (hasText(keyword)) {
-                String pattern = "%" + keyword.trim().toLowerCase() + "%";
-                Predicate byJobName = cb.like(cb.lower(root.get("name")), pattern);
-                Predicate byCompanyName = cb.like(cb.lower(root.get("company").get("name")), pattern);
-                predicates.add(cb.or(byJobName, byCompanyName));
-            }
+
+            // 👉 ĐÃ XÓA ĐOẠN XỬ LÝ KEYWORD (if hasText(keyword) { ... }) Ở ĐÂY
+
             if (specializationId != null && specializationId > 0) {
                 predicates.add(cb.equal(root.get("specialization").get("id"), specializationId));
             }
-            // Lọc theo khoảng lương: Job phù hợp khi khoảng lương của job giao với khoảng filter
-            // 1. Nếu chỉ truyền minSalary: Tìm các job có lương tối thiểu >= minSalary
+
             if (minSalary != null) {
                 predicates.add(cb.greaterThanOrEqualTo(root.get("minSalary"), minSalary));
             }
-
-            // 2. Nếu chỉ truyền maxSalary: Tìm các job có lương tối đa <= maxSalary
             if (maxSalary != null) {
                 predicates.add(cb.lessThanOrEqualTo(root.get("maxSalary"), maxSalary));
             }
@@ -649,7 +645,7 @@ public class JobService {
         // Lưu ý: Truyền securedSpec vào thay vì spec ban đầu
         return handleGetAllJobsWithFilters(
                 securedSpec, pageable, location, levels, specializationId,
-                companyName, minSalary, maxSalary, name, keyword, skill, active, sortCreatedAt
+                companyName, minSalary, maxSalary, name, skill, active, sortCreatedAt
         );
     }
 
