@@ -1,10 +1,7 @@
 package com.dtn.apply_job.service;
 
 import com.dtn.apply_job.common.response.ResultPaginationDTO;
-import com.dtn.apply_job.domain.Application;
-import com.dtn.apply_job.domain.Job;
-import com.dtn.apply_job.domain.Resume;
-import com.dtn.apply_job.domain.User;
+import com.dtn.apply_job.domain.*;
 import com.dtn.apply_job.domain.request.application.ReqCreateApplicationDTO;
 import com.dtn.apply_job.domain.request.application.ReqUpdateAppByCandidateDTO;
 import com.dtn.apply_job.domain.request.application.ReqUpdateApplicationStatusDTO;
@@ -119,16 +116,52 @@ public class ApplicationService {
 
         Application savedApp = applicationRepository.save(application);
 
-        // KÍCH HOẠT AI CHẠY NGẦM SAU KHI LƯU DB
-        // 1. Gộp Job Description và Requirements thành 1 khối Text để AI đọc
+
+        // 6. THÊM MỚI: BẮN THÔNG BÁO CHO NHÀ TUYỂN DỤNG (HR) CỦA CÔNG TY ĐÓ
+        try {
+            // Lấy danh sách HR thuộc công ty đăng Job này
+            Company company = job.getCompany();
+
+            if (company != null && company.getUsers() != null) {
+                String candidateName = candidate.getName();
+                String jobTitle = job.getName();
+
+                String title = "Có ứng viên mới nộp CV!";
+                String message = "Ứng viên " + candidateName + " vừa ứng tuyển vào vị trí [" + jobTitle + "].";
+
+                // Duyệt qua tất cả các user thuộc công ty này
+                for (User hr : company.getUsers()) {
+                    // Kiểm tra chắc chắn user này có quyền HR/EMPLOYER (tránh gửi nhầm cho Admin nếu có)
+                    boolean isEmployer = hr.getRoles().stream()
+                            .anyMatch(r -> r.getName().name().equals("ROLE_EMPLOYER") || r.getName().name().equals("EMPLOYER"));
+
+                    if (isEmployer) {
+                        notificationService.sendToUser(
+                                hr,
+                                title,
+                                message,
+                                "NEW_APPLICATION",
+                                savedApp.getId(),
+                                com.dtn.apply_job.util.constant.enums.ERole.EMPLOYER
+                        );
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Lỗi khi gửi thông báo cho HR: " + e.getMessage());
+        }
+
+
+        // 7. KÍCH HOẠT AI CHẠY NGẦM SAU KHI LƯU DB
+        // 7.1. Gộp Job Description và Requirements thành 1 khối Text để AI đọc
         String jobTextForAI = "";
         if (job.getDescription() != null) jobTextForAI += job.getDescription() + "\n";
         if (job.getRequirements() != null) jobTextForAI += job.getRequirements();
 
-        // 2. Lấy Text của CV đã được Python bóc tách từ trước
+        // 7.2. Lấy Text của CV đã được Python bóc tách từ trước
         String cvTextForAI = resume.getParsedText();
 
-        // 3. Gọi Service chạy ngầm
+        // 7.3. Gọi Service chạy ngầm
         aiPythonService.calculateMatchScoreAsync(savedApp.getId(), jobTextForAI, cvTextForAI);
 
         ResCreateApplicationDTO res = new ResCreateApplicationDTO();

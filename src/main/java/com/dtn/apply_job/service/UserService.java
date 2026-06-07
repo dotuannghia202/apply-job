@@ -186,6 +186,7 @@ public class UserService {
         ResUserDTO resUserDTO = new ResUserDTO();
         resUserDTO.setId(targetUser.getId());
         resUserDTO.setName(targetUser.getName());
+        resUserDTO.setActive(targetUser.getIsActive());
         resUserDTO.setAvatarUrl(targetUser.getAvatarUrl());
         resUserDTO.setEmail(targetUser.getEmail());
         resUserDTO.setAge(targetUser.getAge());
