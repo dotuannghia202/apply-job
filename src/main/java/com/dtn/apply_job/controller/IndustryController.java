@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,8 +21,9 @@ import org.springframework.web.bind.annotation.*;
 public class IndustryController {
 
     private final IndustryService industryService;
-
+    
     @PostMapping("/industries")
+    @PreAuthorize("hasRole('ADMIN')")
     @ApiMessage("Create industry")
     public ResponseEntity<Industry> createIndustry(@Valid @RequestBody Industry industry) {
         Industry newIndustry = this.industryService.handleCreateIndustry(industry);
@@ -29,12 +31,22 @@ public class IndustryController {
     }
 
     @PutMapping("/industries/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @ApiMessage("Update industry")
     public ResponseEntity<Industry> updateIndustry(@PathVariable long id, @Valid @RequestBody Industry industry)
             throws IdInvalidException {
         Industry updatedIndustry = this.industryService.handleUpdateIndustry(id, industry);
         return ResponseEntity.status(HttpStatus.OK).body(updatedIndustry);
     }
+
+    @DeleteMapping("/industries/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @ApiMessage("Delete industry")
+    public ResponseEntity<Void> deleteIndustry(@PathVariable long id) throws IdInvalidException {
+        this.industryService.handleDeleteIndustry(id);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
 
     @GetMapping("/industries/{id}")
     @ApiMessage("Fetch industry by Id")
@@ -52,12 +64,4 @@ public class IndustryController {
         ResultPaginationDTO result = this.industryService.handleGetAllIndustries(spec, pageable);
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
-
-    @DeleteMapping("/industries/{id}")
-    @ApiMessage("Delete industry")
-    public ResponseEntity<Void> deleteIndustry(@PathVariable long id) throws IdInvalidException {
-        this.industryService.handleDeleteIndustry(id);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-    }
 }
-
