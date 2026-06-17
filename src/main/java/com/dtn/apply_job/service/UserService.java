@@ -15,9 +15,7 @@ import com.dtn.apply_job.exception.InvalidRequestException;
 import com.dtn.apply_job.repository.*;
 import com.dtn.apply_job.security.SecurityUtil;
 import com.dtn.apply_job.util.constant.enums.ERole;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
-import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -483,8 +481,25 @@ public class UserService {
         // Build lớp giáp bộ lọc tùy chỉnh
         Specification<User> filterSpec = buildUserFilterSpec(keyword, isActive, role);
 
+        // Lớp giáp loại bỏ những User có quyền ADMIN
+        Specification<User> excludeAdminSpec = (root, query, cb) -> {
+            // Tạo một Subquery (Truy vấn phụ) để tìm ID của tất cả những người là ADMIN
+            Subquery<Long> subquery = query.subquery(Long.class);
+            Root<User> subRoot = subquery.from(User.class);
+            Join<Object, Object> subRoles = subRoot.join("roles");
+
+            subquery.select(subRoot.get("id"))
+                    .where(cb.equal(subRoles.get("name"), ERole.ADMIN)); // Hoặc ROLE_ADMIN tùy cấu hình Enum của bạn
+
+            // Điều kiện chính: ID của User không được nằm trong danh sách ID của Subquery trên
+            return cb.not(root.get("id").in(subquery));
+        };
+
         // Nối lớp giáp với bộ lọc của Frontend (Nếu có)
         Specification<User> combinedSpec = spec == null ? filterSpec : spec.and(filterSpec);
+
+        // Chèn lớp giáp chặn Admin vào cuối cùng
+        combinedSpec = combinedSpec == null ? excludeAdminSpec : combinedSpec.and(excludeAdminSpec);
 
         // Gọi hàm getAllUsers CŨ của bạn truyền Specification vào
         return getAllUsers(combinedSpec, pageable);

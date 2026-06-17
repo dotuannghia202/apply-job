@@ -31,7 +31,10 @@ public class DashboardService {
         ResAdminDashboardDTO stats = new ResAdminDashboardDTO();
 
         // 1. Đếm người dùng
-        stats.setTotalUsers(userRepository.count());
+        long absoluteTotalUsers = userRepository.count();
+        long totalAdmins = userRepository.countByRoles_Name(ERole.ADMIN);
+        stats.setTotalUsers(absoluteTotalUsers - totalAdmins);
+
         // Chú ý: Đảm bảo ERole.CANDIDATE / ERole.EMPLOYER khớp với file Enum của bạn
         stats.setTotalCandidates(userRepository.countByRoles_Name(ERole.CANDIDATE));
         stats.setTotalEmployers(userRepository.countByRoles_Name(ERole.EMPLOYER));

@@ -138,7 +138,7 @@ public class AiPythonService {
         requestBody.put("title", reqDTO.getTitle());
         requestBody.put("skills", reqDTO.getSkills());
         requestBody.put("levels", reqDTO.getLevels());
-        
+
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
