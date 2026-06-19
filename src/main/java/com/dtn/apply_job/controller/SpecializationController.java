@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,6 +28,7 @@ public class SpecializationController {
     private final SpecializationService specializationService;
 
     @PostMapping("/specializations")
+    @PreAuthorize("hasRole('ADMIN')")
     @ApiMessage("Create specialization")
     public ResponseEntity<ResSpecializationDTO> createSpecialization(@Valid @RequestBody ReqCreateSpecializationDTO reqCreateSpecializationDTO)
             throws IdInvalidException {
@@ -35,6 +37,7 @@ public class SpecializationController {
     }
 
     @PutMapping("/specializations/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @ApiMessage("Update specialization")
     public ResponseEntity<Specialization> updateSpecialization(
             @PathVariable long id,
@@ -42,6 +45,14 @@ public class SpecializationController {
     ) throws IdInvalidException {
         Specialization updatedSpecialization = this.specializationService.handleUpdateSpecialization(id, specialization);
         return ResponseEntity.status(HttpStatus.OK).body(updatedSpecialization);
+    }
+
+    @DeleteMapping("/specializations/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @ApiMessage("Delete specialization")
+    public ResponseEntity<Void> deleteSpecialization(@PathVariable long id) throws IdInvalidException {
+        this.specializationService.handleDeleteSpecialization(id);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     @GetMapping("/specializations/{id}")
@@ -70,12 +81,4 @@ public class SpecializationController {
         List<ResSpecializationByIndustryId> result = this.specializationService.handleGetSpecializationsByIndustryId(industryId);
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
-
-    @DeleteMapping("/specializations/{id}")
-    @ApiMessage("Delete specialization")
-    public ResponseEntity<Void> deleteSpecialization(@PathVariable long id) throws IdInvalidException {
-        this.specializationService.handleDeleteSpecialization(id);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-    }
 }
-
