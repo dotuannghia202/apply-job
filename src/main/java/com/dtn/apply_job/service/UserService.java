@@ -407,8 +407,8 @@ public class UserService {
         stats.setTotalActiveJobs(activeJobs);
         stats.setTotalApplicants(totalApplicants);
 
-        // Nếu avgScore bị null (do chưa có ai nộp hoặc chưa chạy AI), trả về 0.0 hoặc mock data 88.4
-        stats.setAvgAiMatchRate(avgScore != null ? Math.round(avgScore * 10.0) / 10.0 : 88.4);
+        // Nếu avgScore bị null (do chưa có ai nộp hoặc chưa chạy AI), trả về 0.0
+        stats.setAvgAiMatchRate(avgScore != null ? Math.round(avgScore * 10.0) / 10.0 : 0.0);
 
         return stats;
     }

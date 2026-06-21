@@ -42,6 +42,9 @@ public class AuthController {
     @Value("${jwt.refresh-token.expiration}")
     private long refreshTokenExpiration;
 
+    @Value("${jwt.access-token.expiration}")
+    private long accessTokenExpiration;
+
     public AuthController(
             AuthenticationManager authenticationManager,
             SecurityUtil securityUtil,
@@ -84,15 +87,16 @@ public class AuthController {
         User currentUser = userService.handleGetUserByUsername(userDetails.getUsername());
 
         ResLoginDTO response = new ResLoginDTO();
-        response.setAccessToken(accessToken);
-        // Tận dụng hàm buildUserLogin(User user) đã có sẵn ở dưới để tự động map cả Roles và Company
         response.setUserLogin(buildUserLogin(currentUser));
 
         // 6. Set cookie
-        ResponseCookie responseCookie = buildRefreshTokenCookie(refreshToken);
+        ResponseCookie refreshTokenCookie = buildRefreshTokenCookie(refreshToken);
+        ResponseCookie accessTokenCookie = buildAccessTokenCookie(accessToken);
+
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, responseCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
                 .body(response);
     }
 
@@ -138,7 +142,7 @@ public class AuthController {
                 currentUser.getName(),
                 currentUser.getPassword(),
                 currentUser.getAvatarUrl(),
-                securityUtil.buildAuthorities(currentUser) // nếu bạn chưa có hàm này thì xem ghi chú bên dưới
+                securityUtil.buildAuthorities(currentUser)
         );
 
         // 4. Dựng lại Authentication
@@ -155,13 +159,20 @@ public class AuthController {
         // 6. Update refresh token mới vào DB
         userService.handleUpdateUserToken(newRefreshToken, email);
 
-        // 7. Set cookie mới
-        ResponseCookie responseCookie = buildRefreshTokenCookie(newRefreshToken);
+        // ==========================================
+        // 7. SET LẠI COOKIE CHO CẢ 2 TOKEN MỚI
+        // ==========================================
+        ResponseCookie accessCookie = buildAccessTokenCookie(newAccessToken);
+        ResponseCookie refreshCookie = buildRefreshTokenCookie(newRefreshToken);
 
-        ResRefreshTokenDTO res = new ResRefreshTokenDTO(newAccessToken);
+        // Tạo một DTO rỗng (Không chứa access token nữa)
+        // Lưu ý: Bạn có thể vào file ResRefreshTokenDTO đổi nó thành class rỗng,
+        // Hoặc truyền null vào constructor: new ResRefreshTokenDTO(null)
+        ResRefreshTokenDTO res = new ResRefreshTokenDTO(null);
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, responseCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
                 .body(res);
     }
 
@@ -177,16 +188,28 @@ public class AuthController {
         // 1. Xóa refresh token trong DB
         userService.handleUpdateUserToken(null, email);
 
-        // 2. Xóa cookie
-        ResponseCookie deleteCookie = ResponseCookie.from("refresh_token", "")
+        // ==========================================
+        // 2. TẠO 2 COOKIE TRỐNG ĐỂ HỦY TOKEN (maxAge = 0)
+        // ==========================================
+        ResponseCookie deleteRefreshCookie = ResponseCookie.from("refresh_token", "")
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
+                .sameSite("None")
+                .maxAge(0)
+                .build();
+
+        ResponseCookie deleteAccessCookie = ResponseCookie.from("access_token", "")
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .sameSite("None")
                 .maxAge(0)
                 .build();
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, deleteCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, deleteAccessCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, deleteRefreshCookie.toString())
                 .build();
     }
 
@@ -225,6 +248,17 @@ public class AuthController {
                 .maxAge(refreshTokenExpiration / 1000)
                 .build();
     }
+
+    private ResponseCookie buildAccessTokenCookie(String accessToken) {
+        return ResponseCookie.from("access_token", accessToken)
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .sameSite("None")
+                .maxAge(accessTokenExpiration / 1000)
+                .build();
+    }
+
 
     @PostMapping("/forgot-password")
     @ApiMessage("Your new password has been sent to your email address!")

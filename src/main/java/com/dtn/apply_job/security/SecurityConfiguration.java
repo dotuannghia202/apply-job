@@ -2,6 +2,7 @@ package com.dtn.apply_job.security;
 
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.nimbusds.jose.util.Base64;
+import jakarta.servlet.http.Cookie;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,6 +21,8 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
+import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
 
 import javax.crypto.SecretKey;
@@ -37,10 +40,6 @@ public class SecurityConfiguration {
         return new BCryptPasswordEncoder();
     }
 
-    /**
-     * Nối Spring Security với CustomUserDetailsService + PasswordEncoder
-     * để xử lý authenticate(username, password)
-     */
     @Bean
     public DaoAuthenticationProvider authenticationProvider(
             CustomUserDetailsService customUserDetailsService
@@ -51,16 +50,34 @@ public class SecurityConfiguration {
         return provider;
     }
 
-    /**
-     * Bean này để AuthController có thể inject AuthenticationManager
-     * và gọi authenticationManager.authenticate(...)
-     */
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration authenticationConfiguration
     ) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
+
+    // =========================================================================
+    // DẠY SPRING SECURITY CÁCH LẤY TOKEN TỪ COOKIE "access_token"
+    // =========================================================================
+    @Bean
+    public BearerTokenResolver bearerTokenResolver() {
+        DefaultBearerTokenResolver defaultResolver = new DefaultBearerTokenResolver();
+
+        return request -> {
+            // 1. Ưu tiên tìm trong Cookie trước
+            if (request.getCookies() != null) {
+                for (Cookie cookie : request.getCookies()) {
+                    if ("access_token".equals(cookie.getName())) {
+                        return cookie.getValue();
+                    }
+                }
+            }
+            // 2. Nếu không có Cookie thì tìm trong Header (Authorization: Bearer ...)
+            return defaultResolver.resolve(request);
+        };
+    }
+    // =========================================================================
 
     @Bean
     public SecurityFilterChain filterChain(
@@ -94,6 +111,9 @@ public class SecurityConfiguration {
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
                         .authenticationEntryPoint(customAuthenticationEntryPoint)
+
+                        // 🟢 Gắn cái BearerTokenResolver vừa tạo ở trên vào chuỗi bảo mật
+                        .bearerTokenResolver(bearerTokenResolver())
                 )
                 .formLogin(form -> form.disable())
                 .httpBasic(httpBasic -> httpBasic.disable())
@@ -114,14 +134,6 @@ public class SecurityConfiguration {
         );
     }
 
-    /**
-     * Dùng để convert claim trong JWT thành authorities của Spring Security
-     * <p>
-     * Lưu ý:
-     * claimName phải khớp với claim bạn đang nhét vào access token.
-     * Nếu token của bạn đang dùng "permission" thì giữ nguyên.
-     * Nếu dùng "authorities" thì đổi lại thành "authorities".
-     */
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter =
@@ -129,8 +141,6 @@ public class SecurityConfiguration {
 
         grantedAuthoritiesConverter.setAuthorityPrefix("");
         grantedAuthoritiesConverter.setAuthoritiesClaimName("roles");
-
-        // hasRole("CANDIDATE") sẽ cần ROLE_CANDIDATE
         grantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
 
         JwtAuthenticationConverter jwtAuthenticationConverter =
