@@ -192,17 +192,17 @@ public class AuthController {
         // ==========================================
         ResponseCookie deleteRefreshCookie = ResponseCookie.from("refresh_token", "")
                 .httpOnly(true)
-                .secure(true)
+                .secure(false)
                 .path("/")
-                .sameSite("None")
+                .sameSite("Lax")
                 .maxAge(0)
                 .build();
 
         ResponseCookie deleteAccessCookie = ResponseCookie.from("access_token", "")
                 .httpOnly(true)
-                .secure(true)
+                .secure(false)
                 .path("/")
-                .sameSite("None")
+                .sameSite("Lax")
                 .maxAge(0)
                 .build();
 
