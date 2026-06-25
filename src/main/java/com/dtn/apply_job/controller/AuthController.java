@@ -241,9 +241,9 @@ public class AuthController {
     private ResponseCookie buildRefreshTokenCookie(String refreshToken) {
         return ResponseCookie.from("refresh_token", refreshToken)
                 .httpOnly(true)
-                .secure(true)
+                .secure(false)
                 .path("/")
-                .sameSite("None")
+                .sameSite("Lax")
                 .maxAge(refreshTokenExpiration / 1000)
                 .build();
     }
@@ -251,9 +251,9 @@ public class AuthController {
     private ResponseCookie buildAccessTokenCookie(String accessToken) {
         return ResponseCookie.from("access_token", accessToken)
                 .httpOnly(true)
-                .secure(true)
+                .secure(false)
                 .path("/")
-                .sameSite("None")
+                .sameSite("Lax")
                 .maxAge(accessTokenExpiration / 1000)
                 .build();
     }
