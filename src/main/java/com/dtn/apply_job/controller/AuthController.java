@@ -6,7 +6,6 @@ import com.dtn.apply_job.domain.request.auth.ReqForgotPasswordDTO;
 import com.dtn.apply_job.domain.request.auth.ReqRegisterDTO;
 import com.dtn.apply_job.domain.request.user.ReqLoginDTO;
 import com.dtn.apply_job.domain.response.user.ResLoginDTO;
-import com.dtn.apply_job.domain.response.user.ResRefreshTokenDTO;
 import com.dtn.apply_job.exception.EmailExistedException;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.security.CustomUserDetails;
@@ -117,7 +116,7 @@ public class AuthController {
     }
 
     @GetMapping("/refresh")
-    public ResponseEntity<ResRefreshTokenDTO> refreshToken(
+    public ResponseEntity<Void> refreshToken(
             @CookieValue(name = "refresh_token", defaultValue = "") String refreshToken
     ) throws Exception {
 
@@ -168,12 +167,12 @@ public class AuthController {
         // Tạo một DTO rỗng (Không chứa access token nữa)
         // Lưu ý: Bạn có thể vào file ResRefreshTokenDTO đổi nó thành class rỗng,
         // Hoặc truyền null vào constructor: new ResRefreshTokenDTO(null)
-        ResRefreshTokenDTO res = new ResRefreshTokenDTO(null);
+
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
-                .body(res);
+                .body(null);
     }
 
     @PostMapping("/logout")

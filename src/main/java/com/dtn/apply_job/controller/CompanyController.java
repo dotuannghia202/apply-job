@@ -36,7 +36,7 @@ public class CompanyController {
         this.companyService = companyService;
     }
 
-    @PreAuthorize("hasAnyRole('EMPLOYER', 'ADMIN')") // 🚨 CHỈ USER ĐƯỢC GỌI
+    @PreAuthorize("hasAnyRole('EMPLOYER', 'ADMIN')")
     @PostMapping("/companies")
     public ResponseEntity<ResCreateCompanyDTO> createCompany(@Valid @RequestBody ReqCreateCompanyDTO company) throws Exception {
         ResCreateCompanyDTO newCompany = this.companyService.handleCreateCompany(company);
@@ -50,7 +50,7 @@ public class CompanyController {
     }
 
     @GetMapping("/companies")
-    @PreAuthorize("hasRole('ADMIN')") // Lưu ý: API này phục vụ Dashboard nên chỉ Admin được gọi
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYER')") // Lưu ý: API này phục vụ Dashboard nên chỉ Admin được gọi
     @ApiMessage("Fetch all companies with filters")
     public ResponseEntity<ResultPaginationDTO> getAllCompanies(
             @Filter Specification<Company> spec,
@@ -83,7 +83,7 @@ public class CompanyController {
 //    }
 
     @PutMapping("companies/{id}/approve")
-    @PreAuthorize("hasRole('ADMIN')") // 🚨 CHỈ ADMIN ĐƯỢC GỌI
+    @PreAuthorize("hasRole('ADMIN')")
     @ApiMessage("Cập nhật trạng thái duyệt công ty thành công")
     public ResponseEntity<Void> approveCompany(
             @PathVariable("id") long companyId,
