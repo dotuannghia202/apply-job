@@ -6,6 +6,7 @@ import jakarta.servlet.http.Cookie;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
@@ -100,6 +101,14 @@ public class SecurityConfiguration {
                                 "/storage/**",
                                 "/api/v1/auth/forgot-password",
                                 "/ws/**"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/v1/industries",
+                                "/api/v1/industries/**",
+                                "/api/v1/specializations",
+                                "/api/v1/specializations/**",
+                                "/api/v1/jobs",
+                                "/api/v1/jobs/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
