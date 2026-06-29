@@ -40,7 +40,7 @@ public class JobController {
     @PostMapping
     @ApiMessage("Create a job")
     // Dùng ReqCreateJobDTO để nhận CompanyId, SpecializationId và List<SkillId>
-    public ResponseEntity<ResJobDTO> createJob(@Valid @RequestBody ReqCreateJobDTO reqDTO) throws Exception {
+    public ResponseEntity<ResJobDTO> createJob(@Valid @RequestBody ReqCreateJobDTO reqDTO) throws IdInvalidException, InvalidDateRangeException, AccessDeniedException {
         ResJobDTO newJob = this.jobService.handleCreateJob(reqDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(newJob);
     }
