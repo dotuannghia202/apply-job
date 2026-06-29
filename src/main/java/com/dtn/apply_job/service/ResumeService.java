@@ -88,10 +88,7 @@ public class ResumeService {
 
         if (reqDTO.getFileUrl() != null && !reqDTO.getFileUrl().equals(currentResume.getFileUrl())) {
             currentResume.setFileUrl(reqDTO.getFileUrl());
-
-            // 🚨 GỌI LẠI AI PYTHON VÌ FILE ĐÃ THAY ĐỔI 🚨
-            // String newText = pythonAiService.parsePdf(reqDTO.getFileUrl());
-            // currentResume.setParsedText(newText);
+            aiPythonService.processCvTextAsync(id, reqDTO.getFileUrl());
         }
 
         if (reqDTO.getIsActive() != null) {
@@ -196,6 +193,7 @@ public class ResumeService {
         dto.setFileName(resume.getFileName());
         dto.setFileUrl(resume.getFileUrl());
         dto.setActive(resume.isActive());
+        dto.setDefault(resume.isDefault());
         dto.setCreatedAt(resume.getCreatedAt());
         dto.setUpdatedAt(resume.getUpdatedAt());
 
@@ -259,5 +257,29 @@ public class ResumeService {
         }
 
         return dto;
+    }
+
+    @Transactional
+    public ResResumeDTO handleSetDefaultResume(long targetResumeId) throws IdInvalidException {
+        // Lấy CV mục tiêu và kiểm tra quyền sở hữu
+        Resume targetResume = getResumeAndCheckPermission(targetResumeId);
+        User candidate = targetResume.getCandidate();
+
+        // Lấy toàn bộ CV của user này
+        List<Resume> allMyResumes = resumeRepository.findByCandidate(candidate);
+
+        // Duyệt qua tất cả CV, ép thằng mục tiêu thành true, các thằng khác thành false
+        for (Resume r : allMyResumes) {
+            if (r.getId().equals(targetResumeId)) {
+                r.setDefault(true);  // Set thành mặc định
+            } else {
+                r.setDefault(false); // Gỡ bỏ mặc định của các CV cũ
+            }
+        }
+
+        // Lưu toàn bộ danh sách đã cập nhật vào Database (Hibernate sẽ tối ưu tự update các row có thay đổi)
+        resumeRepository.saveAll(allMyResumes);
+
+        return convertToResResumeDTO(targetResume);
     }
 }

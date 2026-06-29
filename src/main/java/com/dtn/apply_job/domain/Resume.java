@@ -39,6 +39,9 @@ public class Resume {
     @Column(name = "is_active")
     private boolean active;
 
+    @Column(name = "is_default")
+    private boolean isDefault = false;
+
     // Tùy chọn: Kết nối CV với các Kỹ năng (Bảng Skill)
     @ManyToMany
     @JoinTable(
@@ -51,7 +54,7 @@ public class Resume {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "specialization_id")
 
-    
+
     private Specialization specialization;
 
     @Column(name = "created_at", updatable = false)

@@ -11,4 +11,6 @@ public interface ResumeRepository extends JpaRepository<Resume, Long>, JpaSpecif
     boolean existsBySpecializationId(Long specializationId);
 
     List<Resume> findByCandidateAndActiveTrue(User candidate);
+
+    List<Resume> findByCandidate(User candidate);
 }

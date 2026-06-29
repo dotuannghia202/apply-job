@@ -80,4 +80,12 @@ public class ResumeController {
         resumeService.handleSoftDeleteResume(id);
         return ResponseEntity.ok().build();
     }
+
+    @PutMapping("/resumes/{id}/default")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    @ApiMessage("Set default CV successfully!")
+    public ResponseEntity<ResResumeDTO> setDefaultResume(@PathVariable long id) throws IdInvalidException {
+        ResResumeDTO updatedResume = this.resumeService.handleSetDefaultResume(id);
+        return ResponseEntity.ok(updatedResume);
+    }
 }

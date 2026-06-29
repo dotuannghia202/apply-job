@@ -1,5 +1,6 @@
 package com.dtn.apply_job.domain.response.resume;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,6 +14,9 @@ public class ResResumeDTO {
     private String fileName;
     private String fileUrl;
     private boolean active;
+
+    @JsonProperty("isDefault")
+    private boolean isDefault;
 
 
     private Instant createdAt;
