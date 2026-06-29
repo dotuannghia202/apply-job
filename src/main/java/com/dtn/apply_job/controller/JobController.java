@@ -19,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -47,7 +48,7 @@ public class JobController {
     @PostMapping("/batch")
     @ApiMessage("Create jobs in batch")
     public ResponseEntity<List<ResJobDTO>> createJobsBatch(
-            @Valid @RequestBody List<ReqCreateJobDTO> reqDTOs) throws IdInvalidException, InvalidDateRangeException {
+            @Valid @RequestBody List<ReqCreateJobDTO> reqDTOs) throws IdInvalidException, InvalidDateRangeException, AccessDeniedException {
         List<ResJobDTO> newJobs = this.jobService.handleCreateJobs(reqDTOs);
         return ResponseEntity.status(HttpStatus.CREATED).body(newJobs);
     }

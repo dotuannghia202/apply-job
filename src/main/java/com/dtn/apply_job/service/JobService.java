@@ -48,13 +48,13 @@ public class JobService {
         this.applicationRepository = applicationRepository;
     }
 
-    public ResJobDTO handleCreateJob(ReqCreateJobDTO reqDTO) throws IdInvalidException, InvalidDateRangeException, Exception {
+    public ResJobDTO handleCreateJob(ReqCreateJobDTO reqDTO) throws IdInvalidException, InvalidDateRangeException, AccessDeniedException {
         // 1. KIỂM TRA SỰ TỒN TẠI CỦA COMPANY
         Company company = companyRepository.findById(reqDTO.getCompanyId())
                 .orElseThrow(() -> new IdInvalidException("Company doesn't exist!"));
 
         if (!company.getStatus().equals(CompanyStatus.APPROVED)) {
-            throw new Exception("Hồ sơ Công ty của bạn chưa được Admin phê duyệt. Vui lòng chờ để được đăng tin!");
+            throw new AccessDeniedException("Hồ sơ Công ty của bạn chưa được Admin phê duyệt hoặc bị đình chỉ hoạt động. Vui lòng liên hệ ban quản trị!");
         }
 
         // 2. KIỂM TRA SỰ TỒN TẠI CỦA SPECIALIZATION
