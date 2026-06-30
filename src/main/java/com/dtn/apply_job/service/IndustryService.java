@@ -43,11 +43,22 @@ public class IndustryService {
 
     public Industry handleGetIndustryById(long id) throws IdInvalidException {
         return this.industryRepository.findById(id)
-                .orElseThrow(() -> new IdInvalidException("Industry id not found!"));
+                .orElseThrow(() -> new IdInvalidException("Không tìm thấy ngành này!"));
     }
 
-    public ResultPaginationDTO handleGetAllIndustries(Specification<Industry> spec, Pageable pageable) {
-        Page<Industry> industryPage = this.industryRepository.findAll(spec, pageable);
+    public ResultPaginationDTO handleGetAllIndustries(Specification<Industry> spec, Pageable pageable, String name) {
+        Specification<Industry> nameSpec = null;
+        if (name != null && !name.trim().isEmpty()) {
+            nameSpec = (root, query, cb) ->
+                    cb.like(cb.lower(root.get("name")), "%" + name.trim().toLowerCase() + "%");
+        }
+
+        Specification<Industry> finalSpec = spec;
+        if (nameSpec != null) {
+            finalSpec = (finalSpec == null) ? nameSpec : finalSpec.and(nameSpec);
+        }
+
+        Page<Industry> industryPage = this.industryRepository.findAll(finalSpec, pageable);
 
         ResultPaginationDTO resultPaginationDTO = new ResultPaginationDTO();
         ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();

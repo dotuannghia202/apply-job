@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 public class IndustryController {
 
     private final IndustryService industryService;
-    
+
     @PostMapping("/industries")
     @PreAuthorize("hasRole('ADMIN')")
     @ApiMessage("Create industry")
@@ -59,9 +59,10 @@ public class IndustryController {
     @ApiMessage("Fetch all industries")
     public ResponseEntity<ResultPaginationDTO> getAllIndustries(
             @Filter Specification<Industry> spec,
-            Pageable pageable
+            Pageable pageable,
+            @RequestParam(required = false) String name
     ) {
-        ResultPaginationDTO result = this.industryService.handleGetAllIndustries(spec, pageable);
+        ResultPaginationDTO result = this.industryService.handleGetAllIndustries(spec, pageable, name);
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
 }
