@@ -16,7 +16,9 @@ import com.dtn.apply_job.repository.UserRepository;
 import com.dtn.apply_job.security.SecurityUtil;
 import com.dtn.apply_job.util.constant.enums.ERole;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -183,25 +185,38 @@ public class ApplicationService {
         String email = SecurityUtil.getCurrentUser().orElseThrow();
         User currentUser = userRepository.findByEmail(email);
 
-        // Ép Specification (Điều kiện SQL) theo Role để tránh lộ dữ liệu
-        boolean isAdmin = currentUser.getRoles().stream().anyMatch(r -> r.getName().name().equals("ROLE_ADMIN"));
-        boolean isEmployer = currentUser.getRoles().stream().anyMatch(r -> r.getName().name().equals("ROLE_EMPLOYER"));
+        // Kiểm tra Role (Thêm check cả có/không có tiền tố ROLE_ cho an toàn)
+        boolean isAdmin = currentUser.getRoles().stream()
+                .anyMatch(r -> r.getName().name().equals("ROLE_ADMIN") || r.getName().name().equals("ADMIN"));
+        boolean isEmployer = currentUser.getRoles().stream()
+                .anyMatch(r -> r.getName().name().equals("ROLE_EMPLOYER") || r.getName().name().equals("EMPLOYER"));
 
         Specification<Application> roleSpec;
+        Sort customSort; // 👉 Khai báo biến chứa luật Sắp xếp
 
         if (isAdmin) {
-            roleSpec = spec; // Admin lấy hết theo filter của FE
+            roleSpec = spec;
+            // Admin: Mặc định xem mới nhất lên đầu
+            customSort = Sort.by(Sort.Direction.DESC, "appliedAt");
+
         } else if (isEmployer) {
-            // HR chỉ lấy đơn của công ty mình
             long companyId = currentUser.getCompany() != null ? currentUser.getCompany().getId() : 0;
             Specification<Application> hrSpec = (root, query, cb) ->
                     cb.equal(root.get("job").get("company").get("id"), companyId);
             roleSpec = spec == null ? hrSpec : spec.and(hrSpec);
+
+            // 👉 NHÀ TUYỂN DỤNG: Sắp xếp theo Điểm AI giảm dần (Match Score DESC).
+            // Mẹo: Nếu 2 người điểm bằng nhau, thì ai nộp trước (appliedAt DESC) lên trước.
+            customSort = Sort.by(Sort.Direction.DESC, "matchScore")
+                    .and(Sort.by(Sort.Direction.DESC, "appliedAt"));
+
         } else {
-            // CANDIDATE chỉ lấy đơn của mình
             Specification<Application> candSpec = (root, query, cb) ->
                     cb.equal(root.get("resume").get("candidate").get("id"), currentUser.getId());
             roleSpec = spec == null ? candSpec : spec.and(candSpec);
+
+            // 👉 ỨNG VIÊN: Sắp xếp theo Ngày nộp giảm dần (Mới nhất lên đầu)
+            customSort = Sort.by(Sort.Direction.DESC, "appliedAt");
         }
 
         if (status != null && !status.trim().isEmpty()) {
@@ -210,7 +225,19 @@ public class ApplicationService {
             roleSpec = roleSpec == null ? statusSpec : roleSpec.and(statusSpec);
         }
 
-        Page<Application> pageData = applicationRepository.findAll(roleSpec, pageable);
+        // =========================================================
+        // 👉 ĐÓNG GÓI LẠI PAGEABLE MỚI:
+        // Lấy số trang và số phần tử từ Frontend, nhưng ÉP dùng luật Sắp xếp (customSort) của Backend
+        // =========================================================
+        Pageable customPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                customSort
+        );
+
+        // Truyền customPageable vào Database
+        Page<Application> pageData = applicationRepository.findAll(roleSpec, customPageable);
+
         List<ResApplicationDTO> results = pageData.getContent().stream()
                 .map(this::convertToResAppDTO)
                 .collect(java.util.stream.Collectors.toList());
