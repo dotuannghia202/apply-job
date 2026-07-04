@@ -19,20 +19,18 @@ public class NotificationController {
         this.notificationService = notificationService;
     }
 
-    // 1. LẤY DANH SÁCH THÔNG BÁO (CÓ PHÂN TRANG & LỌC TRẠNG THÁI ĐÃ ĐỌC)
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     @ApiMessage("Lấy danh sách thông báo theo Role")
     public ResponseEntity<ResultPaginationDTO> getMyNotifications(
             @RequestParam(required = false) Boolean isRead,
-            @RequestParam("role") ERole role, // 👉 Bắt FE phải truyền Role lên
+            @RequestParam("role") ERole role,
             Pageable pageable) throws Exception {
 
         ResultPaginationDTO result = notificationService.getMyNotifications(isRead, pageable, role);
         return ResponseEntity.ok(result);
     }
 
-    // 2. ĐÁNH DẤU 1 THÔNG BÁO LÀ "ĐÃ ĐỌC" (Khi user click vào 1 dòng thông báo)
     @PutMapping("/{id:\\d+}/read")
     @PreAuthorize("isAuthenticated()")
     @ApiMessage("Đánh dấu thông báo đã đọc thành công")
@@ -42,13 +40,12 @@ public class NotificationController {
         return ResponseEntity.ok().build();
     }
 
-    // 3. ĐÁNH DẤU "ĐÃ ĐỌC TẤT CẢ" (Khi user click nút Mark All As Read)
     @PutMapping("/read-all")
     @PreAuthorize("isAuthenticated()")
     @ApiMessage("Đánh dấu tất cả thông báo đã đọc thành công")
     public ResponseEntity<Void> markAllAsRead(@RequestParam("role") ERole role) throws Exception {
 
-        notificationService.markAllAsRead(role); // Truyền role xuống service
+        notificationService.markAllAsRead(role);
         return ResponseEntity.ok().build();
     }
 }

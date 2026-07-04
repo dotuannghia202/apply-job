@@ -26,12 +26,11 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = this.userService.handleGetUserByUsername(username);
 
         if (user == null) {
-            throw new UsernameNotFoundException("User not found with email: " + username);
+            throw new UsernameNotFoundException("Không tìm thấy người dùng với email: " + username);
         }
 
-        // 🚨 CHỐT CHẶN BẢO MẬT: NẾU TÀI KHOẢN BỊ KHÓA -> NÉM LỖI DisabledException NGAY LẬP TỨC
         if (user.getIsActive() != null && !user.getIsActive()) {
-            throw new DisabledException("Your account has been locked by the Administrator!");
+            throw new DisabledException("Tài khoản của bạn đã bị khóa bởi Quản trị viên!");
         }
 
         List<SimpleGrantedAuthority> authorities = user.getRoles().stream()

@@ -34,15 +34,11 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
         res.setStatusCode(HttpStatus.FORBIDDEN.value());
         res.setError("FORBIDDEN");
 
-        // 1. Lấy thông báo lỗi do Exception ném ra
         String exMessage = accessDeniedException.getMessage();
+        String finalMessage = "Bạn không có quyền truy cập tài nguyên này!";
 
-        // 2. Câu thông báo mặc định của hệ thống bạn
-        String finalMessage = "You do not have permission to access this resource!";
-
-        // 3. Nếu bạn CÓ truyền message custom VÀ message đó KHÔNG phải câu mặc định của Spring
         if (exMessage != null && !exMessage.isBlank() && !exMessage.equalsIgnoreCase("Access is denied")) {
-            finalMessage = exMessage; // Lấy câu custom của bạn
+            finalMessage = exMessage;
         }
 
         res.setMessage(finalMessage);

@@ -7,6 +7,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ReqUpdateUserStatusDTO {
-    @NotNull(message = "Status is required!")
+    @NotNull(message = "Trạng thái không được để trống!")
     private Boolean isActive;
 }

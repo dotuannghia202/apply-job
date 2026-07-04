@@ -9,13 +9,13 @@ import lombok.Setter;
 @Setter
 public class ReqChangePasswordDTO {
 
-    @NotBlank(message = "Please enter your current password")
+    @NotBlank(message = "Vui lòng nhập mật khẩu hiện tại")
     private String oldPassword;
 
-    @NotBlank(message = "Please enter a new password")
-    @Size(min = 6, message = "New password must be at least 6 characters long")
+    @NotBlank(message = "Vui lòng nhập mật khẩu mới")
+    @Size(min = 6, message = "Mật khẩu mới phải dài ít nhất 6 ký tự")
     private String newPassword;
 
-    @NotBlank(message = "Please confirm your new password")
+    @NotBlank(message = "Vui lòng xác nhận mật khẩu mới")
     private String confirmPassword;
 }

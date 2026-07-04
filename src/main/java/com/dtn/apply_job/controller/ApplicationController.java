@@ -31,14 +31,13 @@ public class ApplicationController {
 
     @PostMapping
     @PreAuthorize("hasRole('CANDIDATE')")
-    @ApiMessage("Successfully created a recruitment profile")
+    @ApiMessage("Nộp hồ sơ ứng tuyển thành công")
     public ResponseEntity<ResCreateApplicationDTO> create(@Valid @RequestBody ReqCreateApplicationDTO reqDTO) throws Exception {
         return ResponseEntity.status(HttpStatus.CREATED).body(applicationService.handleCreateApplication(reqDTO));
     }
 
     @GetMapping
-    @ApiMessage("Get list applications")
-    // Mở cho cả 3 Role, dữ liệu sẽ được Service tự động lọc
+    @ApiMessage("Lấy danh sách ứng tuyển thành công")
     @PreAuthorize("hasAnyRole('CANDIDATE', 'EMPLOYER', 'ADMIN')")
     public ResponseEntity<ResultPaginationDTO> getAll(
             @Filter Specification<Application> spec,
@@ -50,14 +49,14 @@ public class ApplicationController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('CANDIDATE', 'EMPLOYER', 'ADMIN')")
-    @ApiMessage("Get application by id")
+    @ApiMessage("Lấy chi tiết ứng tuyển thành công")
     public ResponseEntity<ResApplicationDTO> getById(@PathVariable long id) throws Exception {
         return ResponseEntity.ok(applicationService.handleGetAppById(id));
     }
 
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('EMPLOYER', 'ADMIN')") // Chặn cứng Candidate
-    @ApiMessage("Update status application successfully!")
+    @PreAuthorize("hasAnyRole('EMPLOYER', 'ADMIN')")
+    @ApiMessage("Cập nhật trạng thái ứng tuyển thành công!")
     public ResponseEntity<ResUpdateApplicationDTO> updateStatus(
             @PathVariable long id,
             @Valid @RequestBody ReqUpdateApplicationStatusDTO reqDTO) throws Exception {
@@ -65,8 +64,8 @@ public class ApplicationController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('CANDIDATE')") // Chặn HR và Admin
-    @ApiMessage("Application updated successfully")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    @ApiMessage("Cập nhật ứng tuyển thành công")
     public ResponseEntity<ResApplicationDTO> updateAppByCandidate(
             @PathVariable long id,
             @Valid @RequestBody ReqUpdateAppByCandidateDTO reqDTO) throws Exception {
@@ -74,9 +73,9 @@ public class ApplicationController {
         return ResponseEntity.ok(applicationService.handleUpdateAppByCandidate(id, reqDTO));
     }
 
-    @GetMapping("/hr") // Đường dẫn: GET /api/v1/applications/hr
-    @PreAuthorize("hasAnyRole('EMPLOYER', 'ADMIN')") // Chặn luôn CANDIDATE từ ngoài cửa
-    @ApiMessage("Fetch applications for HR and Admin")
+    @GetMapping("/hr")
+    @PreAuthorize("hasAnyRole('EMPLOYER', 'ADMIN')")
+    @ApiMessage("Lấy danh sách hồ sơ ứng tuyển thành công")
     public ResponseEntity<ResultPaginationDTO> getApplicationsForHr(
             @Filter Specification<Application> spec,
             Pageable pageable,

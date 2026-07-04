@@ -23,7 +23,7 @@ public class SkillService {
 
     public Skill handleCreateSkill(Skill skill) {
         if (skill.getName() != null && this.skillRepository.existsByName(skill.getName())) {
-            throw new NameExistedException("Skill name is unique!");
+            throw new NameExistedException("Tên kỹ năng phải là duy nhất!");
         }
         return this.skillRepository.save(skill);
     }
@@ -31,7 +31,7 @@ public class SkillService {
     public ResUpdateDTO handleUpdateSkill(long id, Skill skill) throws IdInvalidException, NameExistedException {
         Optional<Skill> skillOptional = this.skillRepository.findById(id);
         if (!skillOptional.isPresent()) {
-            throw new IdInvalidException("Skill id not found");
+            throw new IdInvalidException("Không tìm thấy mã kỹ năng");
         }
         if (skill.getName() != null && !this.skillRepository.existsByName(skill.getName())) {
             Skill currentSkill = skillOptional.get();
@@ -46,13 +46,13 @@ public class SkillService {
             resUpdateDTO.setUpdatedBy(newSkill.getUpdatedBy());
             return resUpdateDTO;
         } else {
-            throw new NameExistedException(skill.getName().toString() + " is existed!");
+            throw new NameExistedException(skill.getName().toString() + " đã tồn tại!");
         }
     }
 
     public Skill handleGetSkillById(long id) throws IdInvalidException {
         if (!this.skillRepository.existsById(id)) {
-            throw new IdInvalidException("Skill id not found!");
+            throw new IdInvalidException("Không tìm thấy mã kỹ năng!");
         }
         return this.skillRepository.findById(id).get();
     }

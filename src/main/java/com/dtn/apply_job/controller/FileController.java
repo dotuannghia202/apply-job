@@ -26,33 +26,26 @@ public class FileController {
     private final FileService fileService;
 
 
-    // =========================================================
-    // API UPLOAD LÊN CLOUDINARY (DÙNG CHO LUỒNG CHÍNH HIỆN TẠI)
-    // =========================================================
     @PostMapping("/files")
-    @ApiMessage("Upload single file to Cloudinary")
+    @ApiMessage("Tải lên tập tin lên Cloudinary thành công")
     public ResponseEntity<ResUploadFileDTO> upload(
             @RequestParam("file") MultipartFile file,
             @RequestParam("folder") String folder) throws URISyntaxException, IOException, FileUploadException {
 
-        // 1. Validate file rỗng
         if (file == null || file.isEmpty()) {
-            throw new FileUploadException("File is empty, please try again!");
+            throw new FileUploadException("Tệp tin bị trống, vui lòng thử lại!");
         }
 
-        // 2. Validate đuôi file (Chỉ cho phép Ảnh và PDF)
         String fileName = file.getOriginalFilename();
         List<String> allowedExtensions = Arrays.asList("jpg", "jpeg", "png", "gif", "pdf", "svg", "webp", "avif");
         boolean isValid = allowedExtensions.stream().anyMatch(i -> fileName.toLowerCase().endsWith(i));
 
         if (!isValid) {
-            throw new FileUploadException("Invalid file extension. Only allow: jpg, jpeg, png, gif, pdf!");
+            throw new FileUploadException("Phần mở rộng của tệp tin không hợp lệ. Chỉ cho phép các định dạng: jpg, jpeg, png, gif, pdf, svg, webp, avif!");
         }
 
-        // 3. Upload thẳng lên Cloudinary (Không cần hàm createDirectory vì Cloudinary tự sinh folder)
         String uploadedFileUrl = this.fileService.storeToCloudinary(file, folder);
 
-        // 4. Trả về DTO chứa Link URL trực tiếp của Cloudinary
         ResUploadFileDTO resUploadFileDTO = new ResUploadFileDTO(uploadedFileUrl, Instant.now());
 
         return ResponseEntity.ok().body(resUploadFileDTO);

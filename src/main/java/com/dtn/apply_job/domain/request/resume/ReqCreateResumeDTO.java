@@ -10,10 +10,10 @@ import java.util.List;
 @Setter
 public class ReqCreateResumeDTO {
 
-    @NotBlank(message = "File name must not be blank")
+    @NotBlank(message = "Tên tệp tin không được để trống")
     private String fileName;
 
-    @NotBlank(message = "URL file must not be blank")
+    @NotBlank(message = "Đường dẫn tệp tin không được để trống")
     private String fileUrl;
 
 

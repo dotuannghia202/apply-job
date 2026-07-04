@@ -36,14 +36,14 @@ public class SpecializationService {
         Long industryId = payload.getIndustryId();
 
         if (industryId <= 0) {
-            throw new IdInvalidException("Industry id is required for specialization");
+            throw new IdInvalidException("Mã ngành nghề không được để trống cho chuyên ngành");
         }
 
         Industry currentIndustry = this.industryRepository.findById(industryId)
-                .orElseThrow(() -> new IdInvalidException("Industry id not found"));
+                .orElseThrow(() -> new IdInvalidException("Không tìm thấy mã ngành nghề"));
 
         if (reqName != null && this.specializationRepository.existsByNameAndIndustryId(reqName, currentIndustry.getId())) {
-            throw new NameExistedException("Specialization name already exists in this industry!");
+            throw new NameExistedException("Tên chuyên ngành đã tồn tại trong ngành nghề này!");
         }
 
         Specialization specialization = new Specialization();
@@ -77,7 +77,7 @@ public class SpecializationService {
 
         if (reqSpecialization.getIndustry() != null && reqSpecialization.getIndustry().getId() > 0) {
             targetIndustry = this.industryRepository.findById(reqSpecialization.getIndustry().getId())
-                    .orElseThrow(() -> new IdInvalidException("Industry id not found"));
+                    .orElseThrow(() -> new IdInvalidException("Không tìm thấy mã ngành nghề"));
         }
 
         boolean isNameChanged = !targetName.equals(currentSpecialization.getName());
@@ -85,7 +85,7 @@ public class SpecializationService {
 
         if ((isNameChanged || isIndustryChanged)
                 && this.specializationRepository.existsByNameAndIndustryId(targetName, targetIndustry.getId())) {
-            throw new NameExistedException("Specialization name already exists in this industry!");
+            throw new NameExistedException("Tên chuyên ngành đã tồn tại trong ngành nghề này!");
         }
 
         currentSpecialization.setName(targetName);
@@ -125,14 +125,14 @@ public class SpecializationService {
                 .map(this::convertToResSpecializationDTO)
                 .toList();
 
-        // ================= ĐOẠN CODE ĐỂ LOG =================
+        
         log.info("Kiểm tra kiểu trả về: {}", specializationPage);
         log.info(">>> KIỂM TRA DỮ LIỆU TRANG: ");
         log.info("- Tổng số bản ghi (Total Elements): {}", specializationPage.getTotalElements());
         log.info("- Tổng số trang (Total Pages): {}", specializationPage.getTotalPages());
         log.info("- Số bản ghi trên 1 trang (Size): {}", specializationPage.getSize());
         log.info("- Nội dung Data (Content): {}", specializationDTOs);
-        // ====================================================
+        
         ResultPaginationDTO resultPaginationDTO = new ResultPaginationDTO();
         ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
         meta.setPage(specializationPage.getNumber() + 1);
@@ -148,11 +148,11 @@ public class SpecializationService {
 
     public List<ResSpecializationByIndustryId> handleGetSpecializationsByIndustryId(long industryId) throws IdInvalidException {
         if (industryId <= 0) {
-            throw new IdInvalidException("Industry id is invalid");
+            throw new IdInvalidException("Mã ngành nghề không hợp lệ");
         }
 
         if (!this.industryRepository.existsById(industryId)) {
-            throw new IdInvalidException("Industry id not found");
+            throw new IdInvalidException("Không tìm thấy mã ngành nghề");
         }
 
         return this.specializationRepository.findAllByIndustryIdProjected(industryId);
@@ -184,7 +184,7 @@ public class SpecializationService {
                 .orElseThrow(() -> new IdInvalidException("Specialization id not found!"));
 
         if (this.jobRepository.existsBySpecializationId(id) || this.resumeRepository.existsBySpecializationId(id)) {
-            throw new NameExistedException("Cannot delete specialization because it is being used by jobs or resumes");
+            throw new NameExistedException("Không thể xóa chuyên ngành vì đang được sử dụng bởi các công việc hoặc CV");
         }
 
         this.specializationRepository.delete(currentSpecialization);

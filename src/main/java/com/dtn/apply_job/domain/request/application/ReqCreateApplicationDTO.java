@@ -7,12 +7,11 @@ import lombok.Setter;
 @Setter
 @Getter
 public class ReqCreateApplicationDTO {
-    @NotNull(message = "Job ID information is missing")
+    @NotNull(message = "Thiếu thông tin ID công việc")
     private Long jobId;
 
-    @NotNull(message = "Please select a CV to apply for (Resume ID)")
+    @NotNull(message = "Vui lòng chọn CV để ứng tuyển (Resume ID)")
     private Long resumeId;
 
-    // Cover letter là tùy chọn, không cần @NotNull
     private String coverLetter;
 }

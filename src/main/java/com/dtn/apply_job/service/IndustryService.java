@@ -21,7 +21,7 @@ public class IndustryService {
 
     public Industry handleCreateIndustry(Industry industry) {
         if (industry.getName() != null && this.industryRepository.existsByName(industry.getName())) {
-            throw new NameExistedException("Industry name is unique!");
+            throw new NameExistedException("Tên ngành nghề phải là duy nhất!");
         }
         return this.industryRepository.save(industry);
     }
@@ -33,7 +33,7 @@ public class IndustryService {
         if (reqIndustry.getName() != null) {
             boolean isNameChanged = !reqIndustry.getName().equals(currentIndustry.getName());
             if (isNameChanged && this.industryRepository.existsByName(reqIndustry.getName())) {
-                throw new NameExistedException(reqIndustry.getName() + " is existed!");
+                throw new NameExistedException(reqIndustry.getName() + " đã tồn tại!");
             }
             currentIndustry.setName(reqIndustry.getName());
         }
@@ -78,7 +78,7 @@ public class IndustryService {
                 .orElseThrow(() -> new IdInvalidException("Industry id not found!"));
 
         if (this.specializationRepository.existsByIndustryId(id)) {
-            throw new NameExistedException("Cannot delete industry because it still has specializations");
+            throw new NameExistedException("Không thể xóa ngành nghề vì vẫn còn các chuyên ngành trực thuộc");
         }
 
         this.industryRepository.delete(currentIndustry);

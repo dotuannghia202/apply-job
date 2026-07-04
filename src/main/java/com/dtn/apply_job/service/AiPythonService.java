@@ -43,19 +43,19 @@ public class AiPythonService {
     public AiPythonService(ResumeRepository resumeRepository, ApplicationRepository applicationRepository) {
         this.resumeRepository = resumeRepository;
         this.applicationRepository = applicationRepository;
-        this.restTemplate = new RestTemplate(); // Công cụ để Java gọi API ngoài
+        this.restTemplate = new RestTemplate(); 
     }
 
-    // @Async giúp hàm này chạy ở một luồng (Thread) riêng biệt, không làm chậm web
+    
     @Async
     public void processCvTextAsync(Long resumeId, String fileUrl) {
         try {
             System.out.println(">>> Đang gửi file PDF sang Python AI để đọc...");
 
-            // 1. Chuẩn bị URL của Python
+            
             String pythonApiUrl = pythonAiBaseUrl + extractCvPath;
 
-            // 2. Chuẩn bị Body JSON {"file_url": "..."} giống hệt cái Pydantic schema bên Python
+            
             Map<String, String> requestBody = new HashMap<>();
             requestBody.put("file_url", fileUrl);
 
@@ -63,16 +63,16 @@ public class AiPythonService {
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
 
-            // 3. Bắn API sang Python
+            
             ResponseEntity<Map> response = restTemplate.postForEntity(pythonApiUrl, requestEntity, Map.class);
 
-            // 4. Bóc tách kết quả từ RestResponse của Python
+            
             Map<String, Object> responseBody = response.getBody();
             if (responseBody != null && (Integer) responseBody.get("status_code") == 200) {
                 Map<String, Object> data = (Map<String, Object>) responseBody.get("data");
                 String parsedText = (String) data.get("parsed_text");
 
-                // 5. Cập nhật lại vào Database
+                
                 Resume resume = resumeRepository.findById(resumeId).orElseThrow();
                 resume.setParsedText(parsedText);
                 resumeRepository.save(resume);
@@ -94,7 +94,7 @@ public class AiPythonService {
 
             String pythonApiUrl = pythonAiBaseUrl + matchScorePath;
 
-            // Chuẩn bị Body gửi đi (Khớp với MatchRequest bên Python)
+            
             Map<String, String> requestBody = new HashMap<>();
             requestBody.put("job_text", jobText != null ? jobText : "");
             requestBody.put("cv_text", cvText != null ? cvText : "");
@@ -103,18 +103,18 @@ public class AiPythonService {
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
 
-            // Bắn API
+            
             ResponseEntity<Map> response = restTemplate.postForEntity(pythonApiUrl, requestEntity, Map.class);
 
             Map<String, Object> responseBody = response.getBody();
             if (responseBody != null && (Integer) responseBody.get("status_code") == 200) {
-                // Bóc tách điểm số từ JSON
+                
                 Map<String, Object> data = (Map<String, Object>) responseBody.get("data");
 
-                // Mẹo Java: Ép kiểu linh hoạt vì Python có thể trả về Double hoặc Integer (ví dụ 85.0 hoặc 85)
+                
                 Double matchScore = Double.valueOf(data.get("match_score").toString());
 
-                // Cập nhật lại vào bảng Application
+                
                 Application app = applicationRepository.findById(applicationId).orElseThrow();
                 app.setMatchScore(matchScore);
                 applicationRepository.save(app);
@@ -129,11 +129,11 @@ public class AiPythonService {
         }
     }
 
-    // LƯU Ý: Không có @Async ở đây
+    
     public ResGenerateJdDTO generateJdFromPython(ReqGenerateJdDTO reqDTO) throws Exception {
         String pythonApiUrl = pythonAiBaseUrl + generateJdPath;
 
-        // Map DTO sang Map JSON để gửi đi
+        
         Map<String, String> requestBody = new HashMap<>();
         requestBody.put("title", reqDTO.getTitle());
         requestBody.put("skills", reqDTO.getSkills());
@@ -148,7 +148,7 @@ public class AiPythonService {
         Map<String, Object> responseBody = response.getBody();
 
         if (responseBody == null) {
-            throw new Exception("Python AI returned empty response body");
+            throw new Exception("Python AI trả về phản hồi rỗng");
         }
 
         Object statusCodeObj = responseBody.get("status_code");
@@ -160,12 +160,12 @@ public class AiPythonService {
 
         Object dataObj = responseBody.get("data");
         if (!(dataObj instanceof Map<?, ?> data)) {
-            throw new Exception("Invalid Python AI response: data must be an object");
+            throw new Exception("Phản hồi từ Python AI không hợp lệ: data phải là một đối tượng");
         }
 
         Object generatedJdObj = data.get("generated_jd");
         if (!(generatedJdObj instanceof Map<?, ?> generatedJd)) {
-            throw new Exception("Invalid Python AI response: generated_jd must be an object");
+            throw new Exception("Phản hồi từ Python AI không hợp lệ: generated_jd phải là một đối tượng");
         }
 
         ResGenerateJdDTO result = new ResGenerateJdDTO();
@@ -191,7 +191,7 @@ public class AiPythonService {
             return Integer.parseInt(str);
         }
 
-        throw new Exception("Invalid status_code from Python AI: " + value);
+        throw new Exception("Mã trạng thái không hợp lệ từ Python AI: " + value);
     }
 
     private List<String> toStringList(Object value) {

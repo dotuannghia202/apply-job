@@ -10,13 +10,13 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ReqCreateUserDTO {
-    @NotBlank(message = "The name cannot be left blank!")
+    @NotBlank(message = "Họ tên không được để trống!")
     private String name;
 
-    @Email(message = "Email is invalid!")
+    @Email(message = "Email không hợp lệ!")
     private String email;
 
-    @NotBlank(message = "Password cannot be left blank!")
+    @NotBlank(message = "Mật khẩu không được để trống!")
     private String password;
 
     private int age;

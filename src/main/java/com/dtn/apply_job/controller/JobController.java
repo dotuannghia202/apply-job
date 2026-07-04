@@ -38,15 +38,14 @@ public class JobController {
     }
 
     @PostMapping
-    @ApiMessage("Create a job")
-    // Dùng ReqCreateJobDTO để nhận CompanyId, SpecializationId và List<SkillId>
+    @ApiMessage("Tạo công việc thành công")
     public ResponseEntity<ResJobDTO> createJob(@Valid @RequestBody ReqCreateJobDTO reqDTO) throws IdInvalidException, InvalidDateRangeException, AccessDeniedException {
         ResJobDTO newJob = this.jobService.handleCreateJob(reqDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(newJob);
     }
 
     @PostMapping("/batch")
-    @ApiMessage("Create jobs in batch")
+    @ApiMessage("Tạo hàng loạt công việc thành công")
     public ResponseEntity<List<ResJobDTO>> createJobsBatch(
             @Valid @RequestBody List<ReqCreateJobDTO> reqDTOs) throws IdInvalidException, InvalidDateRangeException, AccessDeniedException {
         List<ResJobDTO> newJobs = this.jobService.handleCreateJobs(reqDTOs);
@@ -54,17 +53,16 @@ public class JobController {
     }
 
     @PutMapping("/{id:\\d+}")
-    @ApiMessage("Update a job")
+    @ApiMessage("Cập nhật công việc thành công")
     public ResponseEntity<ResUpdateJobDTO> updateJob(
             @PathVariable long id,
             @Valid @RequestBody ReqUpdateJobDTO reqDTO) throws Exception {
-        // Service của bạn cũng cần sửa lại để trả về ResJobDTO nhé
         ResUpdateJobDTO updatedJob = this.jobService.handleUpdateJob(id, reqDTO);
         return ResponseEntity.ok().body(updatedJob);
     }
 
     @GetMapping
-    @ApiMessage("Get all jobs with pagination and filter")
+    @ApiMessage("Lấy danh sách công việc thành công")
     public ResponseEntity<ResultPaginationDTO> getAllJobs(
             @Filter Specification<Job> spec,
             Pageable pageable,
@@ -77,30 +75,33 @@ public class JobController {
             @RequestParam(required = false) Boolean active,
             @RequestParam(required = false) Integer sortCreatedAt
     ) throws IdInvalidException {
+        Specification<Job> notExpiredSpec = (root, query, cb) ->
+                cb.greaterThanOrEqualTo(root.get("endDate"), java.time.Instant.now());
+        Specification<Job> finalSpec = spec == null ? notExpiredSpec : spec.and(notExpiredSpec);
         ResultPaginationDTO result = this.jobService.handleGetAllJobsWithFilters(
-                spec, pageable, location, levels, specialization,
+                finalSpec, pageable, location, levels, specialization,
                 companyName, null, null, name, skill, active, sortCreatedAt);
         return ResponseEntity.ok().body(result);
     }
 
     @GetMapping("/{id:\\d+}")
-    @ApiMessage("Fetch job by id")
+    @ApiMessage("Lấy thông tin công việc thành công")
     public ResponseEntity<ResJobDTO> getJobById(@PathVariable long id) throws IdInvalidException {
         ResJobDTO dto = this.jobService.handleGetJobById(id);
         return ResponseEntity.ok().body(dto);
     }
 
     @DeleteMapping("/{id:\\d+}")
-    @PreAuthorize("hasAnyRole('EMPLOYER', 'ADMIN')") // Chỉ HR và Admin mới được xóa
-    @ApiMessage("Delete a job")
+    @PreAuthorize("hasAnyRole('EMPLOYER', 'ADMIN')")
+    @ApiMessage("Xóa công việc thành công")
     public ResponseEntity<Void> deleteJob(@PathVariable long id) throws Exception {
         this.jobService.handleDeleteJob(id);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/hr")
-    @PreAuthorize("hasRole('EMPLOYER')") // Chỉ HR mới được vào
-    @ApiMessage("Fetch job from your company")
+    @PreAuthorize("hasRole('EMPLOYER')")
+    @ApiMessage("Lấy danh sách công việc của công ty thành công")
     public ResponseEntity<ResultPaginationDTO> getJobsByCurrentHr(
             @Filter Specification<Job> spec,
             Pageable pageable,
@@ -124,16 +125,13 @@ public class JobController {
         return ResponseEntity.ok().body(result);
     }
 
-    // Tạo 1 API độc lập riêng cho chức năng Gen JD
     @PostMapping("/generate-jd")
     @PreAuthorize("hasAnyRole('EMPLOYER', 'ADMIN')")
     @ApiMessage("Tự động sinh JD bằng AI thành công")
     public ResponseEntity<ResGenerateJdDTO> generateJdByAi(@RequestBody ReqGenerateJdDTO reqDTO) throws Exception {
 
-        // Gọi Service
         ResGenerateJdDTO generatedContent = aiPythonService.generateJdFromPython(reqDTO);
 
-        // Trả về đoạn văn bản đó cho ReactJS (Nó sẽ tự bọc vào RestRespon)
         return ResponseEntity.ok(generatedContent);
     }
 

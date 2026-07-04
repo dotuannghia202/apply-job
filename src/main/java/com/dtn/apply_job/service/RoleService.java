@@ -20,7 +20,7 @@ public class RoleService {
 
     public Role handleCreateRole(Role role) {
         if (role.getName() != null && this.roleRepository.existsByName(role.getName())) {
-            throw new NameExistedException("Role name is unique!");
+            throw new NameExistedException("Tên vai trò phải là duy nhất!");
         }
         return this.roleRepository.save(role);
     }
@@ -32,7 +32,7 @@ public class RoleService {
         if (role.getName() != null) {
             boolean isNameChanged = !role.getName().equals(currentRole.getName());
             if (isNameChanged && this.roleRepository.existsByName(role.getName())) {
-                throw new NameExistedException(role.getName().toString() + " is existed!");
+                throw new NameExistedException(role.getName().toString() + " đã tồn tại!");
             }
             currentRole.setName(role.getName());
         }

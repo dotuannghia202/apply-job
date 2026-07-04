@@ -36,9 +36,6 @@ public class SecurityUtil {
         this.jwtDecoder = jwtDecoder;
     }
 
-    /**
-     * Verify refresh token và trả về JWT đã decode.
-     */
     public Jwt checkValidRefreshToken(String refreshToken) {
         try {
             return jwtDecoder.decode(refreshToken);
@@ -48,9 +45,6 @@ public class SecurityUtil {
         }
     }
 
-    /**
-     * Tạo access token từ Authentication sau khi login / refresh thành công.
-     */
     public String createAccessToken(Authentication authentication) {
         CustomUserDetails userDetails = extractCustomUserDetails(authentication);
 
@@ -79,10 +73,6 @@ public class SecurityUtil {
                 .getTokenValue();
     }
 
-    /**
-     * Tạo refresh token từ Authentication.
-     * Refresh token nên nhẹ, chỉ cần subject và hạn dùng.
-     */
     public String createRefreshToken(Authentication authentication) {
         CustomUserDetails userDetails = extractCustomUserDetails(authentication);
 
@@ -102,11 +92,6 @@ public class SecurityUtil {
                 .getTokenValue();
     }
 
-    /**
-     * Dùng ở flow refresh token để dựng lại authorities từ user DB.
-     * Hiện tại mặc định ROLE_USER.
-     * Sau này nếu bạn có bảng role riêng thì sửa logic ở đây.
-     */
     public List<GrantedAuthority> buildAuthorities(User user) {
         return user.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority(role.getName().toString()))
@@ -116,7 +101,7 @@ public class SecurityUtil {
 
     private CustomUserDetails extractCustomUserDetails(Authentication authentication) {
         if (authentication == null || authentication.getPrincipal() == null) {
-            throw new IllegalStateException("Authentication or principal is null");
+            throw new IllegalStateException("Xác thực hoặc thông tin người dùng bị rỗng!");
         }
 
         Object principal = authentication.getPrincipal();
@@ -126,13 +111,10 @@ public class SecurityUtil {
         }
 
         throw new IllegalStateException(
-                "Principal must be CustomUserDetails, but got: " + principal.getClass().getName()
+                "Thông tin người dùng phải là CustomUserDetails, nhưng nhận được: " + principal.getClass().getName()
         );
     }
 
-    /**
-     * Lấy username/email của user hiện tại từ SecurityContext.
-     */
     public static Optional<String> getCurrentUser() {
         SecurityContext securityContext = SecurityContextHolder.getContext();
         return Optional.ofNullable(extractPrincipal(securityContext.getAuthentication()));
@@ -151,9 +133,6 @@ public class SecurityUtil {
         return null;
     }
 
-    /**
-     * Lấy raw JWT hiện tại từ SecurityContext nếu có.
-     */
     public static Optional<String> getCurrentUserJWT() {
         SecurityContext securityContext = SecurityContextHolder.getContext();
         return Optional.ofNullable(securityContext.getAuthentication())

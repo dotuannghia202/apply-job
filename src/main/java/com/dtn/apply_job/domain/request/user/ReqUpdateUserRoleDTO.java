@@ -11,7 +11,6 @@ import java.util.List;
 @Setter
 public class ReqUpdateUserRoleDTO {
 
-    // Yêu cầu phải gửi lên ít nhất 1 quyền (Không được để trống rỗng mảng)
-    @NotEmpty(message = "The list of permissions cannot be left blank!")
+    @NotEmpty(message = "Danh sách quyền không được để trống!")
     private List<ERole> roles;
 }

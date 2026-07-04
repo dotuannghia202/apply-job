@@ -57,38 +57,30 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    @ApiMessage("User login")
+    @ApiMessage("Đăng nhập thành công")
     public ResponseEntity<ResLoginDTO> login(@Valid @RequestBody ReqLoginDTO reqLoginDTO) {
-        // 1. Tạo request xác thực từ username + password
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(
                         reqLoginDTO.getUsername(),
                         reqLoginDTO.getPassword()
                 );
 
-        // 2. Gọi Spring Security xác thực
         Authentication authentication = authenticationManager.authenticate(authenticationToken);
 
-        // 3. Lưu vào security context cho request hiện tại
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // 4. Lấy principal đã xác thực
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
-        // 5. Tạo token
         String accessToken = securityUtil.createAccessToken(authentication);
         String refreshToken = securityUtil.createRefreshToken(authentication);
 
-        // 6. Lưu refresh token vào DB
         userService.handleUpdateUserToken(refreshToken, userDetails.getUsername());
 
-        // 7. LẤY FULL THÔNG TIN USER TỪ DB ĐỂ LẤY ĐƯỢC COMPANY
         User currentUser = userService.handleGetUserByUsername(userDetails.getUsername());
 
         ResLoginDTO response = new ResLoginDTO();
         response.setUserLogin(buildUserLogin(currentUser));
 
-        // 6. Set cookie
         ResponseCookie refreshTokenCookie = buildRefreshTokenCookie(refreshToken);
         ResponseCookie accessTokenCookie = buildAccessTokenCookie(accessToken);
 
@@ -100,7 +92,7 @@ public class AuthController {
     }
 
     @GetMapping("/account")
-    @ApiMessage("Fetch info account")
+    @ApiMessage("Lấy thông tin tài khoản thành công")
     public ResponseEntity<ResLoginDTO.UserGetAccount> getAccount() {
         String email = SecurityUtil.getCurrentUser().orElse("");
 
@@ -124,17 +116,14 @@ public class AuthController {
             throw new BadCredentialsException("Refresh token is missing!");
         }
 
-        // 1. Verify refresh token
         Jwt decodedToken = securityUtil.checkValidRefreshToken(refreshToken);
         String email = decodedToken.getSubject();
 
-        // 2. Check token trong DB có khớp user không
         User currentUser = userService.handleGetUserByRefreshTokenAndEmail(refreshToken, email);
         if (currentUser == null) {
             throw new IdInvalidException("Refresh token invalid!");
         }
 
-        // 3. Dựng lại CustomUserDetails từ user DB
         CustomUserDetails userDetails = new CustomUserDetails(
                 currentUser.getId(),
                 currentUser.getEmail(),
@@ -144,29 +133,19 @@ public class AuthController {
                 securityUtil.buildAuthorities(currentUser)
         );
 
-        // 4. Dựng lại Authentication
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 userDetails,
                 null,
                 userDetails.getAuthorities()
         );
 
-        // 5. Tạo access token mới + refresh token mới
         String newAccessToken = securityUtil.createAccessToken(authentication);
         String newRefreshToken = securityUtil.createRefreshToken(authentication);
 
-        // 6. Update refresh token mới vào DB
         userService.handleUpdateUserToken(newRefreshToken, email);
 
-        // ==========================================
-        // 7. SET LẠI COOKIE CHO CẢ 2 TOKEN MỚI
-        // ==========================================
         ResponseCookie accessCookie = buildAccessTokenCookie(newAccessToken);
         ResponseCookie refreshCookie = buildRefreshTokenCookie(newRefreshToken);
-
-        // Tạo một DTO rỗng (Không chứa access token nữa)
-        // Lưu ý: Bạn có thể vào file ResRefreshTokenDTO đổi nó thành class rỗng,
-        // Hoặc truyền null vào constructor: new ResRefreshTokenDTO(null)
 
 
         return ResponseEntity.ok()
@@ -176,7 +155,7 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    @ApiMessage("User logout")
+    @ApiMessage("Đăng xuất thành công")
     public ResponseEntity<Void> logout() throws IdInvalidException {
         String email = SecurityUtil.getCurrentUser().orElse("");
 
@@ -184,12 +163,8 @@ public class AuthController {
             throw new IdInvalidException("Access token invalid!");
         }
 
-        // 1. Xóa refresh token trong DB
         userService.handleUpdateUserToken(null, email);
 
-        // ==========================================
-        // 2. TẠO 2 COOKIE TRỐNG ĐỂ HỦY TOKEN (maxAge = 0)
-        // ==========================================
         ResponseCookie deleteRefreshCookie = ResponseCookie.from("refresh_token", "")
                 .httpOnly(true)
                 .secure(false)
@@ -260,7 +235,7 @@ public class AuthController {
 
 
     @PostMapping("/forgot-password")
-    @ApiMessage("Your new password has been sent to your email address!")
+    @ApiMessage("Mật khẩu mới đã được gửi tới địa chỉ email của bạn!")
     public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ReqForgotPasswordDTO reqDTO) throws Exception {
         authService.handleForgotPassword(reqDTO.getEmail());
         return ResponseEntity.ok().build();

@@ -19,7 +19,7 @@ public class FileService {
 
     public String storeToCloudinary(MultipartFile file, String folder) throws IOException {
         if (file.isEmpty()) {
-            throw new IllegalArgumentException("File is not blank!");
+            throw new IllegalArgumentException("Tệp tin không được trống!");
         }
 
         String originalFilename = file.getOriginalFilename();
@@ -34,18 +34,18 @@ public class FileService {
         Map<String, Object> uploadOptions = new HashMap<>();
         uploadOptions.put("folder", "apply_job/" + folder);
 
-        // Cấu hình linh hoạt cho từng loại file
+        
         if ("pdf".equals(extension)) {
-            // ĐỐI VỚI PDF:
-            // 1. Phải khai báo là 'raw'
+            
+            
             uploadOptions.put("resource_type", "raw");
-            // 2. PHẢI CÓ .pdf trong public_id để Cloudinary biết nó là PDF
+            
             uploadOptions.put("public_id", nameWithoutExt + "_" + System.currentTimeMillis() + ".pdf");
         } else {
-            // ĐỐI VỚI ẢNH:
-            // 1. Dùng 'auto' (sẽ được Cloudinary hiểu là 'image')
+            
+            
             uploadOptions.put("resource_type", "auto");
-            // 2. Không cần đuôi mở rộng trong public_id vì Cloudinary tự quản lý format
+            
             uploadOptions.put("public_id", nameWithoutExt + "_" + System.currentTimeMillis());
         }
 

@@ -13,10 +13,10 @@ import jakarta.validation.constraints.Positive;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ReqCreateSpecializationDTO {
-    @NotBlank(message = "Name must not be blank")
+    @NotBlank(message = "Tên chuyên ngành không được để trống")
     private String name;
 
-    @NotNull(message = "Industry id is required")
-    @Positive(message = "Industry id must be greater than 0")
+    @NotNull(message = "Mã ngành nghề không được để trống")
+    @Positive(message = "Mã ngành nghề phải lớn hơn 0")
     private Long industryId;
 }

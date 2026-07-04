@@ -8,6 +8,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ReqUpdateApplicationStatusDTO {
-    @NotNull(message = "Status isn't be null!")
+    @NotNull(message = "Trạng thái không được để trống!")
     private ApplicationStatus status;
 }

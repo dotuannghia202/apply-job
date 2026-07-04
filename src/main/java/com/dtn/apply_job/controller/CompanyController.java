@@ -50,8 +50,8 @@ public class CompanyController {
     }
 
     @GetMapping("/companies")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYER')") // Lưu ý: API này phục vụ Dashboard nên chỉ Admin được gọi
-    @ApiMessage("Fetch all companies with filters")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYER')")
+    @ApiMessage("Lấy danh sách công ty thành công")
     public ResponseEntity<ResultPaginationDTO> getAllCompanies(
             @Filter Specification<Company> spec,
             Pageable pageable,
@@ -76,11 +76,7 @@ public class CompanyController {
         return ResponseEntity.ok(companyService.handleUpdateCompany(id, reqDTO));
     }
 
-//    @DeleteMapping("/companies/{id}")
-//    public ResponseEntity<Void> deleteCompany(@PathVariable long id) {
-//        this.companyService.handleDeleteCompany(id);
-//        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
-//    }
+
 
     @PutMapping("companies/{id}/approve")
     @PreAuthorize("hasRole('ADMIN')")
@@ -108,7 +104,6 @@ public class CompanyController {
     }
 
 
-    // 2. API Đình chỉ / Mở khóa công ty đang hoạt động
     @PutMapping("companies/{id}/suspend")
     @PreAuthorize("hasRole('ADMIN')")
     @ApiMessage("Cập nhật trạng thái đình chỉ công ty thành công")
@@ -120,11 +115,9 @@ public class CompanyController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("companies/{id:\\d+}") // Dùng regex \d+ để tránh xung đột với các URL chữ (vd: /my-company)
+    @GetMapping("companies/{id:\\d+}")
     @ApiMessage("Lấy chi tiết công ty thành công")
-    // Không dùng @PreAuthorize ở đây để Guest (Khách chưa login) cũng xem được
     public ResponseEntity<ResCompanyDTO> getCompanyById(@PathVariable("id") long id) throws Exception {
-        // Lưu ý: Logic chặn xem công ty PENDING/REJECTED đã được viết kỹ trong Service rồi
         return ResponseEntity.ok(companyService.handleGetCompanyById(id));
     }
 }

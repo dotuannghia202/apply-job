@@ -30,7 +30,7 @@ public class ResumeController {
 
     @PostMapping("/resumes")
     @PreAuthorize("hasAnyRole('CANDIDATE', 'ADMIN')")
-    @ApiMessage("Create resume")
+    @ApiMessage("Tạo CV thành công")
     public ResponseEntity<ResResumeDTO> createResume(@Valid @RequestBody ReqCreateResumeDTO req) throws Exception {
         ResResumeDTO newResume = this.resumeService.handleCreateResume(req);
         return ResponseEntity.status(HttpStatus.CREATED).body(newResume);
@@ -38,7 +38,7 @@ public class ResumeController {
 
     @PutMapping("/resumes/{id}")
     @PreAuthorize("hasAnyRole('CANDIDATE', 'ADMIN')")
-    @ApiMessage("Update resume")
+    @ApiMessage("Cập nhật CV thành công")
     public ResponseEntity<ResUpdateResumeDTO> updateResume(@PathVariable long id, @Valid @RequestBody ReqUpdateResumeDTO req)
             throws Exception {
         ResUpdateResumeDTO updatedResume = this.resumeService.handleUpdateResume(id, req);
@@ -47,7 +47,7 @@ public class ResumeController {
 
     @GetMapping("/resumes/{id}")
     @PreAuthorize("hasAnyRole('CANDIDATE', 'ADMIN')")
-    @ApiMessage("Fetch resume by Id")
+    @ApiMessage("Lấy thông tin CV thành công")
     public ResponseEntity<ResResumeDTO> getResumeById(@PathVariable long id) throws Exception {
         ResResumeDTO resume = this.resumeService.handleGetResumeById(id);
         return ResponseEntity.status(HttpStatus.OK).body(resume);
@@ -55,7 +55,7 @@ public class ResumeController {
 
     @GetMapping("/resumes")
     @PreAuthorize("hasRole('ADMIN')")
-    @ApiMessage("Fetch all resumes")
+    @ApiMessage("Lấy danh sách CV thành công")
     public ResponseEntity<ResultPaginationDTO> getAllResumes(
             @Filter Specification<Resume> spec,
             Pageable pageable
@@ -67,7 +67,7 @@ public class ResumeController {
 
     @GetMapping("/my-cvs")
     @PreAuthorize("hasRole('CANDIDATE')")
-    @ApiMessage("Get your Cv-list successfully!")
+    @ApiMessage("Lấy danh sách CV của bạn thành công!")
     public ResponseEntity<List<ResResumeDTO>> getMyResumes() throws IdInvalidException {
         List<ResResumeDTO> result = resumeService.handleGetMyResumes();
         return ResponseEntity.ok(result);
@@ -75,7 +75,7 @@ public class ResumeController {
 
     @DeleteMapping("/resumes/{id}")
     @PreAuthorize("hasAnyRole('CANDIDATE', 'ADMIN')")
-    @ApiMessage("Delete resume successfully!")
+    @ApiMessage("Xóa CV thành công!")
     public ResponseEntity<Void> deleteResume(@PathVariable long id) throws IdInvalidException {
         resumeService.handleSoftDeleteResume(id);
         return ResponseEntity.ok().build();
@@ -83,7 +83,7 @@ public class ResumeController {
 
     @PutMapping("/resumes/{id}/default")
     @PreAuthorize("hasRole('CANDIDATE')")
-    @ApiMessage("Set default CV successfully!")
+    @ApiMessage("Đặt làm CV mặc định thành công!")
     public ResponseEntity<ResResumeDTO> setDefaultResume(@PathVariable long id) throws IdInvalidException {
         ResResumeDTO updatedResume = this.resumeService.handleSetDefaultResume(id);
         return ResponseEntity.ok(updatedResume);

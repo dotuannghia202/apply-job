@@ -39,7 +39,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
                 .orElse(authException.getMessage());
         res.setError(errorMessage);
 
-        res.setMessage("Your login session has expired, please log in again!");
+        res.setMessage("Phiên đăng nhập của bạn đã hết hạn, vui lòng đăng nhập lại!");
 
         mapper.writeValue(response.getWriter(), res);
     }

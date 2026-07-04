@@ -13,7 +13,7 @@ public final class DateRangeValidator {
         validate(
                 startDate,
                 endDate,
-                "Start date must be before or equal to end date!"
+                "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc!"
         );
     }
 

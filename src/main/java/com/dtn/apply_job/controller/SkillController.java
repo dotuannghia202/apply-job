@@ -24,28 +24,28 @@ public class SkillController {
     }
 
     @PostMapping("/skills")
-    @ApiMessage("Create skill")
+    @ApiMessage("Tạo kỹ năng thành công")
     public ResponseEntity<Skill> createSkill(@RequestBody Skill skill) throws NameExistedException {
         Skill newSkill = this.skillService.handleCreateSkill(skill);
         return ResponseEntity.status(HttpStatus.CREATED).body(newSkill);
     }
 
     @PutMapping("/skills/{id}")
-    @ApiMessage("Update skill")
+    @ApiMessage("Cập nhật kỹ năng thành công")
     public ResponseEntity<ResUpdateDTO> updateSkill(@PathVariable long id, @RequestBody Skill skill) throws IdInvalidException, NameExistedException {
         ResUpdateDTO result = this.skillService.handleUpdateSkill(id, skill);
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
 
     @GetMapping("/skills/{id}")
-    @ApiMessage("Fetch skill by Id")
+    @ApiMessage("Lấy thông tin kỹ năng thành công")
     public ResponseEntity<Skill> getSkill(@PathVariable long id) throws IdInvalidException {
         Skill skill = this.skillService.handleGetSkillById(id);
         return ResponseEntity.status(HttpStatus.OK).body(skill);
     }
 
     @GetMapping("/skills")
-    @ApiMessage("Fetch all skills")
+    @ApiMessage("Lấy danh sách kỹ năng thành công")
     public ResponseEntity<ResultPaginationDTO> getAllSkills(
             @Filter Specification<Skill> spec,
             Pageable pageable,

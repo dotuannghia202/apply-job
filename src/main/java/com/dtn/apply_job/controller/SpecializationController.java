@@ -29,7 +29,7 @@ public class SpecializationController {
 
     @PostMapping("/specializations")
     @PreAuthorize("hasRole('ADMIN')")
-    @ApiMessage("Create specialization")
+    @ApiMessage("Tạo chuyên ngành thành công")
     public ResponseEntity<ResSpecializationDTO> createSpecialization(@Valid @RequestBody ReqCreateSpecializationDTO reqCreateSpecializationDTO)
             throws IdInvalidException {
         ResSpecializationDTO newSpecialization = this.specializationService.handleCreateSpecialization(reqCreateSpecializationDTO);
@@ -38,7 +38,7 @@ public class SpecializationController {
 
     @PutMapping("/specializations/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @ApiMessage("Update specialization")
+    @ApiMessage("Cập nhật chuyên ngành thành công")
     public ResponseEntity<Specialization> updateSpecialization(
             @PathVariable long id,
             @Valid @RequestBody Specialization specialization
@@ -49,21 +49,21 @@ public class SpecializationController {
 
     @DeleteMapping("/specializations/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @ApiMessage("Delete specialization")
+    @ApiMessage("Xóa chuyên ngành thành công")
     public ResponseEntity<Void> deleteSpecialization(@PathVariable long id) throws IdInvalidException {
         this.specializationService.handleDeleteSpecialization(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     @GetMapping("/specializations/{id}")
-    @ApiMessage("Fetch specialization by Id")
+    @ApiMessage("Lấy thông tin chuyên ngành thành công")
     public ResponseEntity<ResSpecializationDTO> getSpecialization(@PathVariable long id) throws IdInvalidException {
         ResSpecializationDTO specialization = this.specializationService.handleGetSpecializationById(id);
         return ResponseEntity.status(HttpStatus.OK).body(specialization);
     }
 
     @GetMapping("/specializations")
-    @ApiMessage("Fetch all specializations")
+    @ApiMessage("Lấy danh sách chuyên ngành thành công")
     public ResponseEntity<ResultPaginationDTO> getAllSpecializations(
             @Filter Specification<Specialization> spec,
             Pageable pageable,
@@ -74,7 +74,7 @@ public class SpecializationController {
     }
 
     @GetMapping("/specializations/by-industry/{industryId}")
-    @ApiMessage("Fetch specializations by industry id")
+    @ApiMessage("Lấy danh sách chuyên ngành theo mã ngành thành công")
     public ResponseEntity<List<ResSpecializationByIndustryId>> getSpecializationsByIndustryId(
             @PathVariable long industryId
     ) throws IdInvalidException {

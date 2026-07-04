@@ -8,7 +8,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ReqForgotPasswordDTO {
-    @NotBlank(message = "Please enter Email")
-    @Email(message = "Email is invalid!")
+    @NotBlank(message = "Vui lòng nhập Email")
+    @Email(message = "Email không hợp lệ!")
     private String email;
 }

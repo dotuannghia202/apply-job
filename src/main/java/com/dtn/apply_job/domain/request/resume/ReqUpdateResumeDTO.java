@@ -11,10 +11,10 @@ import java.util.List;
 public class ReqUpdateResumeDTO {
 
 
-    @Size(min = 1, message = "File name must not blank!")
+    @Size(min = 1, message = "Tên tệp tin không được để trống!")
     private String fileName;
 
-    @Size(min = 1, message = "File path must not blank!")
+    @Size(min = 1, message = "Đường dẫn tệp tin không được để trống!")
     private String fileUrl;
 
     

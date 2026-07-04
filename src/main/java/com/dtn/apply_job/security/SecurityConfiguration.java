@@ -58,15 +58,11 @@ public class SecurityConfiguration {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
-    // =========================================================================
-    // DẠY SPRING SECURITY CÁCH LẤY TOKEN TỪ COOKIE "access_token"
-    // =========================================================================
     @Bean
     public BearerTokenResolver bearerTokenResolver() {
         DefaultBearerTokenResolver defaultResolver = new DefaultBearerTokenResolver();
 
         return request -> {
-            // 1. Ưu tiên tìm trong Cookie trước
             if (request.getCookies() != null) {
                 for (Cookie cookie : request.getCookies()) {
                     if ("access_token".equals(cookie.getName())) {
@@ -74,11 +70,9 @@ public class SecurityConfiguration {
                     }
                 }
             }
-            // 2. Nếu không có Cookie thì tìm trong Header (Authorization: Bearer ...)
             return defaultResolver.resolve(request);
         };
     }
-    // =========================================================================
 
     @Bean
     public SecurityFilterChain filterChain(
@@ -121,7 +115,6 @@ public class SecurityConfiguration {
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
                         .authenticationEntryPoint(customAuthenticationEntryPoint)
 
-                        // 🟢 Gắn cái BearerTokenResolver vừa tạo ở trên vào chuỗi bảo mật
                         .bearerTokenResolver(bearerTokenResolver())
                 )
                 .formLogin(form -> form.disable())

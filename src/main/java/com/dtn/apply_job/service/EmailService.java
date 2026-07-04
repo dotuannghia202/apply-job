@@ -15,9 +15,9 @@ public class EmailService {
         this.mailSender = mailSender;
     }
 
-    // =======================================================================
-    // 🎨 HÀM TẠO KHUNG GIAO DIỆN CHUNG CHO TẤT CẢ EMAIL (BASE TEMPLATE)
-    // =======================================================================
+    
+    
+    
     private String buildHtmlTemplate(String title, String mainContent) {
         return """
                 <!DOCTYPE html>
@@ -55,18 +55,18 @@ public class EmailService {
                 """.formatted(title, mainContent);
     }
 
-    // =======================================================================
-    // 🛠 HÀM CỐT LÕI ĐỂ GỬI HTML EMAIL
-    // =======================================================================
+    
+    
+    
     private void sendHtmlEmail(String toEmail, String subject, String htmlBody) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
-            // Tham số 'true' báo cho Spring biết đây là Multipart/HTML email
+            
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setTo(toEmail);
             helper.setSubject(subject);
-            helper.setText(htmlBody, true); // true = Bật chế độ HTML
+            helper.setText(htmlBody, true); 
 
             mailSender.send(message);
             System.out.println("Đã gửi HTML Email thành công tới: " + toEmail);
@@ -76,9 +76,9 @@ public class EmailService {
     }
 
 
-    // =======================================================================
-    // 1. EMAIL TẠO TÀI KHOẢN MỚI
-    // =======================================================================
+    
+    
+    
     public void sendPasswordEmail(String toEmail, String generatedPassword) {
         String title = "Chào mừng bạn đến với Job Portal \uD83C\uDF89";
         String content = """
@@ -93,9 +93,9 @@ public class EmailService {
         sendHtmlEmail(toEmail, "Chào mừng đến với Nền tảng Tìm việc - JobPortal", htmlBody);
     }
 
-    // =======================================================================
-    // 2. EMAIL QUÊN MẬT KHẨU
-    // =======================================================================
+    
+    
+    
     public void sendResetPasswordEmail(String toEmail, String newPassword) {
         String title = "Yêu cầu cấp lại mật khẩu \uD83D\uDD12";
         String content = """
@@ -111,9 +111,9 @@ public class EmailService {
         sendHtmlEmail(toEmail, "JobPortal - Yêu cầu Cấp lại Mật khẩu", htmlBody);
     }
 
-    // =======================================================================
-    // 3. EMAIL TÀI KHOẢN BỊ KHÓA
-    // =======================================================================
+    
+    
+    
     public void sendAccountLockedEmail(String toEmail, String name) {
         String title = "CẢNH BÁO BẢO MẬT ⚠️";
         String content = """
@@ -128,9 +128,9 @@ public class EmailService {
         sendHtmlEmail(toEmail, "CẢNH BÁO: Tài khoản của bạn đã bị khóa - JobPortal", htmlBody);
     }
 
-    // =======================================================================
-    // 4. EMAIL CÔNG TY ĐƯỢC DUYỆT
-    // =======================================================================
+    
+    
+    
     public void sendCompanyApprovedEmail(String toEmail, String companyName) {
         String title = "Hồ sơ doanh nghiệp đã được phê duyệt! ✅";
         String content = """
@@ -138,7 +138,7 @@ public class EmailService {
                 <p>Chúc mừng! Hồ sơ đăng ký doanh nghiệp của công ty <b>'%s'</b> đã được Quản trị viên của chúng tôi phê duyệt thành công.</p>
                 <p>Ngay bây giờ, bạn có thể truy cập vào Hệ thống quản trị (Employer Dashboard) để bắt đầu sử dụng các tính năng AI, đăng tải tin tuyển dụng và tìm kiếm những ứng viên tài năng nhất.</p>
                 <center>
-                    <a href="https://dotuannghia.id.vn/login" class="btn">Đăng nhập Dashboard</a>
+                    <a href="https:
                 </center>
                 <br>
                 <p>Nếu cần hỗ trợ thêm, vui lòng liên hệ với chúng tôi.</p>

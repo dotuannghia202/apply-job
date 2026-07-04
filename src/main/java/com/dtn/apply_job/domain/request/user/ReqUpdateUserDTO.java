@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter
 public class ReqUpdateUserDTO {
 
-    @NotBlank(message = "Name must not be blank!")
+    @NotBlank(message = "Họ tên không được để trống!")
     private String name;
     private String avatarUrl;
     private int age;

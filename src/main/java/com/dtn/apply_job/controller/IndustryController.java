@@ -24,7 +24,7 @@ public class IndustryController {
 
     @PostMapping("/industries")
     @PreAuthorize("hasRole('ADMIN')")
-    @ApiMessage("Create industry")
+    @ApiMessage("Tạo ngành nghề thành công")
     public ResponseEntity<Industry> createIndustry(@Valid @RequestBody Industry industry) {
         Industry newIndustry = this.industryService.handleCreateIndustry(industry);
         return ResponseEntity.status(HttpStatus.CREATED).body(newIndustry);
@@ -32,7 +32,7 @@ public class IndustryController {
 
     @PutMapping("/industries/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @ApiMessage("Update industry")
+    @ApiMessage("Cập nhật ngành nghề thành công")
     public ResponseEntity<Industry> updateIndustry(@PathVariable long id, @Valid @RequestBody Industry industry)
             throws IdInvalidException {
         Industry updatedIndustry = this.industryService.handleUpdateIndustry(id, industry);
@@ -41,7 +41,7 @@ public class IndustryController {
 
     @DeleteMapping("/industries/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @ApiMessage("Delete industry")
+    @ApiMessage("Xóa ngành nghề thành công")
     public ResponseEntity<Void> deleteIndustry(@PathVariable long id) throws IdInvalidException {
         this.industryService.handleDeleteIndustry(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
@@ -49,14 +49,14 @@ public class IndustryController {
 
 
     @GetMapping("/industries/{id}")
-    @ApiMessage("Fetch industry by Id")
+    @ApiMessage("Lấy thông tin ngành nghề thành công")
     public ResponseEntity<Industry> getIndustry(@PathVariable long id) throws IdInvalidException {
         Industry industry = this.industryService.handleGetIndustryById(id);
         return ResponseEntity.status(HttpStatus.OK).body(industry);
     }
 
     @GetMapping("/industries")
-    @ApiMessage("Fetch all industries")
+    @ApiMessage("Lấy danh sách ngành nghề thành công")
     public ResponseEntity<ResultPaginationDTO> getAllIndustries(
             @Filter Specification<Industry> spec,
             Pageable pageable,

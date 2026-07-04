@@ -33,8 +33,7 @@ public class GlobalException {
         res.setStatusCode(HttpStatus.UNAUTHORIZED.value());
         res.setError(ex.getClass().getSimpleName());
 
-        // Cố tình ghi đè câu thông báo lỗi để bảo mật hơn
-        res.setMessage("Incorrect account or password!");
+        res.setMessage("Tài khoản hoặc mật khẩu không chính xác!");
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(res);
     }
@@ -57,7 +56,6 @@ public class GlobalException {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<RestRespon<Object>> validationError(MethodArgumentNotValidException ex) {
 
-        //Lấy ra lỗi sử dụng đối tượng BindingResult
         BindingResult result = ex.getBindingResult();
         final List<FieldError> fieldErrors = result.getFieldErrors();
 
@@ -87,7 +85,7 @@ public class GlobalException {
         res.setMessage(
                 (message != null && !message.isBlank())
                         ? message
-                        : "Upload file failed!"
+                        : "Tải lên tệp tin thất bại!"
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
     }
@@ -101,7 +99,7 @@ public class GlobalException {
         RestRespon<Object> res = new RestRespon<>();
         res.setStatusCode(HttpStatus.NOT_FOUND.value());
         res.setError(ex.getClass().getSimpleName());
-        res.setMessage(ex instanceof NoResourceFoundException ? "URL is not found" : ex.getMessage());
+        res.setMessage(ex instanceof NoResourceFoundException ? "Đường dẫn không tồn tại" : ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(res);
     }
 
@@ -112,7 +110,7 @@ public class GlobalException {
         res.setError(ex.getClass().getSimpleName());
 
         Map<String, Object> errorBody = new HashMap<>();
-        errorBody.put("message", "Invalid input data");
+        errorBody.put("message", "Dữ liệu đầu vào không hợp lệ");
 
         Throwable cause = ex.getCause();
         if (cause instanceof InvalidFormatException invalidFormatException) {
@@ -125,20 +123,20 @@ public class GlobalException {
                 String allowedValues = Arrays.toString(invalidFormatException.getTargetType().getEnumConstants());
                 errorBody.put("field", fieldName);
                 errorBody.put("message", String.format(
-                        "Invalid value for '%s'. Allowed values: %s",
+                        "Giá trị không hợp lệ cho '%s'. Các giá trị được phép: %s",
                         fieldName,
                         allowedValues
                 ));
             } else if (Instant.class.equals(invalidFormatException.getTargetType())) {
                 errorBody.put("field", fieldName);
                 errorBody.put("message", String.format(
-                        "Invalid value for '%s'. Expected ISO-8601 datetime, e.g. 2026-05-11T00:00:00Z",
+                        "Giá trị không hợp lệ cho '%s'. Định dạng ngày giờ mong muốn ISO-8601, ví dụ: 2026-05-11T00:00:00Z",
                         fieldName
                 ));
             } else {
                 errorBody.put("field", fieldName);
                 errorBody.put("message", String.format(
-                        "Invalid value for '%s'. Expected type: %s",
+                        "Giá trị không hợp lệ cho '%s'. Kiểu dữ liệu mong muốn: %s",
                         fieldName,
                         invalidFormatException.getTargetType() != null
                                 ? invalidFormatException.getTargetType().getSimpleName()
@@ -156,10 +154,9 @@ public class GlobalException {
     public ResponseEntity<RestRespon<Object>> handleDisabledException(DisabledException ex) {
         RestRespon<Object> res = new RestRespon<>();
 
-        // Dùng mã 403 Forbidden (Bị cấm) là chuẩn nhất cho tài khoản bị khóa
         res.setStatusCode(HttpStatus.FORBIDDEN.value());
         res.setError(ex.getClass().getSimpleName());
-        res.setMessage("Your account has been locked. Please contact the Admin!");
+        res.setMessage("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ với Quản trị viên!");
 
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(res);
     }

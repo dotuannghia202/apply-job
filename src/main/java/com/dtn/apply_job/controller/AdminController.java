@@ -20,8 +20,8 @@ public class AdminController {
     }
 
     @GetMapping("/dashboard-stats")
-    @PreAuthorize("hasRole('ADMIN')") // 🚨 BỨC TƯỜNG LỬA: CHỈ ADMIN MỚI VÀO ĐƯỢC
-    @ApiMessage("Admin Dashboard statistics data retrieved successfully")
+    @PreAuthorize("hasRole('ADMIN')")
+    @ApiMessage("Lấy số liệu thống kê trang quản trị Admin thành công")
     public ResponseEntity<ResAdminDashboardDTO> getAdminDashboardStats() {
 
         ResAdminDashboardDTO result = dashboardService.getAdminDashboardStats();

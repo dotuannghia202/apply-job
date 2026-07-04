@@ -13,61 +13,59 @@ import java.util.Set;
 @Setter
 public class ReqCreateJobDTO {
 
-    @NotBlank(message = "Job title must not be left blank!")
-    @Size(max = 255, message = "Job title must be at most 255 characters!")
+    @NotBlank(message = "Tiêu đề công việc không được để trống!")
+    @Size(max = 255, message = "Tiêu đề công việc tối đa 255 ký tự!")
     private String name;
 
-    @NotBlank(message = "Location must not be left blank!")
+    @NotBlank(message = "Địa điểm làm việc không được để trống!")
     private String location;
 
-    @NotNull(message = "Min salary must not be null!")
-    @PositiveOrZero(message = "Min salary must be greater than or equal to 0!")
+    @NotNull(message = "Lương tối thiểu không được để trống!")
+    @PositiveOrZero(message = "Lương tối thiểu phải lớn hơn hoặc bằng 0!")
     private Double minSalary;
 
-    @NotNull(message = "Max salary must not be null!")
-    @PositiveOrZero(message = "Max salary must be greater than or equal to 0!")
+    @NotNull(message = "Lương tối đa không được để trống!")
+    @PositiveOrZero(message = "Lương tối đa phải lớn hơn hoặc bằng 0!")
     private Double maxSalary;
 
-    @NotNull(message = "Quantity must not be null!")
-    @Positive(message = "Quantity must be greater than 0!")
+    @NotNull(message = "Số lượng tuyển dụng không được để trống!")
+    @Positive(message = "Số lượng tuyển dụng phải lớn hơn 0!")
     private Integer quantity;
 
-    @NotBlank(message = "Description must not be left blank!")
+    @NotBlank(message = "Mô tả công việc không được để trống!")
     private String description;
 
-    @NotEmpty(message = "Requirements must not be empty!")
-    private List<@NotBlank(message = "Requirement must not be blank!") String> requirements;
+    @NotEmpty(message = "Yêu cầu công việc không được để trống!")
+    private List<@NotBlank(message = "Yêu cầu không được để trống!") String> requirements;
 
-    @NotEmpty(message = "Levels must not be empty!")
-    private Set<@NotNull(message = "Level must not be null!") LevelEnum> levels;
+    @NotEmpty(message = "Cấp bậc không được để trống!")
+    private Set<@NotNull(message = "Cấp bậc không được để trống!") LevelEnum> levels;
 
-    @NotNull(message = "Start date must not be null!")
+    @NotNull(message = "Ngày bắt đầu không được để trống!")
     private Instant startDate;
 
-    @NotNull(message = "End date must not be null!")
+    @NotNull(message = "Hạn nhận hồ sơ không được để trống!")
     private Instant endDate;
 
-    // Không bắt buộc gửi lên.
-    // Nếu null thì BE tự set mặc định = true khi create.
     private Boolean active;
 
     private List<String> benefits;
 
-    @NotBlank(message = "Working hours must not be left blank!")
+    @NotBlank(message = "Thời gian làm việc không được để trống!")
     private String workingHours;
 
-    @NotNull(message = "Company ID must not be null!")
+    @NotNull(message = "Mã công ty không được để trống!")
     private Long companyId;
 
-    @NotNull(message = "Specialization ID must not be null!")
+    @NotNull(message = "Mã chuyên ngành không được để trống!")
     private Long specializationId;
 
-    @NotEmpty(message = "Skill IDs must not be empty!")
-    private List<@NotNull(message = "Skill ID must not be null!")
-    @Positive(message = "Skill ID must be greater than 0!")
+    @NotEmpty(message = "Mã kỹ năng không được để trống!")
+    private List<@NotNull(message = "Mã kỹ năng không được để trống!")
+    @Positive(message = "ID kỹ năng phải lớn hơn 0!")
             Long> skillIds;
 
-    @AssertTrue(message = "Max salary must be greater than or equal to min salary!")
+    @AssertTrue(message = "Lương tối đa phải lớn hơn hoặc bằng lương tối thiểu!")
     public boolean isSalaryRangeValid() {
         if (minSalary == null || maxSalary == null) {
             return true;

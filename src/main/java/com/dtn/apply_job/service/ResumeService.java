@@ -57,7 +57,7 @@ public class ResumeService {
         if (req.getSkillIds() != null && !req.getSkillIds().isEmpty()) {
             List<Skill> skills = this.skillRepository.findByIdIn(req.getSkillIds());
             if (skills.size() != req.getSkillIds().size()) {
-                throw new IdInvalidException("Some skill ids are invalid");
+                throw new IdInvalidException("Một số mã kỹ năng không hợp lệ");
             }
             resume.setSkills(skills);
         } else {
@@ -101,7 +101,7 @@ public class ResumeService {
             } else {
                 List<Skill> skills = this.skillRepository.findByIdIn(reqDTO.getSkillIds());
                 if (skills.size() != reqDTO.getSkillIds().size()) {
-                    throw new IdInvalidException("Some skill ids are invalid");
+                    throw new IdInvalidException("Một số mã kỹ năng không hợp lệ");
                 }
                 currentResume.setSkills(skills);
             }
@@ -157,7 +157,7 @@ public class ResumeService {
 
         User currentUser = this.userRepository.findByEmail(email);
         if (currentUser == null) {
-            throw new IdInvalidException("Account doesn't exist! Please register first!");
+            throw new IdInvalidException("Tài khoản không tồn tại! Vui lòng đăng ký trước!");
         }
 
         List<Resume> myResumes = this.resumeRepository.findByCandidateAndActiveTrue(currentUser);
@@ -174,14 +174,14 @@ public class ResumeService {
                 .orElseThrow(() -> new IdInvalidException("Please log in to view this CV!"));
         User currentUser = userRepository.findByEmail(currentUserEmail);
         if (currentUser == null) {
-            throw new IdInvalidException("Account doesn't exist! Please register first!");
+            throw new IdInvalidException("Tài khoản không tồn tại! Vui lòng đăng ký trước!");
         }
 
         boolean isAdmin = currentUser.getRoles().stream()
                 .anyMatch(role -> role.getName().name().equals("ADMIN"));
 
         if (!isAdmin && !resume.getCandidate().getEmail().equals(currentUserEmail)) {
-            throw new IdInvalidException("You don't have permission to view this CV! Only the owner can view it!");
+            throw new IdInvalidException("Bạn không có quyền xem CV này! Chỉ chủ sở hữu mới có quyền xem!");
         }
 
         return resume;
@@ -261,23 +261,23 @@ public class ResumeService {
 
     @Transactional
     public ResResumeDTO handleSetDefaultResume(long targetResumeId) throws IdInvalidException {
-        // Lấy CV mục tiêu và kiểm tra quyền sở hữu
+        
         Resume targetResume = getResumeAndCheckPermission(targetResumeId);
         User candidate = targetResume.getCandidate();
 
-        // Lấy toàn bộ CV của user này
+        
         List<Resume> allMyResumes = resumeRepository.findByCandidate(candidate);
 
-        // Duyệt qua tất cả CV, ép thằng mục tiêu thành true, các thằng khác thành false
+        
         for (Resume r : allMyResumes) {
             if (r.getId().equals(targetResumeId)) {
-                r.setDefault(true);  // Set thành mặc định
+                r.setDefault(true);  
             } else {
-                r.setDefault(false); // Gỡ bỏ mặc định của các CV cũ
+                r.setDefault(false); 
             }
         }
 
-        // Lưu toàn bộ danh sách đã cập nhật vào Database (Hibernate sẽ tối ưu tự update các row có thay đổi)
+        
         resumeRepository.saveAll(allMyResumes);
 
         return convertToResResumeDTO(targetResume);
