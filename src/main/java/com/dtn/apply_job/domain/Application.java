@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
+import java.util.List;
 
 @Entity
 @Table(name = "applications")
@@ -39,6 +40,17 @@ public class Application {
     @Column(name = "match_score")
     private Double matchScore;
 
+    @ElementCollection
+    @CollectionTable(name = "application_matched_skills", joinColumns = @JoinColumn(name = "application_id"))
+    @Column(name = "skill_name")
+    private List<String> matchedSkills;
+
+    // THÊM MỚI: Lưu danh sách kỹ năng còn thiếu
+    @ElementCollection
+    @CollectionTable(name = "application_missing_skills", joinColumns = @JoinColumn(name = "application_id"))
+    @Column(name = "skill_name")
+    private List<String> missingSkills;
+
     // Lời nhắn gửi kèm của ứng viên (Cover Letter)
     @Column(name = "cover_letter", columnDefinition = "TEXT")
     private String coverLetter;
@@ -51,4 +63,5 @@ public class Application {
     protected void onCreate() {
         appliedAt = Instant.now();
     }
+
 }

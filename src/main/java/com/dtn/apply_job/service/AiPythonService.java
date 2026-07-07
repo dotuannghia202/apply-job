@@ -43,19 +43,19 @@ public class AiPythonService {
     public AiPythonService(ResumeRepository resumeRepository, ApplicationRepository applicationRepository) {
         this.resumeRepository = resumeRepository;
         this.applicationRepository = applicationRepository;
-        this.restTemplate = new RestTemplate(); 
+        this.restTemplate = new RestTemplate();
     }
 
-    
+
     @Async
     public void processCvTextAsync(Long resumeId, String fileUrl) {
         try {
             System.out.println(">>> Đang gửi file PDF sang Python AI để đọc...");
 
-            
+
             String pythonApiUrl = pythonAiBaseUrl + extractCvPath;
 
-            
+
             Map<String, String> requestBody = new HashMap<>();
             requestBody.put("file_url", fileUrl);
 
@@ -63,16 +63,16 @@ public class AiPythonService {
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
 
-            
+
             ResponseEntity<Map> response = restTemplate.postForEntity(pythonApiUrl, requestEntity, Map.class);
 
-            
+
             Map<String, Object> responseBody = response.getBody();
             if (responseBody != null && (Integer) responseBody.get("status_code") == 200) {
                 Map<String, Object> data = (Map<String, Object>) responseBody.get("data");
                 String parsedText = (String) data.get("parsed_text");
 
-                
+
                 Resume resume = resumeRepository.findById(resumeId).orElseThrow();
                 resume.setParsedText(parsedText);
                 resumeRepository.save(resume);
@@ -94,7 +94,7 @@ public class AiPythonService {
 
             String pythonApiUrl = pythonAiBaseUrl + matchScorePath;
 
-            
+
             Map<String, String> requestBody = new HashMap<>();
             requestBody.put("job_text", jobText != null ? jobText : "");
             requestBody.put("cv_text", cvText != null ? cvText : "");
@@ -103,23 +103,29 @@ public class AiPythonService {
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
 
-            
+
             ResponseEntity<Map> response = restTemplate.postForEntity(pythonApiUrl, requestEntity, Map.class);
 
             Map<String, Object> responseBody = response.getBody();
             if (responseBody != null && (Integer) responseBody.get("status_code") == 200) {
-                
+
                 Map<String, Object> data = (Map<String, Object>) responseBody.get("data");
 
-                
+
                 Double matchScore = Double.valueOf(data.get("match_score").toString());
 
-                
+
+                List<String> matchedSkills = (List<String>) data.get("matched_skills");
+                List<String> missingSkills = (List<String>) data.get("missing_skills");
+
                 Application app = applicationRepository.findById(applicationId).orElseThrow();
                 app.setMatchScore(matchScore);
-                applicationRepository.save(app);
 
-                System.out.println(">>> AI Đã chấm xong! Điểm số: " + matchScore + "% cho Application ID: " + applicationId);
+                app.setMatchedSkills(matchedSkills);
+                app.setMissingSkills(missingSkills);
+
+                applicationRepository.save(app);
+                System.out.println(">>> AI Đã phân tích xong! Application ID: " + applicationId);
             } else {
                 System.out.println(">>> Python AI báo lỗi: " + responseBody.get("error"));
             }
@@ -129,11 +135,11 @@ public class AiPythonService {
         }
     }
 
-    
+
     public ResGenerateJdDTO generateJdFromPython(ReqGenerateJdDTO reqDTO) throws Exception {
         String pythonApiUrl = pythonAiBaseUrl + generateJdPath;
 
-        
+
         Map<String, String> requestBody = new HashMap<>();
         requestBody.put("title", reqDTO.getTitle());
         requestBody.put("skills", reqDTO.getSkills());

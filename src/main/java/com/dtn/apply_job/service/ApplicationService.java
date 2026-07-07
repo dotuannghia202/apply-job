@@ -351,6 +351,8 @@ public class ApplicationService {
         dto.setId(app.getId());
         dto.setStatus(app.getStatus());
         dto.setMatchScore(app.getMatchScore());
+        dto.setMatchedSkills(app.getMatchedSkills());
+        dto.setMissingSkills(app.getMissingSkills());
         dto.setCoverLetter(app.getCoverLetter());
         dto.setHasCoverLetter(app.getCoverLetter() != null && !app.getCoverLetter().trim().isEmpty());
         dto.setAppliedAt(app.getAppliedAt());

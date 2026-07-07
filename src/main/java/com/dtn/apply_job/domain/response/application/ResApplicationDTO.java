@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.List;
 
 @Getter
 @Setter
@@ -12,6 +13,8 @@ public class ResApplicationDTO {
     private Long id;
     private ApplicationStatus status;
     private Double matchScore; // Điểm AI
+    private List<String> matchedSkills;
+    private List<String> missingSkills;
     private String coverLetter;
     private Boolean hasCoverLetter;
 
