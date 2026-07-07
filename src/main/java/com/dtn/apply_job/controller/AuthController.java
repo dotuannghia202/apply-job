@@ -167,17 +167,17 @@ public class AuthController {
 
         ResponseCookie deleteRefreshCookie = ResponseCookie.from("refresh_token", "")
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path("/")
-                .sameSite("Lax")
+                .sameSite("None")
                 .maxAge(0)
                 .build();
 
         ResponseCookie deleteAccessCookie = ResponseCookie.from("access_token", "")
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path("/")
-                .sameSite("Lax")
+                .sameSite("None")
                 .maxAge(0)
                 .build();
 
@@ -216,9 +216,9 @@ public class AuthController {
     private ResponseCookie buildRefreshTokenCookie(String refreshToken) {
         return ResponseCookie.from("refresh_token", refreshToken)
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path("/")
-                .sameSite("Lax")
+                .sameSite("None")
                 .maxAge(refreshTokenExpiration / 1000)
                 .build();
     }
@@ -226,9 +226,9 @@ public class AuthController {
     private ResponseCookie buildAccessTokenCookie(String accessToken) {
         return ResponseCookie.from("access_token", accessToken)
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path("/")
-                .sameSite("Lax")
+                .sameSite("None")
                 .maxAge(accessTokenExpiration / 1000)
                 .build();
     }
