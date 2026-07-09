@@ -15,4 +15,5 @@ public class ReqUpdateApplicationStatusDTO {
 
     private Instant interviewTime;
     private String interviewLocation;
+    private String interviewMessage;
 }

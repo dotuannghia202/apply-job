@@ -259,15 +259,10 @@ public class ApplicationService {
         }
 
         String statusName = reqDTO.getStatus().name();
+        String finalHrMessage = "";
 
-        // Cố định câu lời nhắn tiêu chuẩn
-        String defaultHrMessage = "Vui lòng chuẩn bị kỹ lưỡng và phản hồi lại email này để xác nhận khả năng tham dự phỏng vấn của bạn. Hẹn gặp lại bạn!";
-
-        // =======================================================
-        // 1. KIỂM TRA LOGIC & THIẾT LẬP DỮ LIỆU TRƯỚC KHI LƯU DB
-        // =======================================================
         if (statusName.equals("INTERVIEW")) {
-            // Bắt lỗi: HR phải nhập đủ Ngày giờ và Địa điểm
+
             if (reqDTO.getInterviewTime() == null || reqDTO.getInterviewLocation() == null || reqDTO.getInterviewLocation().isBlank()) {
                 throw new IdInvalidException("Vui lòng cung cấp đầy đủ Thời gian và Địa điểm phỏng vấn!");
             }
@@ -277,10 +272,14 @@ public class ApplicationService {
                 throw new IdInvalidException("Vui lòng vào trang Hồ sơ để liên kết tài khoản Gmail trước khi lên lịch phỏng vấn!");
             }
 
-            // Gán dữ liệu vào Entity
+            finalHrMessage = "Vui lòng chuẩn bị kỹ lưỡng và phản hồi lại email này để xác nhận khả năng tham dự phỏng vấn của bạn. Hẹn gặp lại bạn!";
+            if (reqDTO.getInterviewMessage() != null && !reqDTO.getInterviewMessage().isBlank()) {
+                finalHrMessage = reqDTO.getInterviewMessage().trim();
+            }
+
             app.setInterviewTime(reqDTO.getInterviewTime());
-            app.setInterviewLocation(reqDTO.getInterviewLocation());
-            app.setInterviewMessage(defaultHrMessage);
+            app.setInterviewLocation(reqDTO.getInterviewLocation().trim());
+            app.setInterviewMessage(finalHrMessage);
         }
 
         app.setStatus(reqDTO.getStatus());
@@ -315,7 +314,7 @@ public class ApplicationService {
                     java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm - dd/MM/yyyy").withZone(zoneId);
                     String formattedTime = formatter.format(reqDTO.getInterviewTime());
 
-                    // Gọi Gmail OAuth Service
+                    // Gọi Gmail OAuth Service gửi thư thật bằng mail HR
                     gmailOAuthService.sendInterviewInvitationAsync(
                             currentUser,
                             candidate.getEmail(),
@@ -324,7 +323,7 @@ public class ApplicationService {
                             jobTitle,
                             formattedTime,
                             reqDTO.getInterviewLocation(),
-                            defaultHrMessage
+                            finalHrMessage
                     );
                     break;
             }

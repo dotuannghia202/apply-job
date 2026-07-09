@@ -147,6 +147,15 @@ public class GmailOAuthService {
     public void sendInterviewInvitationAsync(User hrUser, String toEmail, String candidateName, String companyName, String jobTitle, String time, String location, String hrMessage) {
         try {
             String title = "Thư mời phỏng vấn - " + companyName + " \uD83D\uDCE7";
+
+            String hrMessageBlock = "";
+            if (hrMessage != null && !hrMessage.isBlank()) {
+                hrMessageBlock = """
+                        <blockquote style="border-left: 4px solid #16a34a; padding-left: 15px; color: #4b5563; font-style: italic; background: #f0fdf4; padding: 10px;">
+                            "%s"
+                        </blockquote>
+                        """.formatted(hrMessage);
+            }
             String content = """
                     <p>Chào <b>%s</b>,</p>
                     <p>Cảm ơn bạn đã quan tâm và ứng tuyển vào vị trí <b>%s</b> tại <b>%s</b>.</p>
@@ -157,13 +166,10 @@ public class GmailOAuthService {
                         <p style="margin: 5px 0;">📍 <b>Địa điểm / Link Online:</b> <a href="%s" style="color: #2563eb; text-decoration: underline;" target="_blank">%s</a></p>
                     </div>
                     
-                    <p><b>Lời nhắn từ Nhà tuyển dụng:</b></p>
-                    <blockquote style="border-left: 4px solid #16a34a; padding-left: 15px; color: #4b5563; font-style: italic; background: #f0fdf4; padding: 10px;">
-                        "%s"
-                    </blockquote>
+                    
                     
                     <p>Vui lòng phản hồi lại email này để xác nhận khả năng tham dự của bạn. Chúc bạn có một buổi phỏng vấn thành công!</p>
-                    """.formatted(candidateName, jobTitle, companyName, time, location, location, hrMessage);
+                    """.formatted(candidateName, jobTitle, companyName, time, location, location, hrMessageBlock);
 
             String htmlBody = buildHtmlTemplate(title, content);
             String subject = "Thư mời phỏng vấn: " + jobTitle + " - " + companyName;
