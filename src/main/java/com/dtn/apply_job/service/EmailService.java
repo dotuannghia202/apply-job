@@ -15,9 +15,7 @@ public class EmailService {
         this.mailSender = mailSender;
     }
 
-    
-    
-    
+
     private String buildHtmlTemplate(String title, String mainContent) {
         return """
                 <!DOCTYPE html>
@@ -55,18 +53,16 @@ public class EmailService {
                 """.formatted(title, mainContent);
     }
 
-    
-    
-    
+
     private void sendHtmlEmail(String toEmail, String subject, String htmlBody) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
-            
+
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setTo(toEmail);
             helper.setSubject(subject);
-            helper.setText(htmlBody, true); 
+            helper.setText(htmlBody, true);
 
             mailSender.send(message);
             System.out.println("Đã gửi HTML Email thành công tới: " + toEmail);
@@ -76,9 +72,6 @@ public class EmailService {
     }
 
 
-    
-    
-    
     public void sendPasswordEmail(String toEmail, String generatedPassword) {
         String title = "Chào mừng bạn đến với Job Portal \uD83C\uDF89";
         String content = """
@@ -93,9 +86,7 @@ public class EmailService {
         sendHtmlEmail(toEmail, "Chào mừng đến với Nền tảng Tìm việc - JobPortal", htmlBody);
     }
 
-    
-    
-    
+
     public void sendResetPasswordEmail(String toEmail, String newPassword) {
         String title = "Yêu cầu cấp lại mật khẩu \uD83D\uDD12";
         String content = """
@@ -111,9 +102,7 @@ public class EmailService {
         sendHtmlEmail(toEmail, "JobPortal - Yêu cầu Cấp lại Mật khẩu", htmlBody);
     }
 
-    
-    
-    
+
     public void sendAccountLockedEmail(String toEmail, String name) {
         String title = "CẢNH BÁO BẢO MẬT ⚠️";
         String content = """
@@ -128,9 +117,7 @@ public class EmailService {
         sendHtmlEmail(toEmail, "CẢNH BÁO: Tài khoản của bạn đã bị khóa - JobPortal", htmlBody);
     }
 
-    
-    
-    
+
     public void sendCompanyApprovedEmail(String toEmail, String companyName) {
         String title = "Hồ sơ doanh nghiệp đã được phê duyệt! ✅";
         String content = """
@@ -164,4 +151,5 @@ public class EmailService {
         String htmlBody = buildHtmlTemplate(title, content);
         sendHtmlEmail(toEmail, "JobPortal - Thông báo về hồ sơ doanh nghiệp", htmlBody);
     }
+
 }

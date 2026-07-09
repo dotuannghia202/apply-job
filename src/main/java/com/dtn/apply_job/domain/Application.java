@@ -20,23 +20,19 @@ public class Application {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Nộp vào Công việc nào?
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "job_id", nullable = false)
     private Job job;
 
-    // Sử dụng CV nào để nộp?
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "resume_id", nullable = false)
     private Resume resume;
 
-    // Trạng thái đơn (Dùng Enum)
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private ApplicationStatus status = ApplicationStatus.PENDING;
 
-    // VÙNG DỮ LIỆU DÀNH CHO AI: Lưu điểm % phù hợp do AI chấm
     @Column(name = "match_score")
     private Double matchScore;
 
@@ -45,23 +41,30 @@ public class Application {
     @Column(name = "skill_name")
     private List<String> matchedSkills;
 
-    // THÊM MỚI: Lưu danh sách kỹ năng còn thiếu
     @ElementCollection
     @CollectionTable(name = "application_missing_skills", joinColumns = @JoinColumn(name = "application_id"))
     @Column(name = "skill_name")
     private List<String> missingSkills;
 
-    // Lời nhắn gửi kèm của ứng viên (Cover Letter)
+
+    // THÔNG TIN LÊN LỊCH PHỎNG VẤN
+    @Column(name = "interview_time")
+    private Instant interviewTime;
+
+    @Column(name = "interview_location", columnDefinition = "TEXT")
+    private String interviewLocation;
+
+    @Column(name = "interview_message", columnDefinition = "TEXT")
+    private String interviewMessage;
+
     @Column(name = "cover_letter", columnDefinition = "TEXT")
     private String coverLetter;
 
     @Column(name = "applied_at")
     private Instant appliedAt;
 
-    // Hàm tự động gán ngày nộp lúc Insert dữ liệu
     @PrePersist
     protected void onCreate() {
         appliedAt = Instant.now();
     }
-
 }

@@ -17,6 +17,9 @@ import java.util.Set;
 @Setter
 public class User {
 
+    @Column(name = "google_refresh_token", length = 500)
+    private String googleRefreshToken;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;

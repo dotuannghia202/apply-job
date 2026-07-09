@@ -9,5 +9,8 @@ import lombok.Setter;
 public class ResUpdateApplicationDTO {
     private Long id;
     private ApplicationStatus status;
+
+
 }
+
 

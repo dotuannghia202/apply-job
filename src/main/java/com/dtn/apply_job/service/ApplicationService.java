@@ -14,7 +14,6 @@ import com.dtn.apply_job.repository.JobRepository;
 import com.dtn.apply_job.repository.ResumeRepository;
 import com.dtn.apply_job.repository.UserRepository;
 import com.dtn.apply_job.security.SecurityUtil;
-import com.dtn.apply_job.util.constant.enums.ERole;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -35,15 +34,17 @@ public class ApplicationService {
     private final ResumeRepository resumeRepository;
     private final AiPythonService aiPythonService;
     private final NotificationService notificationService;
+    private final GmailOAuthService gmailOAuthService;
 
 
-    public ApplicationService(ApplicationRepository applicationRepository, UserRepository userRepository, JobRepository jobRepository, ResumeRepository resumeRepository, AiPythonService aiPythonService, NotificationService notificationService) {
+    public ApplicationService(ApplicationRepository applicationRepository, UserRepository userRepository, JobRepository jobRepository, ResumeRepository resumeRepository, AiPythonService aiPythonService, NotificationService notificationService, GmailOAuthService gmailOAuthService) {
         this.applicationRepository = applicationRepository;
         this.userRepository = userRepository;
         this.jobRepository = jobRepository;
         this.resumeRepository = resumeRepository;
         this.aiPythonService = aiPythonService;
         this.notificationService = notificationService;
+        this.gmailOAuthService = gmailOAuthService;
     }
 
 
@@ -245,15 +246,41 @@ public class ApplicationService {
         return resultPaginationDTO;
     }
 
+    @Transactional
     public ResUpdateApplicationDTO handleUpdateStatus(long id, ReqUpdateApplicationStatusDTO reqDTO) throws Exception {
         Application app = getAppAndCheckAccess(id);
 
         String email = SecurityUtil.getCurrentUser().get();
         User currentUser = userRepository.findByEmail(email);
-        boolean isCandidate = currentUser.getRoles().stream().anyMatch(r -> r.getName().name().equals("ROLE_CANDIDATE"));
+        boolean isCandidate = currentUser.getRoles().stream().anyMatch(r -> r.getName().name().equals("ROLE_CANDIDATE") || r.getName().name().equals("CANDIDATE"));
 
         if (isCandidate) {
-            throw new Exception("Người ứng tuyển không được phép thay đổi trạng thái ứng tuyển!");
+            throw new org.springframework.security.access.AccessDeniedException("Người ứng tuyển không được phép thay đổi trạng thái ứng tuyển!");
+        }
+
+        String statusName = reqDTO.getStatus().name();
+
+        // Cố định câu lời nhắn tiêu chuẩn
+        String defaultHrMessage = "Vui lòng chuẩn bị kỹ lưỡng và phản hồi lại email này để xác nhận khả năng tham dự phỏng vấn của bạn. Hẹn gặp lại bạn!";
+
+        // =======================================================
+        // 1. KIỂM TRA LOGIC & THIẾT LẬP DỮ LIỆU TRƯỚC KHI LƯU DB
+        // =======================================================
+        if (statusName.equals("INTERVIEW")) {
+            // Bắt lỗi: HR phải nhập đủ Ngày giờ và Địa điểm
+            if (reqDTO.getInterviewTime() == null || reqDTO.getInterviewLocation() == null || reqDTO.getInterviewLocation().isBlank()) {
+                throw new IdInvalidException("Vui lòng cung cấp đầy đủ Thời gian và Địa điểm phỏng vấn!");
+            }
+
+            // Bắt lỗi: HR phải liên kết Gmail rồi mới được gửi thư
+            if (currentUser.getGoogleRefreshToken() == null) {
+                throw new IdInvalidException("Vui lòng vào trang Hồ sơ để liên kết tài khoản Gmail trước khi lên lịch phỏng vấn!");
+            }
+
+            // Gán dữ liệu vào Entity
+            app.setInterviewTime(reqDTO.getInterviewTime());
+            app.setInterviewLocation(reqDTO.getInterviewLocation());
+            app.setInterviewMessage(defaultHrMessage);
         }
 
         app.setStatus(reqDTO.getStatus());
@@ -262,7 +289,6 @@ public class ApplicationService {
         try {
             User candidate = updatedApp.getResume().getCandidate();
             String jobTitle = updatedApp.getJob().getName();
-            String statusName = updatedApp.getStatus().name();
 
             String title = "Cập nhật trạng thái ứng tuyển";
             String message = "Đơn ứng tuyển của bạn cho vị trí [" + jobTitle + "] đã chuyển sang trạng thái: " + statusName;
@@ -270,7 +296,7 @@ public class ApplicationService {
             switch (statusName) {
                 case "APPROVED":
                     title = "🎉 Chúc mừng! Đơn ứng tuyển được duyệt";
-                    message = "Nhà tuyển dụng đã duyệt CV của bạn cho vị trí [" + jobTitle + "]. Vui lòng kiểm tra email để xem lịch phỏng vấn.";
+                    message = "Nhà tuyển dụng đã duyệt CV của bạn cho vị trí [" + jobTitle + "].";
                     break;
                 case "REJECTED":
                     title = "Cập nhật trạng thái ứng tuyển";
@@ -280,20 +306,43 @@ public class ApplicationService {
                     title = "CV đang được xem xét";
                     message = "Nhà tuyển dụng đang xem xét CV của bạn cho vị trí [" + jobTitle + "].";
                     break;
+                case "INTERVIEW":
+                    title = "📅 Lời mời phỏng vấn!";
+                    message = "Bạn có một lời mời phỏng vấn cho vị trí [" + jobTitle + "]. Vui lòng kiểm tra email để xem chi tiết thời gian và địa điểm.";
+
+                    // Format thời gian đẹp để nhét vào Email
+                    java.time.ZoneId zoneId = java.time.ZoneId.of("Asia/Ho_Chi_Minh");
+                    java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm - dd/MM/yyyy").withZone(zoneId);
+                    String formattedTime = formatter.format(reqDTO.getInterviewTime());
+
+                    // Gọi Gmail OAuth Service
+                    gmailOAuthService.sendInterviewInvitationAsync(
+                            currentUser,
+                            candidate.getEmail(),
+                            candidate.getName(),
+                            updatedApp.getJob().getCompany().getName(),
+                            jobTitle,
+                            formattedTime,
+                            reqDTO.getInterviewLocation(),
+                            defaultHrMessage
+                    );
+                    break;
             }
 
-
+            // Bắn thông báo lên chuông Web
             notificationService.sendToUser(
                     candidate,
                     title,
                     message,
                     "APPLICATION_STATUS_UPDATED",
                     updatedApp.getId(),
-                    ERole.CANDIDATE
+                    com.dtn.apply_job.util.constant.enums.ERole.CANDIDATE
             );
+
         } catch (Exception e) {
-            System.err.println("Lỗi khi gửi thông báo: " + e.getMessage());
+            System.err.println(">>> Lỗi khi gửi thông báo/email: " + e.getMessage());
         }
+
         return convertToResUpdateAppDTO(updatedApp);
     }
 

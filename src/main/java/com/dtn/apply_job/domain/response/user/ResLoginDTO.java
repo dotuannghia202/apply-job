@@ -28,8 +28,10 @@ public class ResLoginDTO {
         private String name;
         private List<String> roles;
         private String avatarUrl;
+        private Boolean isGmailLinked;
 
         private CompanyInfo company;
+
 
         @Getter
         @Setter

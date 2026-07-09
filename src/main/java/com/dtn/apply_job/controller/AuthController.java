@@ -210,6 +210,7 @@ public class AuthController {
             companyInfo.setName(user.getCompany().getName());
             userLogin.setCompany(companyInfo);
         }
+        userLogin.setIsGmailLinked(user.getGoogleRefreshToken() != null);
         return userLogin;
     }
 

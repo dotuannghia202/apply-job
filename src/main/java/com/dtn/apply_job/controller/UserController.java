@@ -10,6 +10,7 @@ import com.dtn.apply_job.domain.response.user.ResUpdateUserDTO;
 import com.dtn.apply_job.domain.response.user.ResUserDTO;
 import com.dtn.apply_job.exception.EmailExistedException;
 import com.dtn.apply_job.exception.IdInvalidException;
+import com.dtn.apply_job.service.GmailOAuthService;
 import com.dtn.apply_job.service.JobService;
 import com.dtn.apply_job.service.UserService;
 import com.dtn.apply_job.util.constant.enums.ERole;
@@ -23,18 +24,22 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/v1")
 public class UserController {
 
     private final UserService userService;
     private final JobService jobService;
+    private final GmailOAuthService gmailOAuthService;
 
 
-    public UserController(UserService userService, PasswordEncoder passwordEncoder, JobService jobService) {
+    public UserController(UserService userService, PasswordEncoder passwordEncoder, JobService jobService, GmailOAuthService gmailOAuthService) {
 
         this.userService = userService;
         this.jobService = jobService;
+        this.gmailOAuthService = gmailOAuthService;
     }
 
     @GetMapping("/users")
@@ -135,6 +140,13 @@ public class UserController {
     @ApiMessage("Thay đổi mật khẩu thành công")
     public ResponseEntity<Void> changePassword(@Valid @RequestBody ReqChangePasswordDTO reqDTO) throws Exception {
         userService.handleChangePassword(reqDTO);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/users/link-gmail")
+    @PreAuthorize("hasRole('EMPLOYER')")
+    public ResponseEntity<Void> linkGmail(@RequestBody Map<String, String> body) throws Exception {
+        gmailOAuthService.linkGoogleAccount(body.get("code"));
         return ResponseEntity.ok().build();
     }
 
