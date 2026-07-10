@@ -1,6 +1,7 @@
 package com.dtn.apply_job.domain.response.application;
 
 import com.dtn.apply_job.util.constant.enums.ApplicationStatus;
+import jakarta.persistence.Column;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,6 +20,13 @@ public class ResApplicationDTO {
     private Boolean hasCoverLetter;
 
     private Instant appliedAt;
+    
+    private Instant interviewTime;
+
+    private String interviewLocation;
+
+    @Column(name = "interview_message", columnDefinition = "TEXT")
+    private String interviewMessage;
 
     private JobInfo job;
     private ResumeInfo resume;

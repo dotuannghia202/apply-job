@@ -404,6 +404,9 @@ public class ApplicationService {
         dto.setCoverLetter(app.getCoverLetter());
         dto.setHasCoverLetter(app.getCoverLetter() != null && !app.getCoverLetter().trim().isEmpty());
         dto.setAppliedAt(app.getAppliedAt());
+        dto.setInterviewTime(app.getInterviewTime());
+        dto.setInterviewLocation(app.getInterviewLocation());
+        dto.setInterviewMessage(app.getInterviewMessage());
 
         ResApplicationDTO.JobInfo jobInfo = new ResApplicationDTO.JobInfo();
         jobInfo.setId(app.getJob().getId());
