@@ -13,7 +13,9 @@ import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.exception.InvalidDateRangeException;
 import com.dtn.apply_job.service.AiPythonService;
 import com.dtn.apply_job.service.JobService;
+import com.dtn.apply_job.util.constant.enums.CompanyStatus;
 import com.turkraft.springfilter.boot.Filter;
+import jakarta.persistence.criteria.Predicate;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -75,9 +77,13 @@ public class JobController {
             @RequestParam(required = false) Boolean active,
             @RequestParam(required = false) Integer sortCreatedAt
     ) throws IdInvalidException {
-        Specification<Job> notExpiredSpec = (root, query, cb) ->
-                cb.greaterThanOrEqualTo(root.get("endDate"), java.time.Instant.now());
-        Specification<Job> finalSpec = spec == null ? notExpiredSpec : spec.and(notExpiredSpec);
+        Specification<Job> publicViewSpec = (root, query, cb) -> {
+
+            Predicate notExpired = cb.greaterThanOrEqualTo(root.get("endDate"), java.time.Instant.now());
+            Predicate companyApproved = cb.equal(root.get("company").get("status"), CompanyStatus.APPROVED);
+            return cb.and(notExpired, companyApproved);
+        };
+        Specification<Job> finalSpec = spec == null ? publicViewSpec : spec.and(publicViewSpec);
         ResultPaginationDTO result = this.jobService.handleGetAllJobsWithFilters(
                 finalSpec, pageable, location, levels, specialization,
                 companyName, null, null, name, skill, active, sortCreatedAt);
