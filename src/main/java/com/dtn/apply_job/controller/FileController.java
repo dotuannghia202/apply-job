@@ -1,15 +1,13 @@
 package com.dtn.apply_job.controller;
 
 import com.dtn.apply_job.common.annotation.ApiMessage;
+import com.dtn.apply_job.domain.response.file.ResDownloadFileDTO;
 import com.dtn.apply_job.domain.response.file.ResUploadFileDTO;
 import com.dtn.apply_job.exception.FileUploadException;
 import com.dtn.apply_job.service.FileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -51,5 +49,14 @@ public class FileController {
         return ResponseEntity.ok().body(resUploadFileDTO);
     }
 
-
+    @GetMapping("/files/download")
+    @ApiMessage("Lấy đường link tải xuống thành công")
+    public ResponseEntity<ResDownloadFileDTO> getDownloadUrl(
+            @RequestParam("fileUrl") String fileUrl,
+            @RequestParam(value = "fileName", required = false) String fileName
+    ) {
+        String downloadUrl = this.fileService.generateDownloadUrl(fileUrl, fileName);
+        ResDownloadFileDTO res = new ResDownloadFileDTO(downloadUrl, fileName);
+        return ResponseEntity.ok().body(res);
+    }
 }
