@@ -5,8 +5,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.io.InputStream;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -55,28 +55,13 @@ public class FileService {
         return uploadResult.get("secure_url").toString();
     }
 
-    public String generateDownloadUrl(String fileUrl, String customFilename) {
+
+    public byte[] downloadFileBytes(String fileUrl) throws IOException {
         if (fileUrl == null || fileUrl.isBlank()) {
-            throw new IllegalArgumentException("Đường dẫn tệp tin không hợp lệ!");
+            throw new IllegalArgumentException("Đường dẫn file không hợp lệ!");
         }
-
-        // 1. Chuẩn hóa tên file tải về và loại bỏ kí tự lạ, thêm đuôi pdf nếu thiếu)
-        String safeName = (customFilename != null && !customFilename.isBlank()) ?
-                customFilename.trim().replaceAll("[^a-zA-Z0-9_.-]", "_")
-                : "CV_Resume.pdf";
-        if (!safeName.toLowerCase().endsWith(".pdf")) {
-            safeName += ".pdf";
+        try (InputStream in = URI.create(fileUrl).toURL().openStream()) {
+            return in.readAllBytes();
         }
-
-        // Encode tên file để tránh lỗi URL
-        String encodedFileName = URLEncoder.encode(safeName, StandardCharsets.UTF_8).replace("+", "%20");
-
-        // 2. Chèn 'fl_attachment:Ten_File' vào ngay sau '/upload/' trong link Cloudinary
-        if (fileUrl.contains("/upload/")) {
-            return fileUrl.replace("/upload/", "/upload/fl_attachment:" + encodedFileName + "/");
-        }
-
-        return fileUrl;
-
     }
 }

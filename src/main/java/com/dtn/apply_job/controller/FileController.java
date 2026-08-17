@@ -1,11 +1,13 @@
 package com.dtn.apply_job.controller;
 
 import com.dtn.apply_job.common.annotation.ApiMessage;
-import com.dtn.apply_job.domain.response.file.ResDownloadFileDTO;
 import com.dtn.apply_job.domain.response.file.ResUploadFileDTO;
 import com.dtn.apply_job.exception.FileUploadException;
 import com.dtn.apply_job.service.FileService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -50,13 +52,31 @@ public class FileController {
     }
 
     @GetMapping("/files/download")
-    @ApiMessage("Lấy đường link tải xuống thành công")
-    public ResponseEntity<ResDownloadFileDTO> getDownloadUrl(
+    public void downloadFile(
             @RequestParam("fileUrl") String fileUrl,
-            @RequestParam(value = "fileName", required = false) String fileName
-    ) {
-        String downloadUrl = this.fileService.generateDownloadUrl(fileUrl, fileName);
-        ResDownloadFileDTO res = new ResDownloadFileDTO(downloadUrl, fileName);
-        return ResponseEntity.ok().body(res);
+            @RequestParam(value = "fileName", required = false) String fileName,
+            HttpServletResponse response
+    ) throws IOException {
+
+        // 1. Đọc dữ liệu nhị phân từ Cloudinary
+        byte[] data = this.fileService.downloadFileBytes(fileUrl);
+
+        // 2. Chuẩn hóa tên file
+        String downloadName = (fileName != null && !fileName.isBlank())
+                ? fileName.trim()
+                : "CV_Resume.pdf";
+
+        if (!downloadName.toLowerCase().endsWith(".pdf")) {
+            downloadName += ".pdf";
+        }
+
+        // 3. Thiết lập Header HTTP trả về
+        response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + downloadName + "\"");
+        response.setContentLength(data.length);
+
+        // 4. Ghi trực tiếp mảng byte ra luồng mạng (Không bị RestRespon bọc lại)
+        response.getOutputStream().write(data);
+        response.getOutputStream().flush();
     }
 }
