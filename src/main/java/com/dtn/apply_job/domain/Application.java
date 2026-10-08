@@ -2,15 +2,17 @@ package com.dtn.apply_job.domain;
 
 import com.dtn.apply_job.util.constant.enums.ApplicationStatus;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.List;
 
 @Entity
 @Table(name = "applications")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

@@ -31,7 +31,7 @@ public class ApplicationController {
 
     @PostMapping
     @PreAuthorize("hasRole('CANDIDATE')")
-    @ApiMessage("Nộp hồ sơ ứng tuyển thành công")
+    @ApiMessage("Your CV submitted successfully!")
     public ResponseEntity<ResCreateApplicationDTO> create(@Valid @RequestBody ReqCreateApplicationDTO reqDTO) throws Exception {
         return ResponseEntity.status(HttpStatus.CREATED).body(applicationService.handleCreateApplication(reqDTO));
     }

@@ -9,11 +9,14 @@ import com.dtn.apply_job.domain.response.application.ResApplicationDTO;
 import com.dtn.apply_job.domain.response.application.ResCreateApplicationDTO;
 import com.dtn.apply_job.domain.response.application.ResUpdateApplicationDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
-import com.dtn.apply_job.repository.ApplicationRepository;
-import com.dtn.apply_job.repository.JobRepository;
-import com.dtn.apply_job.repository.ResumeRepository;
-import com.dtn.apply_job.repository.UserRepository;
+import com.dtn.apply_job.mapper.ApplicationMapper;
+import com.dtn.apply_job.repository.*;
 import com.dtn.apply_job.security.SecurityUtil;
+import com.dtn.apply_job.util.constant.enums.InterviewSessionStatus;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,28 +29,24 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Service
 public class ApplicationService {
-    private final ApplicationRepository applicationRepository;
-    private final UserRepository userRepository;
-    private final JobRepository jobRepository;
-    private final ResumeRepository resumeRepository;
-    private final AiPythonService aiPythonService;
-    private final NotificationService notificationService;
-    private final GmailOAuthService gmailOAuthService;
+    ApplicationRepository applicationRepository;
+    UserRepository userRepository;
+    JobRepository jobRepository;
+    ResumeRepository resumeRepository;
+    AiPythonService aiPythonService;
+    NotificationService notificationService;
+    GmailOAuthService gmailOAuthService;
+    InterviewSessionRepository interviewSessionRepository;
+
+    ApplicationMapper applicationMapper;
 
 
-    public ApplicationService(ApplicationRepository applicationRepository, UserRepository userRepository, JobRepository jobRepository, ResumeRepository resumeRepository, AiPythonService aiPythonService, NotificationService notificationService, GmailOAuthService gmailOAuthService) {
-        this.applicationRepository = applicationRepository;
-        this.userRepository = userRepository;
-        this.jobRepository = jobRepository;
-        this.resumeRepository = resumeRepository;
-        this.aiPythonService = aiPythonService;
-        this.notificationService = notificationService;
-        this.gmailOAuthService = gmailOAuthService;
-    }
-
-
+    //Check access permission
     private Application getAppAndCheckAccess(long id) throws Exception {
         Application app = applicationRepository.findById(id)
                 .orElseThrow(() -> new IdInvalidException("The application form does not exist!"));
@@ -64,60 +63,51 @@ public class ApplicationService {
 
             if (currentUser.getCompany() == null ||
                     app.getJob().getCompany().getId() != currentUser.getCompany().getId()) {
-                throw new Exception("Bạn không được phép xem hồ sơ ứng tuyển của công ty khác!");
+                throw new Exception("You don't have permission to view job applications submitted to other company!");
             }
             return app;
         }
 
 
         if (app.getResume().getCandidate().getId() != currentUser.getId()) {
-            throw new Exception("Bạn không được phép xem hồ sơ ứng tuyển của người khác!");
+            throw new Exception("You don't have permission to view resume application!");
         }
 
         return app;
     }
 
-
+    //Handle create Application
     @Transactional
     public ResCreateApplicationDTO handleCreateApplication(ReqCreateApplicationDTO reqDTO) throws IdInvalidException, Exception {
-
 
         String email = SecurityUtil.getCurrentUser().orElseThrow();
         User candidate = userRepository.findByEmail(email);
 
-
         Resume resume = resumeRepository.findById(reqDTO.getResumeId())
                 .orElseThrow(() -> new IdInvalidException("CV doesn't exist!"));
 
-
         if (resume.getCandidate().getId() != candidate.getId()) {
-            throw new Exception("Bạn không được phép sử dụng CV của người khác!");
+            throw new Exception("You don't have permission to use someone else's cv!");
         }
-
 
         Job job = jobRepository.findById(reqDTO.getJobId())
                 .orElseThrow(() -> new IdInvalidException("Job doesn't exist!"));
 
         if (!job.getActive()) {
-            throw new Exception("Công việc này đã đóng hoặc thời hạn nộp hồ sơ đã hết hạn!");
+            throw new Exception("\n" +
+                    "This job posting is closed, or the application deadline has passed!");
         }
-
 
         boolean isAlreadyApplied = applicationRepository.existsByResumeCandidateAndJob(candidate, job);
         if (isAlreadyApplied) {
-            throw new Exception("Bạn đã ứng tuyển công việc này rồi. Vui lòng kiểm tra trang Quản lý ứng tuyển!");
+            throw new Exception("You have already applied for this job. Please check the Application Management page!");
         }
 
-
-        Application application = new Application();
-        application.setJob(job);
+        Application application = applicationMapper.toApplication(reqDTO);
         application.setResume(resume);
-        application.setCoverLetter(reqDTO.getCoverLetter());
+        application.setJob(job);
 
-
-        application.setMatchScore(null);
-
-        Application savedApp = applicationRepository.save(application);
+        application = applicationRepository.save(application);
 
 
         try {
@@ -127,12 +117,10 @@ public class ApplicationService {
                 String candidateName = candidate.getName();
                 String jobTitle = job.getName();
 
-                String title = "Có ứng viên mới nộp CV!";
-                String message = "Ứng viên " + candidateName + " vừa ứng tuyển vào vị trí [" + jobTitle + "].";
-
+                String title = "A candidate has been submitted their CV!";
+                String message = "Candidate " + candidateName + " has been applied for position [" + jobTitle + "].";
 
                 for (User hr : company.getUsers()) {
-
                     boolean isEmployer = hr.getRoles().stream()
                             .anyMatch(r -> r.getName().name().equals("ROLE_EMPLOYER") || r.getName().name().equals("EMPLOYER"));
 
@@ -142,33 +130,42 @@ public class ApplicationService {
                                 title,
                                 message,
                                 "NEW_APPLICATION",
-                                savedApp.getId(),
+                                application.getId(),
                                 com.dtn.apply_job.util.constant.enums.ERole.EMPLOYER
                         );
                     }
                 }
             }
         } catch (Exception e) {
-            System.err.println("Lỗi khi gửi thông báo cho HR: " + e.getMessage());
+            System.err.println("Error sending notification to HR: " + e.getMessage());
         }
 
         String jobTextForAI = "";
         if (job.getDescription() != null) jobTextForAI += job.getDescription() + "\n";
         if (job.getRequirements() != null) jobTextForAI += job.getRequirements();
 
-
+        //Calculate match score cv and jd
         String cvTextForAI = resume.getParsedText();
+        aiPythonService.calculateMatchScoreAsync(application.getId(), jobTextForAI, cvTextForAI);
+
+        //Initial InterviewSession
+        InterviewSession session = InterviewSession.builder()
+                .application(application)
+                .status(InterviewSessionStatus.NOT_STARTED)
+                .build();
+        InterviewSession savedSession = interviewSessionRepository.save(session);
+
+        //Active Python AI to generate five interview questions
+        aiPythonService.generateInterviewQuestionsAsync(savedSession.getId(), jobTextForAI, cvTextForAI);
 
 
-        aiPythonService.calculateMatchScoreAsync(savedApp.getId(), jobTextForAI, cvTextForAI);
-
-        ResCreateApplicationDTO res = new ResCreateApplicationDTO();
-        res.setId(savedApp.getId());
-        res.setStatus(savedApp.getStatus());
-        res.setAppliedAt(savedApp.getAppliedAt());
-        return res;
+        return ResCreateApplicationDTO.builder()
+                .id(application.getId())
+                .status(application.getStatus())
+                .appliedAt(application.getAppliedAt())
+                .interviewSession(savedSession.getId())
+                .build();
     }
-
 
     public ResApplicationDTO handleGetAppById(long id) throws Exception {
         Application app = getAppAndCheckAccess(id);

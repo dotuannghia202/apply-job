@@ -1,15 +1,19 @@
 package com.dtn.apply_job.domain.response.application;
 
 import com.dtn.apply_job.util.constant.enums.ApplicationStatus;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
 
-@Getter
-@Setter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ResCreateApplicationDTO {
-    private Long id;
-    private ApplicationStatus status;
-    private Instant appliedAt;
+    Long id;
+    ApplicationStatus status;
+    Instant appliedAt;
+    Long interviewSession;
 }

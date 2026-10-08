@@ -1,11 +1,21 @@
 package com.dtn.apply_job.service;
 
 import com.dtn.apply_job.domain.Application;
+import com.dtn.apply_job.domain.InterviewQuestion;
+import com.dtn.apply_job.domain.InterviewSession;
 import com.dtn.apply_job.domain.Resume;
 import com.dtn.apply_job.domain.request.job.ReqGenerateJdDTO;
 import com.dtn.apply_job.domain.response.job.ResGenerateJdDTO;
 import com.dtn.apply_job.repository.ApplicationRepository;
+import com.dtn.apply_job.repository.InterviewQuestionRepository;
+import com.dtn.apply_job.repository.InterviewSessionRepository;
 import com.dtn.apply_job.repository.ResumeRepository;
+import com.dtn.apply_job.util.constant.enums.QuestionCategory;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -13,45 +23,51 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Service
 public class AiPythonService {
 
+    @NonFinal
     @Value("${python.ai.base-url}")
-    private String pythonAiBaseUrl;
+    String pythonAiBaseUrl;
 
+    @NonFinal
     @Value("${python.ai.extract-cv-path}")
-    private String extractCvPath;
+    String extractCvPath;
 
+    @NonFinal
     @Value("${python.ai.match-path}")
-    private String matchScorePath;
+    String matchScorePath;
 
+    @NonFinal
     @Value("${python.ai.generate-jd-path}")
-    private String generateJdPath;
+    String generateJdPath;
 
-    private final ResumeRepository resumeRepository;
-    private final RestTemplate restTemplate;
-    private final ApplicationRepository applicationRepository;
+    @NonFinal
+    @Value("${python.ai.generate-interview-question-path}")
+    String generateInterviewQuestionPath;
 
-    public AiPythonService(ResumeRepository resumeRepository, ApplicationRepository applicationRepository) {
-        this.resumeRepository = resumeRepository;
-        this.applicationRepository = applicationRepository;
-        this.restTemplate = new RestTemplate();
-    }
+    ResumeRepository resumeRepository;
+    RestTemplate restTemplate;
+    ApplicationRepository applicationRepository;
+    InterviewSessionRepository interviewSessionRepository;
+    InterviewQuestionRepository interviewQuestionRepository;
 
-
+    //Run in the background while uploading the CV
+    //Convert the CV to text format.
     @Async
     public void processCvTextAsync(Long resumeId, String fileUrl) {
         try {
-            System.out.println(">>> Đang gửi file PDF sang Python AI để đọc...");
-
+            System.out.println(">>> Sending the PDF file to the Python AI for reading...");
 
             String pythonApiUrl = pythonAiBaseUrl + extractCvPath;
 
@@ -77,20 +93,20 @@ public class AiPythonService {
                 resume.setParsedText(parsedText);
                 resumeRepository.save(resume);
 
-                System.out.println(">>> AI đã đọc và lưu Text CV thành công cho Resume ID: " + resumeId);
+                System.out.println(">>> AI has successfully read and saved the text CV for Resume ID:" + resumeId);
             } else {
-                System.out.println(">>> Python AI báo lỗi: " + responseBody.get("error"));
+                System.out.println(">>> Python AI reports an error: " + responseBody.get("error"));
             }
 
         } catch (Exception e) {
-            System.out.println(">>> Lỗi kết nối đến Python AI: " + e.getMessage());
+            System.out.println(">>> Connection error to Python AI: " + e.getMessage());
         }
     }
 
     @Async
     public void calculateMatchScoreAsync(Long applicationId, String jobText, String cvText) {
         try {
-            System.out.println(">>> Đang gửi Text sang Python AI để chấm điểm...");
+            System.out.println(">>> Sending text to Python AI for scoring...");
 
             String pythonApiUrl = pythonAiBaseUrl + matchScorePath;
 
@@ -125,13 +141,13 @@ public class AiPythonService {
                 app.setMissingSkills(missingSkills);
 
                 applicationRepository.save(app);
-                System.out.println(">>> AI Đã phân tích xong! Application ID: " + applicationId);
+                System.out.println(">>> AI analysis complete! Application ID: " + applicationId);
             } else {
-                System.out.println(">>> Python AI báo lỗi: " + responseBody.get("error"));
+                System.out.println(">>> Python AI reports an error: " + responseBody.get("error"));
             }
 
         } catch (Exception e) {
-            System.out.println(">>> Lỗi kết nối đến Python AI (Match): " + e.getMessage());
+            System.out.println(">>> Connection error to Python AI (Match): " + e.getMessage());
         }
     }
 
@@ -154,24 +170,24 @@ public class AiPythonService {
         Map<String, Object> responseBody = response.getBody();
 
         if (responseBody == null) {
-            throw new Exception("Python AI trả về phản hồi rỗng");
+            throw new Exception("Python return empty response");
         }
 
         Object statusCodeObj = responseBody.get("status_code");
         int statusCode = convertToInt(statusCodeObj);
 
         if (statusCode != 200) {
-            throw new Exception("Lỗi từ Python AI: " + responseBody.get("error"));
+            throw new Exception("Error from Python AI: " + responseBody.get("error"));
         }
 
         Object dataObj = responseBody.get("data");
         if (!(dataObj instanceof Map<?, ?> data)) {
-            throw new Exception("Phản hồi từ Python AI không hợp lệ: data phải là một đối tượng");
+            throw new Exception("Response from Python AI invalid: data must be an object");
         }
 
         Object generatedJdObj = data.get("generated_jd");
         if (!(generatedJdObj instanceof Map<?, ?> generatedJd)) {
-            throw new Exception("Phản hồi từ Python AI không hợp lệ: generated_jd phải là một đối tượng");
+            throw new Exception("Response from Python AI invalid: generated_jd must be an object");
         }
 
         ResGenerateJdDTO result = new ResGenerateJdDTO();
@@ -197,7 +213,7 @@ public class AiPythonService {
             return Integer.parseInt(str);
         }
 
-        throw new Exception("Mã trạng thái không hợp lệ từ Python AI: " + value);
+        throw new Exception("Status code invalid from AI Python: " + value);
     }
 
     private List<String> toStringList(Object value) {
@@ -212,5 +228,68 @@ public class AiPythonService {
         }
 
         return List.of(String.valueOf(value));
+    }
+
+
+    // Call the Python API to generate five interview questions
+    @Async
+    public void generateInterviewQuestionsAsync(Long sessionId, String jobText, String cvText) {
+        try {
+            System.out.println(">>> [AI Interview] Sending JD & CV to Python AI to generate interview question for Session ID: " + sessionId);
+
+            String pythonApiUrl = pythonAiBaseUrl + generateInterviewQuestionPath;
+
+            Map<String, String> requestBody = new HashMap<>();
+            requestBody.put("job_text", jobText != null ? jobText : "");
+            requestBody.put("cv_text", cvText != null ? cvText : "");
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
+
+            ResponseEntity<Map> response = restTemplate.postForEntity(pythonApiUrl, requestEntity, Map.class);
+            Map<String, Object> responseBody = response.getBody();
+
+            if (responseBody != null && (Integer) responseBody.get("status_code") == 200) {
+
+                List<Map<String, Object>> rawQuestions = (List<Map<String, Object>>) responseBody.get("data");
+
+                if (rawQuestions == null) {
+                    log.warn(">>> [AI Interview] The list of questions from Python is empty!");
+                    return;
+                }
+
+
+                InterviewSession session = interviewSessionRepository.findById(sessionId)
+                        .orElseThrow(() -> new RuntimeException("InterviewSession ID: " + sessionId + "not found"));
+
+                List<InterviewQuestion> questions = new ArrayList<>();
+                for (Map<String, Object> q : rawQuestions) {
+                    InterviewQuestion question = InterviewQuestion.builder()
+                            .interviewSession(session)
+                            .orderIndex((Integer) q.get("order_index"))
+                            .questionText((String) q.get("question_text"))
+                            .category(QuestionCategory.valueOf(((String) q.get("category")).toUpperCase()))
+                            .timeLimitSeconds((Integer) q.get("time_limit_seconds"))
+                            .rubric((String) q.get("rubric"))
+                            .build();
+                    questions.add(question);
+                }
+
+                interviewQuestionRepository.saveAll(questions);
+                System.out.println(">>> [AI Interview] has just been generated" + questions.size() + " interview question for Session: " + sessionId);
+            } else {
+                System.err.println(">>> [AI Interview] Python error: " + (responseBody != null ? responseBody.get("error") : "empty"));
+            }
+        } catch (HttpStatusCodeException ex) {
+            // ex.getResponseBodyAsString() chứa JSON lỗi từ Python
+            String responseBody = ex.getResponseBodyAsString();
+            log.error(">>> [AI Interview] Python error: Status = {}, Body = {}",
+                    ex.getStatusCode(), responseBody);
+        } catch (ResourceAccessException ex) {
+            log.error(">>> [AI Interview] Unable to connect to the Python service (Connection Timeout/Refused)");
+        } catch (Exception ex) {
+            log.error(">>> [AI Interview] Unknown error: ", ex);
+        }
     }
 }

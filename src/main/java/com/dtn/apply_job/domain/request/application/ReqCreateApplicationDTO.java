@@ -1,16 +1,22 @@
 package com.dtn.apply_job.domain.request.application;
 
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.FieldDefaults;
 
-@Setter
-@Getter
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ReqCreateApplicationDTO {
-    @NotNull(message = "Thiếu thông tin ID công việc")
+    @NotNull(message = "Missing job ID information")
     private Long jobId;
 
-    @NotNull(message = "Vui lòng chọn CV để ứng tuyển (Resume ID)")
+    @NotNull(message = "Please select a CV to apply (Resume ID)")
     private Long resumeId;
 
     private String coverLetter;
