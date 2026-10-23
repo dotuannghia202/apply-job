@@ -10,6 +10,7 @@ import com.dtn.apply_job.domain.request.resume.ReqUpdateResumeDTO;
 import com.dtn.apply_job.domain.response.resume.ResResumeDTO;
 import com.dtn.apply_job.domain.response.resume.ResUpdateResumeDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
+import com.dtn.apply_job.mapper.ResumeMapper;
 import com.dtn.apply_job.repository.ResumeRepository;
 import com.dtn.apply_job.repository.SkillRepository;
 import com.dtn.apply_job.repository.SpecializationRepository;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,6 +38,7 @@ public class ResumeService {
     private final SkillRepository skillRepository;
     private final SpecializationRepository specializationRepository;
     private final AiPythonService aiPythonService;
+    private final ResumeMapper resumeMapper;
 
     @Transactional
     public ResResumeDTO handleCreateResume(ReqCreateResumeDTO req) throws IdInvalidException {
@@ -46,13 +49,8 @@ public class ResumeService {
             throw new IdInvalidException("Tài khoản không tồn tại!");
         }
 
-        Resume resume = new Resume();
+        Resume resume = resumeMapper.toResume(req);
         resume.setCandidate(currentUser);
-        resume.setFileName(req.getFileName());
-        resume.setFileUrl(req.getFileUrl());
-        resume.setActive(true);
-
-        resume.setParsedText(null);
 
         if (req.getSkillIds() != null && !req.getSkillIds().isEmpty()) {
             List<Skill> skills = this.skillRepository.findByIdIn(req.getSkillIds());
@@ -72,27 +70,19 @@ public class ResumeService {
             resume.setSpecialization(null);
         }
 
-        resume.setCreatedAt(Instant.now());
-
         Resume savedResume = this.resumeRepository.save(resume);
         aiPythonService.processCvTextAsync(savedResume.getId(), savedResume.getFileUrl());
-        return convertToResResumeDTO(savedResume);
+        return resumeMapper.toResResumeDTO(savedResume);
     }
 
-    public ResUpdateResumeDTO handleUpdateResume(long id, ReqUpdateResumeDTO reqDTO) throws IdInvalidException {
+    public ResUpdateResumeDTO handleUpdateResume(UUID id, ReqUpdateResumeDTO reqDTO) throws IdInvalidException {
         Resume currentResume = getResumeAndCheckPermission(id);
+        boolean fileUrlChanged = reqDTO.getFileUrl() != null && !reqDTO.getFileUrl().equals(currentResume.getFileUrl());
 
-        if (reqDTO.getFileName() != null) {
-            currentResume.setFileName(reqDTO.getFileName());
-        }
+        resumeMapper.updateResumeFromDTO(reqDTO, currentResume);
 
-        if (reqDTO.getFileUrl() != null && !reqDTO.getFileUrl().equals(currentResume.getFileUrl())) {
-            currentResume.setFileUrl(reqDTO.getFileUrl());
+        if (fileUrlChanged) {
             aiPythonService.processCvTextAsync(id, reqDTO.getFileUrl());
-        }
-
-        if (reqDTO.getIsActive() != null) {
-            currentResume.setActive(reqDTO.getIsActive());
         }
 
         if (reqDTO.getSkillIds() != null) {
@@ -116,26 +106,26 @@ public class ResumeService {
         currentResume.setUpdatedAt(Instant.now());
 
         Resume updatedResume = resumeRepository.save(currentResume);
-        return convertToResUpdateResumeDTO(updatedResume);
+        return resumeMapper.toResUpdateResumeDTO(updatedResume);
     }
 
     @Transactional
-    public void handleSoftDeleteResume(long id) throws IdInvalidException {
+    public void handleSoftDeleteResume(UUID id) throws IdInvalidException {
         Resume currentResume = getResumeAndCheckPermission(id);
         currentResume.setActive(false);
         resumeRepository.save(currentResume);
     }
 
-    public ResResumeDTO handleGetResumeById(long id) throws Exception {
+    public ResResumeDTO handleGetResumeById(UUID id) throws Exception {
         Resume resume = getResumeAndCheckPermission(id);
-        return convertToResResumeDTO(resume);
+        return resumeMapper.toResResumeDTO(resume);
     }
 
     public ResultPaginationDTO handleGetAllResumes(Specification<Resume> spec, Pageable pageable) {
         Page<Resume> resumePage = this.resumeRepository.findAll(spec, pageable);
 
         List<ResResumeDTO> results = resumePage.getContent().stream()
-                .map(this::convertToResResumeDTO)
+                .map(resumeMapper::toResResumeDTO)
                 .collect(Collectors.toList());
 
         ResultPaginationDTO resultPaginationDTO = new ResultPaginationDTO();
@@ -162,11 +152,11 @@ public class ResumeService {
 
         List<Resume> myResumes = this.resumeRepository.findByCandidateAndActiveTrue(currentUser);
         return myResumes.stream()
-                .map(this::convertToResResumeDTO)
+                .map(resumeMapper::toResResumeDTO)
                 .collect(Collectors.toList());
     }
 
-    private Resume getResumeAndCheckPermission(long resumeId) throws IdInvalidException {
+    private Resume getResumeAndCheckPermission(UUID resumeId) throws IdInvalidException {
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new IdInvalidException("CV doesn't exist!"));
 
@@ -187,80 +177,8 @@ public class ResumeService {
         return resume;
     }
 
-    private ResResumeDTO convertToResResumeDTO(Resume resume) {
-        ResResumeDTO dto = new ResResumeDTO();
-        dto.setId(resume.getId());
-        dto.setFileName(resume.getFileName());
-        dto.setFileUrl(resume.getFileUrl());
-        dto.setActive(resume.isActive());
-        dto.setDefault(resume.isDefault());
-        dto.setCreatedAt(resume.getCreatedAt());
-        dto.setUpdatedAt(resume.getUpdatedAt());
-
-        List<String> skillNames = Collections.emptyList();
-        if (resume.getSkills() != null) {
-            skillNames = resume.getSkills().stream()
-                    .map(Skill::getName)
-                    .collect(Collectors.toList());
-        }
-        dto.setSkills(skillNames);
-
-        if (resume.getCandidate() != null) {
-            ResResumeDTO.CandidateInfo candidateInfo = new ResResumeDTO.CandidateInfo();
-            candidateInfo.setId(resume.getCandidate().getId());
-            candidateInfo.setName(resume.getCandidate().getName());
-            candidateInfo.setEmail(resume.getCandidate().getEmail());
-            dto.setCandidate(candidateInfo);
-        }
-
-        if (resume.getSpecialization() != null) {
-            ResResumeDTO.SpecializationInfo specializationInfo = new ResResumeDTO.SpecializationInfo();
-            specializationInfo.setId(resume.getSpecialization().getId());
-            specializationInfo.setName(resume.getSpecialization().getName());
-            dto.setSpecialization(specializationInfo);
-        }
-
-        return dto;
-    }
-
-    private ResUpdateResumeDTO convertToResUpdateResumeDTO(Resume resume) {
-        ResUpdateResumeDTO dto = new ResUpdateResumeDTO();
-        dto.setId(resume.getId());
-        dto.setFileName(resume.getFileName());
-        dto.setFileUrl(resume.getFileUrl());
-        dto.setActive(resume.isActive());
-        dto.setCreatedAt(resume.getCreatedAt());
-        dto.setUpdatedAt(resume.getUpdatedAt());
-        dto.setUpdatedBy(resume.getUpdatedBy());
-
-        List<String> skillNames = Collections.emptyList();
-        if (resume.getSkills() != null) {
-            skillNames = resume.getSkills().stream()
-                    .map(Skill::getName)
-                    .collect(Collectors.toList());
-        }
-        dto.setSkills(skillNames);
-
-        if (resume.getCandidate() != null) {
-            ResUpdateResumeDTO.CandidateInfo candidateInfo = new ResUpdateResumeDTO.CandidateInfo();
-            candidateInfo.setId(resume.getCandidate().getId());
-            candidateInfo.setName(resume.getCandidate().getName());
-            candidateInfo.setEmail(resume.getCandidate().getEmail());
-            dto.setCandidate(candidateInfo);
-        }
-
-        if (resume.getSpecialization() != null) {
-            ResUpdateResumeDTO.SpecializationInfo specializationInfo = new ResUpdateResumeDTO.SpecializationInfo();
-            specializationInfo.setId(resume.getSpecialization().getId());
-            specializationInfo.setName(resume.getSpecialization().getName());
-            dto.setSpecialization(specializationInfo);
-        }
-
-        return dto;
-    }
-
     @Transactional
-    public ResResumeDTO handleSetDefaultResume(long targetResumeId) throws IdInvalidException {
+    public ResResumeDTO handleSetDefaultResume(UUID targetResumeId) throws IdInvalidException {
         
         Resume targetResume = getResumeAndCheckPermission(targetResumeId);
         User candidate = targetResume.getCandidate();
@@ -280,6 +198,6 @@ public class ResumeService {
         
         resumeRepository.saveAll(allMyResumes);
 
-        return convertToResResumeDTO(targetResume);
+        return resumeMapper.toResResumeDTO(targetResume);
     }
 }

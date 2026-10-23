@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Setter
 @Getter
@@ -71,7 +72,7 @@ public class CompanyController {
     @PreAuthorize("hasRole('EMPLOYER')")
     @ApiMessage("Cập nhật thông tin công ty thành công")
     public ResponseEntity<ResCompanyDTO> updateCompany(
-            @PathVariable long id,
+            @PathVariable UUID id,
             @Valid @RequestBody ReqUpdateCompanyDTO reqDTO) throws Exception {
         return ResponseEntity.ok(companyService.handleUpdateCompany(id, reqDTO));
     }
@@ -82,7 +83,7 @@ public class CompanyController {
     @PreAuthorize("hasRole('ADMIN')")
     @ApiMessage("Cập nhật trạng thái duyệt công ty thành công")
     public ResponseEntity<Void> approveCompany(
-            @PathVariable("id") long companyId,
+            @PathVariable("id") UUID companyId,
             @RequestParam("isApproved") boolean isApproved) throws Exception {
 
         companyService.approveCompany(companyId, isApproved);
@@ -108,16 +109,16 @@ public class CompanyController {
     @PreAuthorize("hasRole('ADMIN')")
     @ApiMessage("Cập nhật trạng thái đình chỉ công ty thành công")
     public ResponseEntity<Void> toggleSuspendCompany(
-            @PathVariable("id") long companyId,
+            @PathVariable("id") UUID companyId,
             @RequestParam("isSuspended") boolean isSuspended) throws Exception {
 
         companyService.toggleSuspendCompany(companyId, isSuspended);
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("companies/{id:\\d+}")
+    @GetMapping("companies/{id}")
     @ApiMessage("Lấy chi tiết công ty thành công")
-    public ResponseEntity<ResCompanyDTO> getCompanyById(@PathVariable("id") long id) throws Exception {
+    public ResponseEntity<ResCompanyDTO> getCompanyById(@PathVariable("id") UUID id) throws Exception {
         return ResponseEntity.ok(companyService.handleGetCompanyById(id));
     }
 }

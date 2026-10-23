@@ -1,7 +1,14 @@
 package com.dtn.apply_job.domain.response.admin;
 
-public interface IndustryStatProjection {
-    String getIndustryName();
+import com.dtn.apply_job.util.LanguageUtil;
 
-    Long getJobCount(); // Bắt buộc dùng Long (Object) để chứa kết quả của COUNT()
+public interface IndustryStatProjection {
+    String getIndustryNameVi();
+    String getIndustryNameEn();
+
+    default String getIndustryName() {
+        return LanguageUtil.resolve(getIndustryNameVi(), getIndustryNameEn());
+    }
+
+    Long getJobCount();
 }

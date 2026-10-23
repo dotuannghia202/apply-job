@@ -13,6 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/v1")
 public class RoleController {
@@ -31,14 +33,14 @@ public class RoleController {
 
     @PutMapping("/roles/{id}")
     @ApiMessage("Cập nhật vai trò thành công")
-    public ResponseEntity<Role> updateRole(@PathVariable long id, @RequestBody Role role) throws IdInvalidException {
+    public ResponseEntity<Role> updateRole(@PathVariable UUID id, @RequestBody Role role) throws IdInvalidException {
         Role updatedRole = this.roleService.handleUpdateRole(id, role);
         return ResponseEntity.status(HttpStatus.OK).body(updatedRole);
     }
 
     @GetMapping("/roles/{id}")
     @ApiMessage("Lấy thông tin vai trò thành công")
-    public ResponseEntity<Role> getRole(@PathVariable long id) throws IdInvalidException {
+    public ResponseEntity<Role> getRole(@PathVariable UUID id) throws IdInvalidException {
         Role role = this.roleService.handleGetRoleById(id);
         return ResponseEntity.status(HttpStatus.OK).body(role);
     }
@@ -55,7 +57,7 @@ public class RoleController {
 
     @DeleteMapping("/roles/{id}")
     @ApiMessage("Xóa vai trò thành công")
-    public ResponseEntity<Void> deleteRole(@PathVariable long id) throws IdInvalidException {
+    public ResponseEntity<Void> deleteRole(@PathVariable UUID id) throws IdInvalidException {
         this.roleService.handleDeleteRole(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }

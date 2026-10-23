@@ -26,6 +26,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/jobs")
@@ -54,10 +55,10 @@ public class JobController {
         return ResponseEntity.status(HttpStatus.CREATED).body(newJobs);
     }
 
-    @PutMapping("/{id:\\d+}")
+    @PutMapping("/{id}")
     @ApiMessage("Cập nhật công việc thành công")
     public ResponseEntity<ResUpdateJobDTO> updateJob(
-            @PathVariable long id,
+            @PathVariable UUID id,
             @Valid @RequestBody ReqUpdateJobDTO reqDTO) throws Exception {
         ResUpdateJobDTO updatedJob = this.jobService.handleUpdateJob(id, reqDTO);
         return ResponseEntity.ok().body(updatedJob);
@@ -70,7 +71,7 @@ public class JobController {
             Pageable pageable,
             @RequestParam(required = false) String location,
             @RequestParam(required = false) List<String> levels,
-            @RequestParam(required = false) Long specialization,
+            @RequestParam(required = false) UUID specialization,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String companyName,
             @RequestParam(required = false) String skill,
@@ -90,17 +91,17 @@ public class JobController {
         return ResponseEntity.ok().body(result);
     }
 
-    @GetMapping("/{id:\\d+}")
+    @GetMapping("/{id}")
     @ApiMessage("Lấy thông tin công việc thành công")
-    public ResponseEntity<ResJobDTO> getJobById(@PathVariable long id) throws IdInvalidException {
+    public ResponseEntity<ResJobDTO> getJobById(@PathVariable UUID id) throws IdInvalidException {
         ResJobDTO dto = this.jobService.handleGetJobById(id);
         return ResponseEntity.ok().body(dto);
     }
 
-    @DeleteMapping("/{id:\\d+}")
+    @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('EMPLOYER', 'ADMIN')")
     @ApiMessage("Xóa công việc thành công")
-    public ResponseEntity<Void> deleteJob(@PathVariable long id) throws Exception {
+    public ResponseEntity<Void> deleteJob(@PathVariable UUID id) throws Exception {
         this.jobService.handleDeleteJob(id);
         return ResponseEntity.ok().build();
     }
@@ -113,7 +114,7 @@ public class JobController {
             Pageable pageable,
             @RequestParam(required = false) String location,
             @RequestParam(required = false) List<String> levels,
-            @RequestParam(required = false) Long specialization,
+            @RequestParam(required = false) UUID specialization,
             @RequestParam(required = false) String company,
             @RequestParam(required = false) Double minSalary,
             @RequestParam(required = false) Double maxSalary,

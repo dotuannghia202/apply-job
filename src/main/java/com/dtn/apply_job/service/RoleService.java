@@ -10,6 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 public class RoleService {
     private final RoleRepository roleRepository;
@@ -25,7 +27,7 @@ public class RoleService {
         return this.roleRepository.save(role);
     }
 
-    public Role handleUpdateRole(long id, Role role) throws IdInvalidException {
+    public Role handleUpdateRole(UUID id, Role role) throws IdInvalidException {
         Role currentRole = this.roleRepository.findById(id)
                 .orElseThrow(() -> new IdInvalidException("Role id not found"));
 
@@ -40,7 +42,7 @@ public class RoleService {
         return this.roleRepository.save(currentRole);
     }
 
-    public Role handleGetRoleById(long id) throws IdInvalidException {
+    public Role handleGetRoleById(UUID id) throws IdInvalidException {
         return this.roleRepository.findById(id)
                 .orElseThrow(() -> new IdInvalidException("Role id not found!"));
     }
@@ -61,7 +63,7 @@ public class RoleService {
         return resultPaginationDTO;
     }
 
-    public void handleDeleteRole(long id) throws IdInvalidException {
+    public void handleDeleteRole(UUID id) throws IdInvalidException {
         Role currentRole = this.roleRepository.findById(id)
                 .orElseThrow(() -> new IdInvalidException("Role id not found!"));
         this.roleRepository.delete(currentRole);

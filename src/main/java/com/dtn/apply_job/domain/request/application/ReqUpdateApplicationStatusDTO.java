@@ -2,18 +2,21 @@ package com.dtn.apply_job.domain.request.application;
 
 import com.dtn.apply_job.util.constant.enums.ApplicationStatus;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
 
-@Getter
-@Setter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ReqUpdateApplicationStatusDTO {
     @NotNull(message = "Trạng thái không được để trống!")
-    private ApplicationStatus status;
+    ApplicationStatus status;
 
-    private Instant interviewTime;
-    private String interviewLocation;
-    private String interviewMessage;
+    Instant interviewTime;
+    String interviewLocation;
+    String interviewMessage;
 }

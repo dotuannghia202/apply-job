@@ -19,6 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -40,7 +41,7 @@ public class SpecializationController {
     @PreAuthorize("hasRole('ADMIN')")
     @ApiMessage("Cập nhật chuyên ngành thành công")
     public ResponseEntity<Specialization> updateSpecialization(
-            @PathVariable long id,
+            @PathVariable UUID id,
             @Valid @RequestBody Specialization specialization
     ) throws IdInvalidException {
         Specialization updatedSpecialization = this.specializationService.handleUpdateSpecialization(id, specialization);
@@ -50,14 +51,14 @@ public class SpecializationController {
     @DeleteMapping("/specializations/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @ApiMessage("Xóa chuyên ngành thành công")
-    public ResponseEntity<Void> deleteSpecialization(@PathVariable long id) throws IdInvalidException {
+    public ResponseEntity<Void> deleteSpecialization(@PathVariable UUID id) throws IdInvalidException {
         this.specializationService.handleDeleteSpecialization(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     @GetMapping("/specializations/{id}")
     @ApiMessage("Lấy thông tin chuyên ngành thành công")
-    public ResponseEntity<ResSpecializationDTO> getSpecialization(@PathVariable long id) throws IdInvalidException {
+    public ResponseEntity<ResSpecializationDTO> getSpecialization(@PathVariable UUID id) throws IdInvalidException {
         ResSpecializationDTO specialization = this.specializationService.handleGetSpecializationById(id);
         return ResponseEntity.status(HttpStatus.OK).body(specialization);
     }
@@ -76,7 +77,7 @@ public class SpecializationController {
     @GetMapping("/specializations/by-industry/{industryId}")
     @ApiMessage("Lấy danh sách chuyên ngành theo mã ngành thành công")
     public ResponseEntity<List<ResSpecializationByIndustryId>> getSpecializationsByIndustryId(
-            @PathVariable long industryId
+            @PathVariable UUID industryId
     ) throws IdInvalidException {
         List<ResSpecializationByIndustryId> result = this.specializationService.handleGetSpecializationsByIndustryId(industryId);
         return ResponseEntity.status(HttpStatus.OK).body(result);

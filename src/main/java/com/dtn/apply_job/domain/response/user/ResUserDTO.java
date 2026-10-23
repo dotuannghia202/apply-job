@@ -1,41 +1,47 @@
 package com.dtn.apply_job.domain.response.user;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
-@Setter
-@Getter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ResUserDTO {
-    private long id;
-    private String name;
-    private String email;
-    private String avatarUrl;
-    private Integer age;
-    private String gender;
-    private String address;
+    UUID id;
+    String name;
+    String email;
+    String avatarUrl;
+    Integer age;
+    String gender;
+    String address;
 
-    private Instant createdAt;
-    private String createdBy;
-    private Instant updatedAt;
-    private String updatedBy;
+    Instant createdAt;
+    String createdBy;
+    Instant updatedAt;
+    String updatedBy;
 
     @JsonProperty("isActive")
-    private boolean isActive;
+    boolean isActive;
 
-    private CompanyUser company;
+    CompanyUser company;
 
-    private List<String> roles;
+    List<String> roles;
 
-    @Setter
-    @Getter
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @FieldDefaults(level = AccessLevel.PRIVATE)
     public static class CompanyUser {
-        private Long id;
+        UUID id;
         String name;
         String logo;
     }
-
 }

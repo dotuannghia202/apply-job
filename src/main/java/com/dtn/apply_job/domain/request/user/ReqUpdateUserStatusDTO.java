@@ -1,12 +1,15 @@
 package com.dtn.apply_job.domain.request.user;
 
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
-@Getter
-@Setter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ReqUpdateUserStatusDTO {
     @NotNull(message = "Trạng thái không được để trống!")
-    private Boolean isActive;
+    Boolean isActive;
 }

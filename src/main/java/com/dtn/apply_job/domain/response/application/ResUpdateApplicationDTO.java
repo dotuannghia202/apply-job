@@ -1,16 +1,19 @@
 package com.dtn.apply_job.domain.response.application;
 
 import com.dtn.apply_job.util.constant.enums.ApplicationStatus;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
-@Getter
-@Setter
+import java.util.UUID;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ResUpdateApplicationDTO {
-    private Long id;
-    private ApplicationStatus status;
-
-
+    UUID id;
+    ApplicationStatus status;
 }
 
 

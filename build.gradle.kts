@@ -40,9 +40,18 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.mapstruct:mapstruct:1.5.5.Final")
+    annotationProcessor("org.projectlombok:lombok-mapstruct-binding:0.2.0")
     annotationProcessor("org.mapstruct:mapstruct-processor:1.5.5.Final")
 }
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+tasks.withType<Jar> {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.withType<War> {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }

@@ -7,6 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+import java.util.UUID;
+
 
 @Data
 @AllArgsConstructor
@@ -14,10 +16,10 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ReqCreateApplicationDTO {
     @NotNull(message = "Missing job ID information")
-    private Long jobId;
+    UUID jobId;
 
     @NotNull(message = "Please select a CV to apply (Resume ID)")
-    private Long resumeId;
+    UUID resumeId;
 
-    private String coverLetter;
+    String coverLetter;
 }

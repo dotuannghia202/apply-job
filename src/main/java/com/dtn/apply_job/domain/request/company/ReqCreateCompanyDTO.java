@@ -1,22 +1,44 @@
 package com.dtn.apply_job.domain.request.company;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
-@Setter
-@Getter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ReqCreateCompanyDTO {
 
     @NotBlank(message = "Tên công ty không được để trống!")
-    private String name;
+    String name;
 
-    @NotBlank(message = "Mô tả công ty không được để trống!")
-    private String description;
+    @JsonProperty("description_vi")
+    String descriptionVi;
+
+    @JsonProperty("description_en")
+    String descriptionEn;
 
     @NotBlank(message = "Địa chỉ công ty không được để trống!")
-    private String address;
+    String address;
 
     @NotBlank(message = "Logo công ty không được để trống!")
-    private String logo;
+    String logo;
+
+    public void setDescription(String description) {
+        if (this.descriptionVi == null || this.descriptionVi.isBlank()) this.descriptionVi = description;
+        if (this.descriptionEn == null || this.descriptionEn.isBlank()) this.descriptionEn = description;
+    }
+
+    public String getDescription() {
+        return this.descriptionVi != null && !this.descriptionVi.isBlank() ? this.descriptionVi : this.descriptionEn;
+    }
+
+    @AssertTrue(message = "Mô tả công ty không được để trống!")
+    public boolean isDescriptionValid() {
+        return (descriptionVi != null && !descriptionVi.isBlank()) || (descriptionEn != null && !descriptionEn.isBlank());
+    }
 }

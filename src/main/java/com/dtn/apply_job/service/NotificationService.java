@@ -5,6 +5,7 @@ import com.dtn.apply_job.domain.Notification;
 import com.dtn.apply_job.domain.User;
 import com.dtn.apply_job.domain.response.notification.ResNotificationDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
+import com.dtn.apply_job.mapper.NotificationMapper;
 import com.dtn.apply_job.repository.NotificationRepository;
 import com.dtn.apply_job.repository.UserRepository;
 import com.dtn.apply_job.security.SecurityUtil;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,58 +27,67 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final SimpMessagingTemplate messagingTemplate; 
     private final UserRepository userRepository;
+    private final NotificationMapper notificationMapper;
 
     public NotificationService(NotificationRepository notificationRepository,
                                SimpMessagingTemplate messagingTemplate,
-                               UserRepository userRepository) {
+                               UserRepository userRepository,
+                               NotificationMapper notificationMapper) {
         this.notificationRepository = notificationRepository;
         this.messagingTemplate = messagingTemplate;
         this.userRepository = userRepository;
+        this.notificationMapper = notificationMapper;
     }
 
     
-    public void sendToUser(User user, String title, String message, String type, Long refId, ERole targetRole) {
+    public void sendToUser(User user, String title, String message, String type, UUID refId, ERole targetRole) {
+        sendToUser(user, title, title, message, message, type, refId, targetRole);
+    }
+
+    public void sendToUser(User user, String titleVi, String titleEn, String messageVi, String messageEn, String type, UUID refId, ERole targetRole) {
         Notification notif = new Notification();
         notif.setRecipient(user);
-        notif.setTitle(title);
-        notif.setMessage(message);
+        notif.setTitleVi(titleVi);
+        notif.setTitleEn(titleEn);
+        notif.setMessageVi(messageVi);
+        notif.setMessageEn(messageEn);
         notif.setType(type);
         notif.setReferenceId(refId);
-
-        notif.setTargetRole(targetRole); 
+        notif.setTargetRole(targetRole);
 
         notificationRepository.save(notif);
 
-        
-        ResNotificationDTO dto = convertToDTO(notif);
+        ResNotificationDTO dto = notificationMapper.toResNotificationDTO(notif);
         messagingTemplate.convertAndSend("/topic/user/" + user.getId(), dto);
     }
 
-    
     public void sendToAllAdmins(String title, String message, String type) {
-        
+        sendToAllAdmins(title, title, message, message, type);
+    }
+
+    public void sendToAllAdmins(String titleVi, String titleEn, String messageVi, String messageEn, String type) {
         List<User> admins = userRepository.findByRoles_Name(ERole.ADMIN);
 
         for (User admin : admins) {
-            
             Notification notif = new Notification();
             notif.setRecipient(admin);
-            notif.setTitle(title);
-            notif.setMessage(message);
-            notif.setType(type); 
-            notif.setTargetRole(ERole.ADMIN); 
+            notif.setTitleVi(titleVi);
+            notif.setTitleEn(titleEn);
+            notif.setMessageVi(messageVi);
+            notif.setMessageEn(messageEn);
+            notif.setType(type);
+            notif.setTargetRole(ERole.ADMIN);
             notificationRepository.save(notif);
         }
 
-        
         Notification wsNotif = new Notification();
-        wsNotif.setTitle(title);
-        wsNotif.setMessage(message);
-        wsNotif.setType(type); 
+        wsNotif.setTitleVi(titleVi);
+        wsNotif.setTitleEn(titleEn);
+        wsNotif.setMessageVi(messageVi);
+        wsNotif.setMessageEn(messageEn);
+        wsNotif.setType(type);
         messagingTemplate.convertAndSend("/topic/admin", wsNotif);
     }
-
-    
 
     public ResultPaginationDTO getMyNotifications(Boolean isRead, Pageable pageable, ERole role) throws Exception {
         String email = SecurityUtil.getCurrentUser()
@@ -85,21 +96,17 @@ public class NotificationService {
 
         Page<Notification> pageNotif;
         if (isRead == null) {
-            
             pageNotif = notificationRepository.findByRecipient_IdAndTargetRoleOrderByCreatedAtDesc(
                     currentUser.getId(), role, pageable);
         } else {
-            
             pageNotif = notificationRepository.findByRecipient_IdAndTargetRoleAndIsReadOrderByCreatedAtDesc(
                     currentUser.getId(), role, isRead, pageable);
         }
 
-        
         List<ResNotificationDTO> listDTO = pageNotif.getContent().stream()
-                .map(this::convertToDTO)
+                .map(notificationMapper::toResNotificationDTO)
                 .collect(Collectors.toList());
 
-        
         ResultPaginationDTO resultPaginationDTO = new ResultPaginationDTO();
         ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
 
@@ -114,23 +121,10 @@ public class NotificationService {
         return resultPaginationDTO;
     }
 
-    private ResNotificationDTO convertToDTO(Notification notification) {
-        ResNotificationDTO dto = new ResNotificationDTO();
-        dto.setId(notification.getId());
-        dto.setTitle(notification.getTitle());
-        dto.setMessage(notification.getMessage());
-        dto.setRead(notification.isRead());
-        dto.setCreatedAt(notification.getCreatedAt());
-
-        dto.setType(notification.getType());
-        dto.setReferenceId(notification.getReferenceId());
-        return dto;
-    }
-
     
     
     @Transactional
-    public void markAsRead(Long notifId) throws Exception {
+    public void markAsRead(UUID notifId) throws Exception {
         
         Notification notif = notificationRepository.findById(notifId)
                 .orElseThrow(() -> new IdInvalidException("Thông báo không tồn tại!"));

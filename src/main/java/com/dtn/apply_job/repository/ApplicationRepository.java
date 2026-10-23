@@ -16,29 +16,30 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface ApplicationRepository extends JpaRepository<Application, Long>, JpaSpecificationExecutor<Application> {
+public interface ApplicationRepository extends JpaRepository<Application, UUID>, JpaSpecificationExecutor<Application> {
     Application save(Application application);
 
     boolean existsByResumeCandidateAndJob(User candidate, Job job);
 
     @Query("select distinct a.job.id from Application a where a.resume.candidate = :candidate")
-    List<Long> findAppliedJobIdsByCandidate(@Param("candidate") User candidate);
+    List<UUID> findAppliedJobIdsByCandidate(@Param("candidate") User candidate);
 
     @Override
     @EntityGraph(attributePaths = {"job", "job.company", "resume", "resume.candidate"})
     Page<Application> findAll(@Nullable Specification<Application> spec, Pageable pageable);
 
     @EntityGraph(attributePaths = {"job", "job.company", "resume", "resume.candidate"})
-    Optional<Application> findById(Long id);
+    Optional<Application> findById(UUID id);
 
-    long countByJob_Company_Id(Long companyId);
+    long countByJob_Company_Id(UUID companyId);
 
     // Tính điểm AI trung bình của công ty đó (Bỏ qua các đơn chưa có điểm)
     @Query("SELECT AVG(a.matchScore) FROM Application a WHERE a.job.company.id = :companyId AND a.matchScore IS NOT NULL")
-    Double getAverageMatchScoreByCompanyId(Long companyId);
+    Double getAverageMatchScoreByCompanyId(UUID companyId);
 
     // Đếm số người ứng tuyển vào 1 công việc cụ thể (Dùng cho Bước 2 bên dưới)
-    long countByJob_Id(Long jobId);
+    long countByJob_Id(UUID jobId);
 }

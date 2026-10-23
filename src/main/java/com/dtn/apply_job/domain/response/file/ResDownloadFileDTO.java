@@ -1,13 +1,14 @@
 package com.dtn.apply_job.domain.response.file;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
-@Setter
-@Getter
+@Data
+@NoArgsConstructor
 @AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ResDownloadFileDTO {
-    private String downloadUrl;
-    private String fileName;
+    String downloadUrl;
+    String fileName;
 }

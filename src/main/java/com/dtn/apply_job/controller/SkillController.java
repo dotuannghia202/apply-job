@@ -14,6 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/v1")
 public class SkillController {
@@ -32,14 +34,14 @@ public class SkillController {
 
     @PutMapping("/skills/{id}")
     @ApiMessage("Cập nhật kỹ năng thành công")
-    public ResponseEntity<ResUpdateDTO> updateSkill(@PathVariable long id, @RequestBody Skill skill) throws IdInvalidException, NameExistedException {
+    public ResponseEntity<ResUpdateDTO> updateSkill(@PathVariable UUID id, @RequestBody Skill skill) throws IdInvalidException, NameExistedException {
         ResUpdateDTO result = this.skillService.handleUpdateSkill(id, skill);
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
 
     @GetMapping("/skills/{id}")
     @ApiMessage("Lấy thông tin kỹ năng thành công")
-    public ResponseEntity<Skill> getSkill(@PathVariable long id) throws IdInvalidException {
+    public ResponseEntity<Skill> getSkill(@PathVariable UUID id) throws IdInvalidException {
         Skill skill = this.skillService.handleGetSkillById(id);
         return ResponseEntity.status(HttpStatus.OK).body(skill);
     }

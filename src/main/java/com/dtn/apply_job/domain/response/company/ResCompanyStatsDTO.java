@@ -1,12 +1,15 @@
 package com.dtn.apply_job.domain.response.company;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
-@Getter
-@Setter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ResCompanyStatsDTO {
-    private long totalCompanies;
-    private long pendingApproval;
-    private long approved;
+    long totalCompanies;
+    long pendingApproval;
+    long approved;
 }

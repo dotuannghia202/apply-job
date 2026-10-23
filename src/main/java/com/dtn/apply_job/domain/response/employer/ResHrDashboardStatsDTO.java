@@ -1,12 +1,15 @@
 package com.dtn.apply_job.domain.response.employer;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
-@Getter
-@Setter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ResHrDashboardStatsDTO {
-    private long totalActiveJobs;
-    private long totalApplicants;
-    private double avgAiMatchRate;
+    long totalActiveJobs;
+    long totalApplicants;
+    double avgAiMatchRate;
 }

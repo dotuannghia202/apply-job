@@ -25,6 +25,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -67,19 +68,19 @@ public class UserController {
     }
 
 
-    @GetMapping("/users/{id:\\d+}")
+    @GetMapping("/users/{id}")
     @PreAuthorize("isAuthenticated()")
     @ApiMessage("Lấy thông tin người dùng thành công")
-    public ResponseEntity<ResUserDTO> getUserById(@PathVariable long id) throws IdInvalidException {
+    public ResponseEntity<ResUserDTO> getUserById(@PathVariable UUID id) throws IdInvalidException {
         ResUserDTO result = this.userService.getUserById(id);
         return ResponseEntity.ok().body(result);
     }
 
-    @PutMapping("/users/{id:\\d+}/status")
+    @PutMapping("/users/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
     @ApiMessage("Cập nhật trạng thái người dùng thành công!")
     public ResponseEntity<Void> updateUserStatus(
-            @PathVariable("id") long targetUserId,
+            @PathVariable("id") UUID targetUserId,
             @Valid @RequestBody ReqUpdateUserStatusDTO reqDTO) throws Exception {
 
         userService.handleUpdateUserStatus(targetUserId, reqDTO);
@@ -89,30 +90,30 @@ public class UserController {
 
     @PutMapping("/users/{id}")
     @ApiMessage("Cập nhật người dùng thành công")
-    public ResponseEntity<ResUpdateUserDTO> updateUser(@PathVariable long id, @RequestBody ReqUpdateUserDTO user) throws IdInvalidException {
+    public ResponseEntity<ResUpdateUserDTO> updateUser(@PathVariable UUID id, @RequestBody ReqUpdateUserDTO user) throws IdInvalidException {
         ResUpdateUserDTO result = this.userService.handleUpdateUser(id, user);
         return ResponseEntity.ok().body(result);
     }
 
     @PostMapping("/users/save-job/{jobId}")
     @ApiMessage("Bật/tắt trạng thái lưu công việc thành công")
-    public ResponseEntity<Boolean> toggleSaveJob(@PathVariable Long jobId) throws Exception {
+    public ResponseEntity<Boolean> toggleSaveJob(@PathVariable UUID jobId) throws Exception {
         boolean isSaved = jobService.toggleSavedJob(jobId);
         return ResponseEntity.ok(isSaved);
     }
 
     @PutMapping("/users/assign-company/{companyId}")
     @ApiMessage("Gán công ty cho nhà tuyển dụng thành công")
-    public ResponseEntity<Void> assignCompany(@PathVariable Long companyId) throws Exception {
+    public ResponseEntity<Void> assignCompany(@PathVariable UUID companyId) throws Exception {
         userService.assignCompanyToCurrentUser(companyId);
         return ResponseEntity.ok().body(null);
     }
 
-    @PutMapping("users/{id:\\d+}/roles")
+    @PutMapping("/users/{id}/roles")
     @PreAuthorize("hasAnyRole('ADMIN', 'CANDIDATE', 'EMPLOYER')")
     @ApiMessage("Cập nhật quyền người dùng thành công!")
     public ResponseEntity<ResUpdateUserDTO> updateUserRoles(
-            @PathVariable("id") long targetUserId,
+            @PathVariable("id") UUID targetUserId,
             @Valid @RequestBody ReqUpdateUserRoleDTO reqDTO) throws Exception {
 
         ResUpdateUserDTO result = userService.handleUpdateUserRoles(targetUserId, reqDTO);

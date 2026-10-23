@@ -1,62 +1,90 @@
 package com.dtn.apply_job.domain;
 
 import com.dtn.apply_job.security.SecurityUtil;
+import com.dtn.apply_job.util.LanguageUtil;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "specializations")
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Specialization {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    UUID id;
 
-    @NotBlank(message = "\n" +
-            "The field name cannot be left blank!")
-    private String name;
+    @Column(name = "name_vi")
+    @JsonProperty("name_vi")
+    String nameVi;
+
+    @Column(name = "name_en")
+    @JsonProperty("name_en")
+    String nameEn;
 
     // Trực thuộc Ngành nghề nào?
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "industry_id")
-    private Industry industry;
+    Industry industry;
 
     // Các tin tuyển dụng thuộc mảng này
     @OneToMany(mappedBy = "specialization", fetch = FetchType.LAZY)
     @JsonIgnore
-    private List<Job> jobs;
+    List<Job> jobs;
 
     // Các hồ sơ CV thuộc mảng này
     @OneToMany(mappedBy = "specialization", fetch = FetchType.LAZY)
     @JsonIgnore
-    private List<Resume> resumes;
+    List<Resume> resumes;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
-    private Instant createdAt;
+    Instant createdAt;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
-    private Instant updatedAt;
+    Instant updatedAt;
 
-    private String createdBy;
-    private String updatedBy;
+    String createdBy;
+    String updatedBy;
+
+    @JsonProperty("name")
+    public String getName() {
+        return LanguageUtil.resolve(this.nameVi, this.nameEn);
+    }
+
+    public void setName(String name) {
+        if (this.nameVi == null || this.nameVi.isBlank()) {
+            this.nameVi = name;
+        }
+        if (this.nameEn == null || this.nameEn.isBlank()) {
+            this.nameEn = name;
+        }
+    }
 
     @PrePersist
     public void handleBeforeCreate() {
+        if (this.nameVi == null && this.nameEn != null) this.nameVi = this.nameEn;
+        if (this.nameEn == null && this.nameVi != null) this.nameEn = this.nameVi;
         this.createdBy = SecurityUtil.getCurrentUser().orElse("");
         this.createdAt = Instant.now();
     }
 
     @PreUpdate
     public void handleBeforeUpdate() {
+        if (this.nameVi == null && this.nameEn != null) this.nameVi = this.nameEn;
+        if (this.nameEn == null && this.nameVi != null) this.nameEn = this.nameVi;
         this.updatedBy = SecurityUtil.getCurrentUser().orElse("");
         this.updatedAt = Instant.now();
     }

@@ -1,21 +1,40 @@
 package com.dtn.apply_job.domain.response.company;
 
-import lombok.Getter;
-import lombok.Setter;
+import com.dtn.apply_job.util.LanguageUtil;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
+import java.util.UUID;
 
-@Setter
-@Getter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ResCreateCompanyDTO {
-    private long id;
-    private String name;
-    private String description;
-    private String address;
-    private String logo;
+    UUID id;
+    String name;
 
+    @JsonProperty("description_vi")
+    String descriptionVi;
 
-    private Instant createdAt;
+    @JsonProperty("description_en")
+    String descriptionEn;
 
-    private String createdBy;
+    String address;
+    String logo;
+    Instant createdAt;
+    String createdBy;
+
+    @JsonProperty("description")
+    public String getDescription() {
+        return LanguageUtil.resolve(this.descriptionVi, this.descriptionEn);
+    }
+
+    public void setDescription(String description) {
+        if (this.descriptionVi == null) this.descriptionVi = description;
+        if (this.descriptionEn == null) this.descriptionEn = description;
+    }
 }

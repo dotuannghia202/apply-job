@@ -15,6 +15,7 @@ import com.dtn.apply_job.exception.InvalidRequestException;
 import com.dtn.apply_job.repository.*;
 import com.dtn.apply_job.security.SecurityUtil;
 import com.dtn.apply_job.util.constant.enums.ERole;
+import com.dtn.apply_job.mapper.UserMapper;
 import jakarta.persistence.criteria.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class UserService {
@@ -37,8 +39,9 @@ public class UserService {
     private final JobRepository jobRepository;
     private final ApplicationRepository applicationRepository;
     private final EmailService emailService;
+    private final UserMapper userMapper;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, CompanyRepository companyRepository, RoleRepository roleRepository, JobRepository jobRepository, ApplicationRepository applicationRepository, EmailService emailService) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, CompanyRepository companyRepository, RoleRepository roleRepository, JobRepository jobRepository, ApplicationRepository applicationRepository, EmailService emailService, UserMapper userMapper) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.companyRepository = companyRepository;
@@ -46,41 +49,15 @@ public class UserService {
         this.jobRepository = jobRepository;
         this.applicationRepository = applicationRepository;
         this.emailService = emailService;
+        this.userMapper = userMapper;
     }
 
     public ResultPaginationDTO getAllUsers(Specification<User> spec, Pageable pageable) {
         Page<User> pageUser = this.userRepository.findAll(spec, pageable);
 
-        List<ResUserDTO> results = new ArrayList<>(pageUser.getContent().size());
-        for (User user : pageUser.getContent()) {
-            ResUserDTO userDTO = new ResUserDTO();
-            userDTO.setId(user.getId());
-            userDTO.setName(user.getName());
-            userDTO.setEmail(user.getEmail());
-            userDTO.setAvatarUrl(user.getAvatarUrl());
-            userDTO.setAge(user.getAge());
-            userDTO.setGender(user.getGender() != null ? user.getGender().toString() : null);
-            userDTO.setAddress(user.getAddress());
-            userDTO.setActive(user.getIsActive());
-            userDTO.setCreatedAt(user.getCreatedAt());
-            userDTO.setUpdatedAt(user.getUpdatedAt());
-            userDTO.setCreatedBy(user.getCreatedBy());
-            userDTO.setUpdatedBy(user.getUpdatedBy());
-            userDTO.setRoles(user.getRoles().stream()
-                    .map(role -> role.getName().name())
-                    .toList());
-
-            if (user.getCompany() != null) {
-                ResUserDTO.CompanyUser companyUserDTO = new ResUserDTO.CompanyUser();
-                companyUserDTO.setId(user.getCompany().getId());
-                companyUserDTO.setName(user.getCompany().getName());
-                companyUserDTO.setLogo(user.getCompany().getLogo());
-                userDTO.setCompany(companyUserDTO);
-            }
-
-            results.add(userDTO);
-
-        }
+        List<ResUserDTO> results = pageUser.getContent().stream()
+                .map(this.userMapper::toResUserDTO)
+                .toList();
 
         ResultPaginationDTO resultPaginationDTO = new ResultPaginationDTO();
         ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
@@ -101,13 +78,7 @@ public class UserService {
             throw new EmailExistedException("Địa chỉ email đã tồn tại trong hệ thống.");
         }
 
-        User newUser = new User();
-        newUser.setName(reqDTO.getName());
-        newUser.setEmail(reqDTO.getEmail());
-        newUser.setAge(reqDTO.getAge());
-        newUser.setGender(reqDTO.getGender());
-        newUser.setAddress(reqDTO.getAddress());
-
+        User newUser = userMapper.toUser(reqDTO);
         newUser.setPassword(passwordEncoder.encode(reqDTO.getPassword()));
 
         if (reqDTO.getCompanyId() != null) {
@@ -127,32 +98,10 @@ public class UserService {
         }
 
         User savedUser = this.userRepository.save(newUser);
-
-        // 6. Trả về Response DTO
-        ResCreateUserDTO resCreatedDTO = new ResCreateUserDTO();
-        resCreatedDTO.setId(savedUser.getId());
-        resCreatedDTO.setName(savedUser.getName());
-        resCreatedDTO.setEmail(savedUser.getEmail());
-        resCreatedDTO.setAge(savedUser.getAge());
-        resCreatedDTO.setGender(savedUser.getGender() != null ? savedUser.getGender().toString() : null);
-        resCreatedDTO.setAddress(savedUser.getAddress());
-        resCreatedDTO.setRoles(savedUser.getRoles().stream()
-                .map(role -> role.getName().name())
-                .toList());
-        resCreatedDTO.setCreatedAt(savedUser.getCreatedAt());
-        resCreatedDTO.setCreatedBy(savedUser.getCreatedBy());
-
-        if (savedUser.getCompany() != null) {
-            ResCreateUserDTO.CompanyUser companyUser = new ResCreateUserDTO.CompanyUser();
-            companyUser.setId(savedUser.getCompany().getId());
-            companyUser.setName(savedUser.getCompany().getName());
-            resCreatedDTO.setCompany(companyUser);
-        }
-
-        return resCreatedDTO;
+        return this.userMapper.toResCreateUserDTO(savedUser);
     }
 
-    public ResUserDTO getUserById(long id) throws IdInvalidException {
+    public ResUserDTO getUserById(UUID id) throws IdInvalidException {
         User targetUser = this.userRepository.findById(id)
                 .orElseThrow(() -> new IdInvalidException("Không tìm thấy người dùng với id " + id + "!"));
 
@@ -163,41 +112,15 @@ public class UserService {
         boolean isAdmin = currentUser.getRoles().stream()
                 .anyMatch(r -> r.getName().name().equals("ROLE_ADMIN") || r.getName().name().equals("ADMIN"));
 
-        if (!isAdmin && currentUser.getId() != id) {
+        if (!isAdmin && !currentUser.getId().equals(id)) {
             throw new AccessDeniedException("Lỗi bảo mật: Bạn không có quyền xem thông tin cá nhân của người khác!");
         }
 
-        ResUserDTO resUserDTO = new ResUserDTO();
-        resUserDTO.setId(targetUser.getId());
-        resUserDTO.setName(targetUser.getName());
-        resUserDTO.setActive(targetUser.getIsActive());
-        resUserDTO.setAvatarUrl(targetUser.getAvatarUrl());
-        resUserDTO.setEmail(targetUser.getEmail());
-        resUserDTO.setAge(targetUser.getAge());
-
-        resUserDTO.setGender(targetUser.getGender() != null ? targetUser.getGender().toString() : null);
-
-        resUserDTO.setAddress(targetUser.getAddress());
-        resUserDTO.setCreatedAt(targetUser.getCreatedAt());
-        resUserDTO.setRoles(targetUser.getRoles().stream()
-                .map(role -> role.getName().name())
-                .toList());
-
-        if (targetUser.getCompany() != null) {
-            ResUserDTO.CompanyUser companyUser = new ResUserDTO.CompanyUser();
-            companyUser.setId(targetUser.getCompany().getId());
-            companyUser.setName(targetUser.getCompany().getName());
-            companyUser.setLogo(targetUser.getCompany().getLogo());
-            resUserDTO.setCompany(companyUser);
-        } else {
-            resUserDTO.setCompany(null);
-        }
-
-        return resUserDTO;
+        return this.userMapper.toResUserDTO(targetUser);
     }
 
     @Transactional
-    public void handleUpdateUserStatus(long targetUserId, ReqUpdateUserStatusDTO reqDTO) throws IdInvalidException {
+    public void handleUpdateUserStatus(UUID targetUserId, ReqUpdateUserStatusDTO reqDTO) throws IdInvalidException {
         User targetUser = this.userRepository.findById(targetUserId)
                 .orElseThrow(() -> new IdInvalidException("Người dùng không tồn tại!"));
 
@@ -214,7 +137,7 @@ public class UserService {
         }
     }
 
-    public ResUpdateUserDTO handleUpdateUser(long id, ReqUpdateUserDTO reqUser) throws IdInvalidException, InvalidRequestException {
+    public ResUpdateUserDTO handleUpdateUser(UUID id, ReqUpdateUserDTO reqUser) throws IdInvalidException, InvalidRequestException {
 
         String email = SecurityUtil.getCurrentUser()
                 .orElseThrow(() -> new IdInvalidException("Vui lòng đăng nhập!"));
@@ -223,22 +146,18 @@ public class UserService {
         boolean isAdmin = loggedInUser.getRoles().stream()
                 .anyMatch(r -> r.getName().name().equals("ROLE_ADMIN") || r.getName().name().equals("ADMIN"));
 
-        if (!isAdmin && loggedInUser.getId() != id) {
+        if (!isAdmin && !loggedInUser.getId().equals(id)) {
             throw new AccessDeniedException("Lỗi bảo mật: Bạn không có quyền cập nhật thông tin của người khác!");
         }
 
         User currentUser = this.userRepository.findById(id)
                 .orElseThrow(() -> new IdInvalidException("Không tìm thấy người dùng với id " + id + "!"));
 
-        if (reqUser.getName() != null) currentUser.setName(reqUser.getName());
-        if (reqUser.getAvatarUrl() != null) currentUser.setAvatarUrl(reqUser.getAvatarUrl());
-        if (reqUser.getAge() > 0) currentUser.setAge(reqUser.getAge());
-        if (reqUser.getGender() != null) currentUser.setGender(reqUser.getGender());
-        if (reqUser.getAddress() != null) currentUser.setAddress(reqUser.getAddress());
+        userMapper.updateUserFromDTO(reqUser, currentUser);
 
         User updatedUser = this.userRepository.save(currentUser);
 
-        return convertToResUpdateUserDTO(updatedUser);
+        return this.userMapper.toResUpdateUserDTO(updatedUser);
     }
 
     public User handleGetUserByUsername(String email) {
@@ -266,7 +185,7 @@ public class UserService {
     }
 
     @Transactional
-    public void assignCompanyToCurrentUser(Long companyId) throws Exception {
+    public void assignCompanyToCurrentUser(UUID companyId) throws Exception {
         String email = SecurityUtil.getCurrentUser()
                 .orElseThrow(() -> new IdInvalidException("Vui lòng đăng nhập!"));
         User currentUser = userRepository.findByEmail(email);
@@ -282,7 +201,7 @@ public class UserService {
     }
 
     @Transactional
-    public ResUpdateUserDTO handleUpdateUserRoles(long targetUserId, ReqUpdateUserRoleDTO reqDTO) throws Exception, AccessDeniedException {
+    public ResUpdateUserDTO handleUpdateUserRoles(UUID targetUserId, ReqUpdateUserRoleDTO reqDTO) throws Exception, AccessDeniedException {
 
         String email = SecurityUtil.getCurrentUser().orElseThrow();
         User currentUser = userRepository.findByEmail(email);
@@ -290,7 +209,7 @@ public class UserService {
         boolean isAdmin = currentUser.getRoles().stream()
                 .anyMatch(r -> r.getName().name().equals("ROLE_ADMIN"));
 
-        if (!isAdmin && currentUser.getId() != targetUserId) {
+        if (!isAdmin && !currentUser.getId().equals(targetUserId)) {
             throw new Exception("Lỗi bảo mật: Bạn không có quyền thay đổi quyền truy cập của người khác!");
         }
 
@@ -313,32 +232,7 @@ public class UserService {
 
         User updatedUser = userRepository.save(targetUser);
 
-        return convertToResUpdateUserDTO(updatedUser);
-    }
-
-    private ResUpdateUserDTO convertToResUpdateUserDTO(User updatedUser) {
-        ResUpdateUserDTO resUpdateDTO = new ResUpdateUserDTO();
-        resUpdateDTO.setId(updatedUser.getId());
-        resUpdateDTO.setName(updatedUser.getName());
-        resUpdateDTO.setEmail(updatedUser.getEmail());
-        resUpdateDTO.setAvatarUrl(updatedUser.getAvatarUrl());
-        resUpdateDTO.setAge(updatedUser.getAge());
-        resUpdateDTO.setGender(updatedUser.getGender() != null ? updatedUser.getGender().toString() : null);
-        resUpdateDTO.setAddress(updatedUser.getAddress());
-        resUpdateDTO.setRoles(updatedUser.getRoles().stream()
-                .map(role -> role.getName().name())
-                .toList());
-        resUpdateDTO.setIsActive(updatedUser.getIsActive());
-        resUpdateDTO.setUpdatedAt(updatedUser.getUpdatedAt());
-        resUpdateDTO.setUpdatedBy(updatedUser.getUpdatedBy());
-
-        if (updatedUser.getCompany() != null) {
-            ResUpdateUserDTO.CompanyUser companyUser = new ResUpdateUserDTO.CompanyUser();
-            companyUser.setId(updatedUser.getCompany().getId());
-            companyUser.setName(updatedUser.getCompany().getName());
-            resUpdateDTO.setCompany(companyUser);
-        }
-        return resUpdateDTO;
+        return this.userMapper.toResUpdateUserDTO(updatedUser);
     }
 
     public ResHrDashboardStatsDTO getHrDashboardStats() throws Exception {
@@ -349,7 +243,7 @@ public class UserService {
             throw new Exception("Bạn chưa tham gia vào công ty nào!");
         }
 
-        Long companyId = currentHr.getCompany().getId();
+        UUID companyId = currentHr.getCompany().getId();
 
         long activeJobs = jobRepository.countByCompany_IdAndActiveTrue(companyId);
         long totalApplicants = applicationRepository.countByJob_Company_Id(companyId);
@@ -422,7 +316,7 @@ public class UserService {
         Specification<User> filterSpec = buildUserFilterSpec(keyword, isActive, role);
 
         Specification<User> excludeAdminSpec = (root, query, cb) -> {
-            Subquery<Long> subquery = query.subquery(Long.class);
+            Subquery<UUID> subquery = query.subquery(UUID.class);
             Root<User> subRoot = subquery.from(User.class);
             Join<Object, Object> subRoles = subRoot.join("roles");
 

@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
@@ -15,13 +18,11 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 @Component
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class CustomAccessDeniedHandler implements AccessDeniedHandler {
 
-    private final ObjectMapper objectMapper;
-
-    public CustomAccessDeniedHandler(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-    }
+    ObjectMapper objectMapper;
 
     @Override
     public void handle(
@@ -35,7 +36,7 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
         res.setError("FORBIDDEN");
 
         String exMessage = accessDeniedException.getMessage();
-        String finalMessage = "Bạn không có quyền truy cập tài nguyên này!";
+        String finalMessage = "You do not have permission to access this resource!";
 
         if (exMessage != null && !exMessage.isBlank() && !exMessage.equalsIgnoreCase("Access is denied")) {
             finalMessage = exMessage;

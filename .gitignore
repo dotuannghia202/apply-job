@@ -38,5 +38,5 @@ out/
 
 application.properties
 **/resources/application.properties
-
+repomix-output.xml
 .env

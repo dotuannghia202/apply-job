@@ -51,7 +51,7 @@ public class DashboardService {
 
         
         List<ResAdminDashboardDTO.IndustryStat> industryStats = projections.stream()
-                .map(p -> new ResAdminDashboardDTO.IndustryStat(p.getIndustryName(), p.getJobCount()))
+                .map(p -> new ResAdminDashboardDTO.IndustryStat(p.getIndustryNameVi(), p.getIndustryNameEn(), p.getJobCount()))
                 .toList();
 
         stats.setIndustryStats(industryStats);

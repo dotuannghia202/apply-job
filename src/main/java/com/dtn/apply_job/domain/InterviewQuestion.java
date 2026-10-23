@@ -1,9 +1,13 @@
 package com.dtn.apply_job.domain;
 
+import com.dtn.apply_job.util.LanguageUtil;
 import com.dtn.apply_job.util.constant.enums.QuestionCategory;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
+import java.util.UUID;
 
 @Entity
 @Table(name = "interview_questions")
@@ -16,64 +20,91 @@ import lombok.experimental.FieldDefaults;
 public class InterviewQuestion {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "session_id", nullable = false)
     InterviewSession interviewSession;
 
-    //Số thứ tự câu hỏi dùng để frontend hiển thị lần lượt
     @Column(name = "order_index", nullable = false)
     Integer orderIndex;
 
-    //Nội dung câu hỏi
-    @Column(name = "question_text", columnDefinition = "TEXT", nullable = false)
-    String questionText;
+    // Câu hỏi song ngữ
+    @Column(name = "question_text_vi", columnDefinition = "TEXT")
+    @JsonProperty("question_text_vi")
+    String questionTextVi;
 
-    //Phân loại câu hỏi
+    @Column(name = "question_text_en", columnDefinition = "TEXT")
+    @JsonProperty("question_text_en")
+    String questionTextEn;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
     QuestionCategory category;
 
-    //Thời gian tối đa để trả loi câu hỏi này
     @Column(name = "time_limit_seconds", nullable = false)
-    Integer timeLimitSeconds; // Mặc định 90s
+    Integer timeLimitSeconds;
 
-    // Tiêu chí chấm điểm ngầm mà AI sinh ra
     @Column(name = "rubric", columnDefinition = "TEXT")
     String rubric;
 
-    // --- KẾT QUẢ TRẢ LỜI CỦA ỨNG VIÊN ---
-
-    //Thời gian ứng viên trả lời câu hỏi,đùng để tính điểm tốc độ
+    // Dữ liệu thời gian làm bài của ứng viên
     @Column(name = "duration_seconds")
     Integer durationSeconds;
 
-    //Link file ghi âm của giọng nói của ứng viên
-    @Column(name = "audio_url")
-    String audioUrl;
+    @Column(name = "start_time_seconds")
+    Integer startTimeSeconds;
 
-    //Văn bản được bóc tách từ file ghi âm phỏng vấn
-    @Column(name = "transcribed_text", columnDefinition = "TEXT")
-    String transcribedText;
+    // Lời thoại bóc băng song ngữ
+    @Column(name = "transcribed_text_vi", columnDefinition = "TEXT")
+    @JsonProperty("transcribed_text_vi")
+    String transcribedTextVi;
 
-    //KẾT QUẢ CHẤM ĐIỂM CỦA AI (Cập nhật sau khi nộp bài)
-    //AI đánh giá câu trả lời của ứng viên khớp được bao nhiêu % các ý yêu cầu trong rubric
+    @Column(name = "transcribed_text_en", columnDefinition = "TEXT")
+    @JsonProperty("transcribed_text_en")
+    String transcribedTextEn;
+
+    // Chấm điểm & Bằng chứng chống ảo giác
     @Column(name = "accuracy_score")
     Double accuracyScore;
 
-    //Hệ số tốc độ (0.0 đến 1.0),Nếu trả lời sai (accuracyScore < 50) thì hệ số này tự động bị set về 0.
     @Column(name = "speed_factor")
     Double speedFactor;
 
-    //Điểm tổng kết cuối cùng của câu hỏi này, kết hợp giữa độ chính xác và tốc độ:
-    //finalScore=accuracyScore×(0.7+0.3×speedFactor)
     @Column(name = "final_score")
     Double finalScore;
 
-    //Lời nhận xét chi tiết của AI cho riêng câu này
-    //(VD: "Ứng viên hiểu đúng bản chất Redis nhưng quên nhắc đến giải pháp phòng chống Cache Avalanche khi hệ thống sập").
-    @Column(name = "feedback", columnDefinition = "TEXT")
-    String feedback;
+    @Column(name = "evidence_quote", columnDefinition = "TEXT")
+    String evidenceQuote;
+
+    // Nhận xét song ngữ
+    @Column(name = "feedback_vi", columnDefinition = "TEXT")
+    @JsonProperty("feedback_vi")
+    String feedbackVi;
+
+    @Column(name = "feedback_en", columnDefinition = "TEXT")
+    @JsonProperty("feedback_en")
+    String feedbackEn;
+
+    @JsonProperty("question_text")
+    public String getQuestionText() {
+        return LanguageUtil.resolve(this.questionTextVi, this.questionTextEn);
+    }
+
+    @JsonProperty("transcribed_text")
+    public String getTranscribedText() {
+        return LanguageUtil.resolve(this.transcribedTextVi, this.transcribedTextEn);
+    }
+
+    @JsonProperty("feedback")
+    public String getFeedback() {
+        return LanguageUtil.resolve(this.feedbackVi, this.feedbackEn);
+    }
+
+    @PrePersist
+    public void handleBeforeCreate() {
+        if (this.questionTextVi == null && this.questionTextEn != null) this.questionTextVi = this.questionTextEn;
+        if (this.questionTextEn == null && this.questionTextVi != null) this.questionTextEn = this.questionTextVi;
+    }
 }

@@ -1,52 +1,53 @@
 package com.dtn.apply_job.domain.response.user;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.util.List;
+import java.util.UUID;
 
-
-@Setter
-@Getter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ResLoginDTO {
 
-
     @JsonProperty("user")
-    private UserLogin userLogin;
+    UserLogin userLogin;
 
-
-    @Setter
-    @Getter
-    @AllArgsConstructor
+    @Data
     @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @FieldDefaults(level = AccessLevel.PRIVATE)
     public static class UserLogin {
-        private long id;
-        private String email;
-        private String name;
-        private List<String> roles;
-        private String avatarUrl;
-        private Boolean isGmailLinked;
+        UUID id;
+        String email;
+        String name;
+        List<String> roles;
+        String avatarUrl;
+        Boolean isGmailLinked;
+        CompanyInfo company;
 
-        private CompanyInfo company;
-
-
-        @Getter
-        @Setter
+        @Data
+        @NoArgsConstructor
+        @AllArgsConstructor
+        @Builder
+        @FieldDefaults(level = AccessLevel.PRIVATE)
         public static class CompanyInfo {
-            private long id;
-            private String name;
-
+            UUID id;
+            String name;
         }
     }
 
-    @Setter
-    @Getter
-    @AllArgsConstructor
+    @Data
     @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @FieldDefaults(level = AccessLevel.PRIVATE)
     public static class UserGetAccount {
-        private UserLogin user;
+        UserLogin user;
     }
 }

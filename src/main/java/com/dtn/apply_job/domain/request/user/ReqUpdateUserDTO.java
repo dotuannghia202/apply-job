@@ -2,17 +2,20 @@ package com.dtn.apply_job.domain.request.user;
 
 import com.dtn.apply_job.util.constant.enums.GenderEnum;
 import jakarta.validation.constraints.NotBlank;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
-@Setter
-@Getter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ReqUpdateUserDTO {
 
     @NotBlank(message = "Họ tên không được để trống!")
-    private String name;
-    private String avatarUrl;
-    private int age;
-    private GenderEnum gender;
-    private String address;
+    String name;
+    String avatarUrl;
+    int age;
+    GenderEnum gender;
+    String address;
 }

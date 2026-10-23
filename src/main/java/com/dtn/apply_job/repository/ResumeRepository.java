@@ -6,9 +6,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.List;
+import java.util.UUID;
 
-public interface ResumeRepository extends JpaRepository<Resume, Long>, JpaSpecificationExecutor<Resume> {
-    boolean existsBySpecializationId(Long specializationId);
+public interface ResumeRepository extends JpaRepository<Resume, UUID>, JpaSpecificationExecutor<Resume> {
+    boolean existsBySpecializationId(UUID specializationId);
 
     List<Resume> findByCandidateAndActiveTrue(User candidate);
 

@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -47,7 +48,7 @@ public class ApplicationService {
 
 
     //Check access permission
-    private Application getAppAndCheckAccess(long id) throws Exception {
+    private Application getAppAndCheckAccess(UUID id) throws Exception {
         Application app = applicationRepository.findById(id)
                 .orElseThrow(() -> new IdInvalidException("The application form does not exist!"));
 
@@ -62,14 +63,14 @@ public class ApplicationService {
         if (isEmployer) {
 
             if (currentUser.getCompany() == null ||
-                    app.getJob().getCompany().getId() != currentUser.getCompany().getId()) {
+                    !app.getJob().getCompany().getId().equals(currentUser.getCompany().getId())) {
                 throw new Exception("You don't have permission to view job applications submitted to other company!");
             }
             return app;
         }
 
 
-        if (app.getResume().getCandidate().getId() != currentUser.getId()) {
+        if (!app.getResume().getCandidate().getId().equals(currentUser.getId())) {
             throw new Exception("You don't have permission to view resume application!");
         }
 
@@ -86,7 +87,7 @@ public class ApplicationService {
         Resume resume = resumeRepository.findById(reqDTO.getResumeId())
                 .orElseThrow(() -> new IdInvalidException("CV doesn't exist!"));
 
-        if (resume.getCandidate().getId() != candidate.getId()) {
+        if (!resume.getCandidate().getId().equals(candidate.getId())) {
             throw new Exception("You don't have permission to use someone else's cv!");
         }
 
@@ -117,8 +118,10 @@ public class ApplicationService {
                 String candidateName = candidate.getName();
                 String jobTitle = job.getName();
 
-                String title = "A candidate has been submitted their CV!";
-                String message = "Candidate " + candidateName + " has been applied for position [" + jobTitle + "].";
+                String titleVi = "Ứng viên đã nộp CV!";
+                String titleEn = "A candidate has submitted their CV!";
+                String messageVi = "Ứng viên " + candidateName + " vừa ứng tuyển vào vị trí [" + (job.getNameVi() != null ? job.getNameVi() : job.getName()) + "].";
+                String messageEn = "Candidate " + candidateName + " has applied for position [" + (job.getNameEn() != null ? job.getNameEn() : job.getName()) + "].";
 
                 for (User hr : company.getUsers()) {
                     boolean isEmployer = hr.getRoles().stream()
@@ -127,8 +130,10 @@ public class ApplicationService {
                     if (isEmployer) {
                         notificationService.sendToUser(
                                 hr,
-                                title,
-                                message,
+                                titleVi,
+                                titleEn,
+                                messageVi,
+                                messageEn,
                                 "NEW_APPLICATION",
                                 application.getId(),
                                 com.dtn.apply_job.util.constant.enums.ERole.EMPLOYER
@@ -167,7 +172,7 @@ public class ApplicationService {
                 .build();
     }
 
-    public ResApplicationDTO handleGetAppById(long id) throws Exception {
+    public ResApplicationDTO handleGetAppById(UUID id) throws Exception {
         Application app = getAppAndCheckAccess(id);
         return convertToResAppDTO(app);
     }
@@ -193,7 +198,7 @@ public class ApplicationService {
             customSort = Sort.by(Sort.Direction.DESC, "appliedAt");
 
         } else if (isEmployer) {
-            long companyId = currentUser.getCompany() != null ? currentUser.getCompany().getId() : 0;
+            UUID companyId = currentUser.getCompany() != null ? currentUser.getCompany().getId() : null;
             Specification<Application> hrSpec = (root, query, cb) ->
                     cb.equal(root.get("job").get("company").get("id"), companyId);
             roleSpec = spec == null ? hrSpec : spec.and(hrSpec);
@@ -244,7 +249,7 @@ public class ApplicationService {
     }
 
     @Transactional
-    public ResUpdateApplicationDTO handleUpdateStatus(long id, ReqUpdateApplicationStatusDTO reqDTO) throws Exception {
+    public ResUpdateApplicationDTO handleUpdateStatus(UUID id, ReqUpdateApplicationStatusDTO reqDTO) throws Exception {
         Application app = getAppAndCheckAccess(id);
 
         String email = SecurityUtil.getCurrentUser().get();
@@ -343,14 +348,14 @@ public class ApplicationService {
     }
 
     @Transactional
-    public ResApplicationDTO handleUpdateAppByCandidate(long id, ReqUpdateAppByCandidateDTO reqDTO) throws Exception {
+    public ResApplicationDTO handleUpdateAppByCandidate(UUID id, ReqUpdateAppByCandidateDTO reqDTO) throws Exception {
 
         Application app = getAppAndCheckAccess(id);
 
         String email = SecurityUtil.getCurrentUser().get();
         User currentUser = userRepository.findByEmail(email);
 
-        if (app.getResume().getCandidate().getId() != currentUser.getId()) {
+        if (!app.getResume().getCandidate().getId().equals(currentUser.getId())) {
             throw new Exception("Bạn không có quyền chỉnh sửa hồ sơ ứng tuyển này!");
         }
 
@@ -361,11 +366,11 @@ public class ApplicationService {
         boolean isResumeChanged = false;
 
 
-        if (reqDTO.getResumeId() != null && reqDTO.getResumeId() != app.getResume().getId()) {
+        if (reqDTO.getResumeId() != null && !reqDTO.getResumeId().equals(app.getResume().getId())) {
             Resume newResume = resumeRepository.findById(reqDTO.getResumeId())
                     .orElseThrow(() -> new IdInvalidException("CV mới không tồn tại!"));
 
-            if (newResume.getCandidate().getId() != currentUser.getId()) {
+            if (!newResume.getCandidate().getId().equals(currentUser.getId())) {
                 throw new Exception("Bạn không thể dùng CV của người khác!");
             }
 
@@ -392,50 +397,16 @@ public class ApplicationService {
 
 
     private ResApplicationDTO convertToResAppDTO(Application app) {
-        ResApplicationDTO dto = new ResApplicationDTO();
-        dto.setId(app.getId());
-        dto.setStatus(app.getStatus());
-        dto.setMatchScore(app.getMatchScore());
-        dto.setMatchedSkills(app.getMatchedSkills());
-        dto.setMissingSkills(app.getMissingSkills());
-        dto.setCoverLetter(app.getCoverLetter());
-        dto.setHasCoverLetter(app.getCoverLetter() != null && !app.getCoverLetter().trim().isEmpty());
-        dto.setAppliedAt(app.getAppliedAt());
-        dto.setInterviewTime(app.getInterviewTime());
-        dto.setInterviewLocation(app.getInterviewLocation());
-        dto.setInterviewMessage(app.getInterviewMessage());
-
-        ResApplicationDTO.JobInfo jobInfo = new ResApplicationDTO.JobInfo();
-        jobInfo.setId(app.getJob().getId());
-        jobInfo.setName(app.getJob().getName());
-        jobInfo.setMinSalary(app.getJob().getMinSalary());
-        jobInfo.setMaxSalary(app.getJob().getMaxSalary());
-        jobInfo.setCompanyName(app.getJob().getCompany().getName());
-        jobInfo.setLocation(app.getJob().getLocation());
-        jobInfo.setCompanyLogo(app.getJob().getCompany().getLogo());
-        dto.setJob(jobInfo);
-
-        ResApplicationDTO.ResumeInfo resumeInfo = new ResApplicationDTO.ResumeInfo();
-        resumeInfo.setId(app.getResume().getId());
-        resumeInfo.setFileName(app.getResume().getFileName());
-        resumeInfo.setFileUrl(app.getResume().getFileUrl());
-        dto.setResume(resumeInfo);
-
-        ResApplicationDTO.CandidateInfo candInfo = new ResApplicationDTO.CandidateInfo();
-        candInfo.setId(app.getResume().getCandidate().getId());
-        candInfo.setName(app.getResume().getCandidate().getName());
-        candInfo.setEmail(app.getResume().getCandidate().getEmail());
-        candInfo.setAvatarUrl(app.getResume().getCandidate().getAvatarUrl());
-        dto.setCandidate(candInfo);
-
+        ResApplicationDTO dto = applicationMapper.toResApplicationDTO(app);
+        interviewSessionRepository.findByApplication(app).ifPresent(s -> {
+            dto.setInterviewSessionId(s.getId());
+            dto.setInterviewSessionStatus(s.getStatus());
+        });
         return dto;
     }
 
     private ResUpdateApplicationDTO convertToResUpdateAppDTO(Application app) {
-        ResUpdateApplicationDTO dto = new ResUpdateApplicationDTO();
-        dto.setId(app.getId());
-        dto.setStatus(app.getStatus());
-        return dto;
+        return applicationMapper.toResUpdateApplicationDTO(app);
     }
 
 
@@ -469,7 +440,7 @@ public class ApplicationService {
             if (currentUser.getCompany() == null) {
                 throw new IdInvalidException("Bạn chưa tham gia vào công ty nào!");
             }
-            long companyId = currentUser.getCompany().getId();
+            UUID companyId = currentUser.getCompany().getId();
 
 
             Specification<Application> securitySpec = (root, query, cb) ->

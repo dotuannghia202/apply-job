@@ -4,80 +4,86 @@ import com.dtn.apply_job.security.SecurityUtil;
 import com.dtn.apply_job.util.constant.enums.GenderEnum;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.validation.constraints.NotEmpty;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 @Entity
 @Table(name = "users")
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class User {
 
     @Column(name = "google_refresh_token", length = 500)
-    private String googleRefreshToken;
+    String googleRefreshToken;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    UUID id;
 
     @NotBlank(message = "Full name is not blank")
-    private String name;
+    String name;
 
     @NotBlank(message = "Password is not blank")
-    private String password;
+    String password;
 
     @NotBlank(message = "Email is not blank")
-    private String email;
+    String email;
 
-    private String avatarUrl;
+    String avatarUrl;
 
-    private Integer age;
-
+    Integer age;
 
     @Enumerated(EnumType.STRING)
-    private GenderEnum gender;
+    GenderEnum gender;
 
-    private String address;
+    String address;
 
+    @Builder.Default
     @Column(name = "is_active", nullable = false)
-    private Boolean isActive = true;
+    Boolean isActive = true;
 
     @Column(columnDefinition = "TEXT")
-    private String refreshToken;
+    String refreshToken;
 
+    Instant createdAt;
 
-    private Instant createdAt;
+    Instant updatedAt;
 
-
-    private Instant updatedAt;
-
-    private String createdBy;
-    private String updatedBy;
+    String createdBy;
+    String updatedBy;
 
     @ManyToOne
     @JoinColumn(name = "company_id")
-    private Company company;
+    Company company;
 
-
+    @Builder.Default
+    @NotEmpty(message = "A user must have at least one role.")
     @ManyToMany(fetch = FetchType.EAGER) // Tải quyền ngay lập tức khi đăng nhập
     @JoinTable(
             name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
-    private Set<Role> roles = new HashSet<>();
+    Set<Role> roles = new HashSet<>();
 
+    @Builder.Default
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "saved_jobs", // Hibernate sẽ tự động tạo bảng này
             joinColumns = @JoinColumn(name = "candidate_id"),
             inverseJoinColumns = @JoinColumn(name = "job_id")
     )
-    private Set<Job> savedJobs = new HashSet<>();
+    Set<Job> savedJobs = new HashSet<>();
 
     @PrePersist
     public void handleBeforeCreate() {
@@ -90,21 +96,4 @@ public class User {
         this.updatedBy = SecurityUtil.getCurrentUser().isPresent() == true ? SecurityUtil.getCurrentUser().get() : "";
         this.updatedAt = Instant.now();
     }
-
-
-    public User() {
-
-    }
-
-    public User(String name, String password, String email, int age, GenderEnum gender, String address, Boolean isActive, String refreshToken) {
-        this.name = name;
-        this.password = password;
-        this.email = email;
-        this.age = age;
-        this.isActive = isActive;
-        this.gender = gender;
-        this.address = address;
-        this.refreshToken = refreshToken;
-    }
-
 }

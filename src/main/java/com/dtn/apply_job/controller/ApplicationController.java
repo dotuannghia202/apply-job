@@ -19,6 +19,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/v1/applications")
 public class ApplicationController {
@@ -50,7 +52,7 @@ public class ApplicationController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('CANDIDATE', 'EMPLOYER', 'ADMIN')")
     @ApiMessage("Lấy chi tiết ứng tuyển thành công")
-    public ResponseEntity<ResApplicationDTO> getById(@PathVariable long id) throws Exception {
+    public ResponseEntity<ResApplicationDTO> getById(@PathVariable UUID id) throws Exception {
         return ResponseEntity.ok(applicationService.handleGetAppById(id));
     }
 
@@ -58,7 +60,7 @@ public class ApplicationController {
     @PreAuthorize("hasAnyRole('EMPLOYER', 'ADMIN')")
     @ApiMessage("Cập nhật trạng thái ứng tuyển thành công!")
     public ResponseEntity<ResUpdateApplicationDTO> updateStatus(
-            @PathVariable long id,
+            @PathVariable UUID id,
             @Valid @RequestBody ReqUpdateApplicationStatusDTO reqDTO) throws Exception {
         return ResponseEntity.ok(applicationService.handleUpdateStatus(id, reqDTO));
     }
@@ -67,7 +69,7 @@ public class ApplicationController {
     @PreAuthorize("hasRole('CANDIDATE')")
     @ApiMessage("Cập nhật ứng tuyển thành công")
     public ResponseEntity<ResApplicationDTO> updateAppByCandidate(
-            @PathVariable long id,
+            @PathVariable UUID id,
             @Valid @RequestBody ReqUpdateAppByCandidateDTO reqDTO) throws Exception {
 
         return ResponseEntity.ok(applicationService.handleUpdateAppByCandidate(id, reqDTO));

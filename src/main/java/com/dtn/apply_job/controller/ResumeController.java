@@ -20,6 +20,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -39,7 +40,7 @@ public class ResumeController {
     @PutMapping("/resumes/{id}")
     @PreAuthorize("hasAnyRole('CANDIDATE', 'ADMIN')")
     @ApiMessage("Cập nhật CV thành công")
-    public ResponseEntity<ResUpdateResumeDTO> updateResume(@PathVariable long id, @Valid @RequestBody ReqUpdateResumeDTO req)
+    public ResponseEntity<ResUpdateResumeDTO> updateResume(@PathVariable UUID id, @Valid @RequestBody ReqUpdateResumeDTO req)
             throws Exception {
         ResUpdateResumeDTO updatedResume = this.resumeService.handleUpdateResume(id, req);
         return ResponseEntity.status(HttpStatus.OK).body(updatedResume);
@@ -48,7 +49,7 @@ public class ResumeController {
     @GetMapping("/resumes/{id}")
     @PreAuthorize("hasAnyRole('CANDIDATE', 'ADMIN')")
     @ApiMessage("Lấy thông tin CV thành công")
-    public ResponseEntity<ResResumeDTO> getResumeById(@PathVariable long id) throws Exception {
+    public ResponseEntity<ResResumeDTO> getResumeById(@PathVariable UUID id) throws Exception {
         ResResumeDTO resume = this.resumeService.handleGetResumeById(id);
         return ResponseEntity.status(HttpStatus.OK).body(resume);
     }
@@ -76,7 +77,7 @@ public class ResumeController {
     @DeleteMapping("/resumes/{id}")
     @PreAuthorize("hasAnyRole('CANDIDATE', 'ADMIN')")
     @ApiMessage("Xóa CV thành công!")
-    public ResponseEntity<Void> deleteResume(@PathVariable long id) throws IdInvalidException {
+    public ResponseEntity<Void> deleteResume(@PathVariable UUID id) throws IdInvalidException {
         resumeService.handleSoftDeleteResume(id);
         return ResponseEntity.ok().build();
     }
@@ -84,7 +85,7 @@ public class ResumeController {
     @PutMapping("/resumes/{id}/default")
     @PreAuthorize("hasRole('CANDIDATE')")
     @ApiMessage("Đặt làm CV mặc định thành công!")
-    public ResponseEntity<ResResumeDTO> setDefaultResume(@PathVariable long id) throws IdInvalidException {
+    public ResponseEntity<ResResumeDTO> setDefaultResume(@PathVariable UUID id) throws IdInvalidException {
         ResResumeDTO updatedResume = this.resumeService.handleSetDefaultResume(id);
         return ResponseEntity.ok(updatedResume);
     }

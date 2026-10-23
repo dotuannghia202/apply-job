@@ -1,26 +1,29 @@
 package com.dtn.apply_job.domain.request.resume;
 
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.util.List;
+import java.util.UUID;
 
-@Getter
-@Setter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ReqUpdateResumeDTO {
 
 
     @Size(min = 1, message = "Tên tệp tin không được để trống!")
-    private String fileName;
+    String fileName;
 
     @Size(min = 1, message = "Đường dẫn tệp tin không được để trống!")
-    private String fileUrl;
+    String fileUrl;
 
-    
-    private Boolean isActive;
+    Boolean isActive;
 
-    private Long specializationId;
+    UUID specializationId;
 
-    private List<Long> skillIds;
+    List<UUID> skillIds;
 }

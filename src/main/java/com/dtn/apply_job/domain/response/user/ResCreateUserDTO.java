@@ -1,35 +1,42 @@
 package com.dtn.apply_job.domain.response.user;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
-@Setter
-@Getter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ResCreateUserDTO {
-    private long id;
-    private String email;
-    private String name;
-    private int age;
-    private String gender;
-    private String address;
+    UUID id;
+    String email;
+    String name;
+    int age;
+    String gender;
+    String address;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss a", timezone = "GMT+7")
-    private Instant createdAt;
+    Instant createdAt;
 
-    private String createdBy;
+    String createdBy;
 
-    private CompanyUser company;
+    CompanyUser company;
 
-    private List<String> roles;
+    List<String> roles;
 
-    @Setter
-    @Getter
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @FieldDefaults(level = AccessLevel.PRIVATE)
     public static class CompanyUser {
-        private long id;
+        UUID id;
         String name;
     }
 }

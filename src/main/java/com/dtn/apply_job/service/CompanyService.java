@@ -9,6 +9,7 @@ import com.dtn.apply_job.domain.response.company.ResCompanyDTO;
 import com.dtn.apply_job.domain.response.company.ResCompanyStatsDTO;
 import com.dtn.apply_job.domain.response.company.ResCreateCompanyDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
+import com.dtn.apply_job.mapper.CompanyMapper;
 import com.dtn.apply_job.repository.CompanyRepository;
 import com.dtn.apply_job.repository.UserRepository;
 import com.dtn.apply_job.security.SecurityUtil;
@@ -27,7 +28,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 @Setter
 @Getter
@@ -35,15 +38,16 @@ import java.util.Optional;
 public class CompanyService {
     private final CompanyRepository companyRepository;
     private final UserRepository userRepository;
-
     private final NotificationService notificationService;
     private final EmailService emailService;
+    private final CompanyMapper companyMapper;
 
-    public CompanyService(CompanyRepository companyRepository, UserRepository userRepository, NotificationService notificationService, EmailService emailService) {
+    public CompanyService(CompanyRepository companyRepository, UserRepository userRepository, NotificationService notificationService, EmailService emailService, CompanyMapper companyMapper) {
         this.companyRepository = companyRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
         this.emailService = emailService;
+        this.companyMapper = companyMapper;
     }
 
     @Transactional
@@ -59,37 +63,21 @@ public class CompanyService {
         }
 
         
-        Company company = new Company();
+        Company company = companyMapper.toCompany(reqDTO);
         company.setStatus(CompanyStatus.PENDING);
-        company.setName(reqDTO.getName());
-        company.setDescription(reqDTO.getDescription());
-        company.setAddress(reqDTO.getAddress());
-        company.setLogo(reqDTO.getLogo());
 
         Company savedCompany = this.companyRepository.save(company);
 
-        
         currentUser.setCompany(savedCompany);
         this.userRepository.save(currentUser);
 
-        
         notificationService.sendToAllAdmins(
                 "Yêu cầu duyệt công ty mới",
                 "Nhà tuyển dụng " + currentUser.getName() + " vừa tạo hồ sơ công ty: " + savedCompany.getName(),
                 "NEW_COMPANY_REQUEST"
         );
 
-        
-        ResCreateCompanyDTO res = new ResCreateCompanyDTO();
-        res.setId(savedCompany.getId());
-        res.setName(savedCompany.getName());
-        res.setDescription(savedCompany.getDescription());
-        res.setAddress(savedCompany.getAddress());
-        res.setLogo(savedCompany.getLogo());
-        res.setCreatedAt(savedCompany.getCreatedAt());
-        res.setCreatedBy(savedCompany.getCreatedBy());
-
-        return res;
+        return companyMapper.toResCreateCompanyDTO(savedCompany);
     }
 
     public List<Company> handleCreateCompanies(List<Company> companies) {
@@ -100,29 +88,26 @@ public class CompanyService {
     }
 
     @Transactional
-    public ResCompanyDTO handleUpdateCompany(long id, ReqUpdateCompanyDTO reqDTO) throws Exception {
+    public ResCompanyDTO handleUpdateCompany(UUID id, ReqUpdateCompanyDTO reqDTO) throws Exception {
         
         String email = SecurityUtil.getCurrentUser()
                 .orElseThrow(() -> new IdInvalidException("Vui lòng đăng nhập!"));
         User currentUser = userRepository.findByEmail(email);
 
         
-        if (currentUser.getCompany() == null || currentUser.getCompany().getId() != id) {
+        if (currentUser.getCompany() == null || !Objects.equals(currentUser.getCompany().getId(), id)) {
             throw new AccessDeniedException("Lỗi bảo mật: Bạn không có quyền sửa thông tin công ty của người khác!");
         }
 
         
         Company currentCompany = currentUser.getCompany();
-        if (reqDTO.getName() != null) currentCompany.setName(reqDTO.getName());
-        if (reqDTO.getAddress() != null) currentCompany.setAddress(reqDTO.getAddress());
-        if (reqDTO.getDescription() != null) currentCompany.setDescription(reqDTO.getDescription());
-        if (reqDTO.getLogo() != null) currentCompany.setLogo(reqDTO.getLogo());
+        companyMapper.updateCompanyFromDTO(reqDTO, currentCompany);
 
         Company updatedCompany = companyRepository.save(currentCompany);
         return convertToResCompanyDTO(updatedCompany);
     }
 
-    public void handleDeleteCompany(long id) {
+    public void handleDeleteCompany(UUID id) {
         Optional<Company> optionalCompany = this.companyRepository.findById(id);
         if (optionalCompany.isPresent()) {
             Company company = optionalCompany.get();
@@ -136,7 +121,7 @@ public class CompanyService {
     }
 
     
-    public ResCompanyDTO handleGetCompanyById(long id) throws Exception {
+    public ResCompanyDTO handleGetCompanyById(UUID id) throws Exception {
         Company company = companyRepository.findById(id)
                 .orElseThrow(() -> new IdInvalidException("Công ty không tồn tại!"));
 
@@ -149,7 +134,7 @@ public class CompanyService {
             isAdmin = currentUser.getRoles().stream()
                     .anyMatch(r -> r.getName().name().equals("ROLE_ADMIN") || r.getName().name().equals("ADMIN"));
 
-            if (currentUser.getCompany() != null && currentUser.getCompany().getId() == id) {
+            if (currentUser.getCompany() != null && Objects.equals(currentUser.getCompany().getId(), id)) {
                 isOwner = true;
             }
         }
@@ -166,7 +151,7 @@ public class CompanyService {
     }
 
     @Transactional
-    public void approveCompany(long companyId, boolean isApproved) throws Exception {
+    public void approveCompany(UUID companyId, boolean isApproved) throws Exception {
         
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new IdInvalidException("Công ty không tồn tại!"));
@@ -315,16 +300,7 @@ public class CompanyService {
     
     
     private ResCompanyDTO convertToResCompanyDTO(Company company) {
-        ResCompanyDTO dto = new ResCompanyDTO();
-        dto.setId(company.getId());
-        dto.setName(company.getName());
-        dto.setLogo(company.getLogo());
-        dto.setAddress(company.getAddress());
-        dto.setDescription(company.getDescription());
-        dto.setCreatedAt(company.getCreatedAt());
-        dto.setStatus(company.getStatus());
-        dto.setUpdatedAt(company.getUpdatedAt());
-        dto.setUpdatedBy(company.getUpdatedBy());
+        ResCompanyDTO dto = companyMapper.toResCompanyDTO(company);
 
         String creatorEmail = company.getCreatedBy();
         if (creatorEmail != null && !creatorEmail.isBlank()) {
@@ -338,7 +314,7 @@ public class CompanyService {
     }
 
     @Transactional
-    public void toggleSuspendCompany(long companyId, boolean isSuspended) throws Exception {
+    public void toggleSuspendCompany(UUID companyId, boolean isSuspended) throws Exception {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new IdInvalidException("Công ty không tồn tại!"));
 

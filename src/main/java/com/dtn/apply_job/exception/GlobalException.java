@@ -91,16 +91,22 @@ public class GlobalException {
     }
 
 
-    @ExceptionHandler(value = {
-            NoResourceFoundException.class,
-            IdInvalidException.class,
-    })
-    public ResponseEntity<RestRespon<Object>> handleNotFoundException(Exception ex) {
+    @ExceptionHandler(value = { NoResourceFoundException.class })
+    public ResponseEntity<RestRespon<Object>> handleNotFoundException(NoResourceFoundException ex) {
         RestRespon<Object> res = new RestRespon<>();
         res.setStatusCode(HttpStatus.NOT_FOUND.value());
-        res.setError(ex.getClass().getSimpleName());
-        res.setMessage(ex instanceof NoResourceFoundException ? "Đường dẫn không tồn tại" : ex.getMessage());
+        res.setError("RESOURCE_NOT_FOUND");
+        res.setMessage("Đường dẫn không tồn tại");
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(res);
+    }
+
+    @ExceptionHandler(value = { IdInvalidException.class })
+    public ResponseEntity<RestRespon<Object>> handleIdInvalidException(IdInvalidException ex) {
+        RestRespon<Object> res = new RestRespon<>();
+        res.setStatusCode(HttpStatus.BAD_REQUEST.value());
+        res.setError("RESOURCE_NOT_FOUND");
+        res.setMessage(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -153,11 +159,18 @@ public class GlobalException {
     @ExceptionHandler(value = {DisabledException.class})
     public ResponseEntity<RestRespon<Object>> handleDisabledException(DisabledException ex) {
         RestRespon<Object> res = new RestRespon<>();
-
         res.setStatusCode(HttpStatus.FORBIDDEN.value());
-        res.setError(ex.getClass().getSimpleName());
+        res.setError("ACCOUNT_LOCKED");
         res.setMessage("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ với Quản trị viên!");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(res);
+    }
 
+    @ExceptionHandler(value = {org.springframework.security.access.AccessDeniedException.class})
+    public ResponseEntity<RestRespon<Object>> handleAccessDeniedException(org.springframework.security.access.AccessDeniedException ex) {
+        RestRespon<Object> res = new RestRespon<>();
+        res.setStatusCode(HttpStatus.FORBIDDEN.value());
+        res.setError("FORBIDDEN_ACCESS");
+        res.setMessage("Bạn không có quyền truy cập tài nguyên này!");
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(res);
     }
 }

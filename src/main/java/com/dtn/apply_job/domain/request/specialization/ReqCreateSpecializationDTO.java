@@ -1,22 +1,41 @@
 package com.dtn.apply_job.domain.request.specialization;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import jakarta.validation.constraints.NotBlank;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
-@Setter
-@Getter
+import java.util.UUID;
+
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ReqCreateSpecializationDTO {
-    @NotBlank(message = "Tên chuyên ngành không được để trống")
-    private String name;
+
+    @JsonProperty("name_vi")
+    String nameVi;
+
+    @JsonProperty("name_en")
+    String nameEn;
 
     @NotNull(message = "Mã ngành nghề không được để trống")
-    @Positive(message = "Mã ngành nghề phải lớn hơn 0")
-    private Long industryId;
+    UUID industryId;
+
+    public void setName(String name) {
+        if (this.nameVi == null || this.nameVi.isBlank()) this.nameVi = name;
+        if (this.nameEn == null || this.nameEn.isBlank()) this.nameEn = name;
+    }
+
+    public String getName() {
+        return this.nameVi != null && !this.nameVi.isBlank() ? this.nameVi : this.nameEn;
+    }
+
+    @AssertTrue(message = "Tên chuyên ngành không được để trống")
+    public boolean isNameValid() {
+        return (nameVi != null && !nameVi.isBlank()) || (nameEn != null && !nameEn.isBlank());
+    }
 }

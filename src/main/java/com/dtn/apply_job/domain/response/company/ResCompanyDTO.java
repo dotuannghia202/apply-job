@@ -1,33 +1,49 @@
 package com.dtn.apply_job.domain.response.company;
 
+import com.dtn.apply_job.util.LanguageUtil;
 import com.dtn.apply_job.util.constant.enums.CompanyStatus;
-import lombok.Getter;
-import lombok.Setter;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
+import java.util.UUID;
 
-@Getter
-@Setter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ResCompanyDTO {
     // Cột 1: COMPANY
-    private long id;
-    private String name;
-    private String logo;
-    private String address;
-    private String description;
+    UUID id;
+    String name;
+    String logo;
+    String address;
+
+    @JsonProperty("description_vi")
+    String descriptionVi;
+
+    @JsonProperty("description_en")
+    String descriptionEn;
 
     // Cột 2: EMPLOYER
-    private String employerName;
-    private String employerEmail;
+    String employerName;
+    String employerEmail;
 
     // Cột 3 & 4: DATES & STATUS
+    Instant createdAt;
+    Instant updatedAt;
+    String updatedBy;
+    CompanyStatus status;
 
-    private Instant createdAt;
+    @JsonProperty("description")
+    public String getDescription() {
+        return LanguageUtil.resolve(this.descriptionVi, this.descriptionEn);
+    }
 
-    
-    private Instant updatedAt;
-
-    private String updatedBy;
-
-    private CompanyStatus status;
+    public void setDescription(String description) {
+        if (this.descriptionVi == null) this.descriptionVi = description;
+        if (this.descriptionEn == null) this.descriptionEn = description;
+    }
 }

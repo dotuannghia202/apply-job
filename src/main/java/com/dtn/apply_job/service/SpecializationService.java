@@ -8,6 +8,7 @@ import com.dtn.apply_job.domain.response.specialization.ResSpecializationByIndus
 import com.dtn.apply_job.domain.response.specialization.ResSpecializationDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.exception.NameExistedException;
+import com.dtn.apply_job.mapper.SpecializationMapper;
 import com.dtn.apply_job.repository.IndustryRepository;
 import com.dtn.apply_job.repository.JobRepository;
 import com.dtn.apply_job.repository.ResumeRepository;
@@ -20,6 +21,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -30,109 +32,94 @@ public class SpecializationService {
     private final IndustryRepository industryRepository;
     private final JobRepository jobRepository;
     private final ResumeRepository resumeRepository;
+    private final SpecializationMapper specializationMapper;
 
     public ResSpecializationDTO handleCreateSpecialization(ReqCreateSpecializationDTO payload) throws IdInvalidException {
-        String reqName = payload.getName() != null ? payload.getName().trim() : null;
-        Long industryId = payload.getIndustryId();
+        String nameVi = payload.getNameVi() != null ? payload.getNameVi().trim() : null;
+        String nameEn = payload.getNameEn() != null ? payload.getNameEn().trim() : null;
+        if (nameVi == null && nameEn != null) nameVi = nameEn;
+        if (nameEn == null && nameVi != null) nameEn = nameVi;
 
-        if (industryId <= 0) {
+        UUID industryId = payload.getIndustryId();
+        if (industryId == null) {
             throw new IdInvalidException("Mã ngành nghề không được để trống cho chuyên ngành");
         }
 
         Industry currentIndustry = this.industryRepository.findById(industryId)
                 .orElseThrow(() -> new IdInvalidException("Không tìm thấy mã ngành nghề"));
 
-        if (reqName != null && this.specializationRepository.existsByNameAndIndustryId(reqName, currentIndustry.getId())) {
-            throw new NameExistedException("Tên chuyên ngành đã tồn tại trong ngành nghề này!");
+        if (nameVi != null && this.specializationRepository.existsByNameViAndIndustryId(nameVi, currentIndustry.getId())) {
+            throw new NameExistedException("Tên chuyên ngành tiếng Việt đã tồn tại trong ngành nghề này!");
+        }
+        if (nameEn != null && this.specializationRepository.existsByNameEnAndIndustryId(nameEn, currentIndustry.getId())) {
+            throw new NameExistedException("Tên chuyên ngành tiếng Anh đã tồn tại trong ngành nghề này!");
         }
 
-        Specialization specialization = new Specialization();
-        specialization.setName(reqName);
-
+        Specialization specialization = specializationMapper.toSpecialization(payload);
+        specialization.setNameVi(nameVi);
+        specialization.setNameEn(nameEn);
         specialization.setIndustry(currentIndustry);
         this.specializationRepository.save(specialization);
 
-        ResSpecializationDTO resSpecializationDTO = new ResSpecializationDTO();
-        resSpecializationDTO.setId(specialization.getId());
-        resSpecializationDTO.setName(specialization.getName());
-        resSpecializationDTO.setCreatedAt(specialization.getCreatedAt());
-        resSpecializationDTO.setCreatedBy(specialization.getCreatedBy());
-
-        ResSpecializationDTO.IndustryInfo industryInfo = new ResSpecializationDTO.IndustryInfo();
-        industryInfo.setId(currentIndustry.getId());
-        industryInfo.setName(currentIndustry.getName());
-        resSpecializationDTO.setIndustry(industryInfo);
-
-        return resSpecializationDTO;
+        return specializationMapper.toResSpecializationDTO(specialization);
     }
 
-    public Specialization handleUpdateSpecialization(long id, Specialization reqSpecialization) throws IdInvalidException {
+    public Specialization handleUpdateSpecialization(UUID id, Specialization reqSpecialization) throws IdInvalidException {
         Specialization currentSpecialization = this.specializationRepository.findById(id)
                 .orElseThrow(() -> new IdInvalidException("Specialization id not found"));
 
-        String targetName = reqSpecialization.getName() != null
-                ? reqSpecialization.getName().trim()
-                : currentSpecialization.getName();
         Industry targetIndustry = currentSpecialization.getIndustry();
-
-        if (reqSpecialization.getIndustry() != null && reqSpecialization.getIndustry().getId() > 0) {
+        if (reqSpecialization.getIndustry() != null && reqSpecialization.getIndustry().getId() != null) {
             targetIndustry = this.industryRepository.findById(reqSpecialization.getIndustry().getId())
                     .orElseThrow(() -> new IdInvalidException("Không tìm thấy mã ngành nghề"));
         }
 
-        boolean isNameChanged = !targetName.equals(currentSpecialization.getName());
-        boolean isIndustryChanged = targetIndustry.getId() != currentSpecialization.getIndustry().getId();
+        String targetNameVi = reqSpecialization.getNameVi() != null ? reqSpecialization.getNameVi().trim() : currentSpecialization.getNameVi();
+        String targetNameEn = reqSpecialization.getNameEn() != null ? reqSpecialization.getNameEn().trim() : currentSpecialization.getNameEn();
 
-        if ((isNameChanged || isIndustryChanged)
-                && this.specializationRepository.existsByNameAndIndustryId(targetName, targetIndustry.getId())) {
-            throw new NameExistedException("Tên chuyên ngành đã tồn tại trong ngành nghề này!");
+        if (reqSpecialization.getNameVi() != null) {
+            boolean isNameChanged = !targetNameVi.equals(currentSpecialization.getNameVi());
+            if (isNameChanged && this.specializationRepository.existsByNameViAndIndustryId(targetNameVi, targetIndustry.getId())) {
+                throw new NameExistedException("Tên chuyên ngành tiếng Việt đã tồn tại trong ngành nghề này!");
+            }
+            currentSpecialization.setNameVi(targetNameVi);
         }
 
-        currentSpecialization.setName(targetName);
-        currentSpecialization.setIndustry(targetIndustry);
+        if (reqSpecialization.getNameEn() != null) {
+            boolean isNameChanged = !targetNameEn.equals(currentSpecialization.getNameEn());
+            if (isNameChanged && this.specializationRepository.existsByNameEnAndIndustryId(targetNameEn, targetIndustry.getId())) {
+                throw new NameExistedException("Tên chuyên ngành tiếng Anh đã tồn tại trong ngành nghề này!");
+            }
+            currentSpecialization.setNameEn(targetNameEn);
+        }
 
+        currentSpecialization.setIndustry(targetIndustry);
         return this.specializationRepository.save(currentSpecialization);
     }
 
-    public ResSpecializationDTO handleGetSpecializationById(long id) throws IdInvalidException {
-        Specialization specicalization = this.specializationRepository.findById(id)
+    public ResSpecializationDTO handleGetSpecializationById(UUID id) throws IdInvalidException {
+        Specialization specialization = this.specializationRepository.findById(id)
                 .orElseThrow(() -> new IdInvalidException("Specialization id not found!"));
-        ResSpecializationDTO result = new ResSpecializationDTO();
-        result.setId(specicalization.getId());
-        result.setName(specicalization.getName());
-        result.setCreatedAt(specicalization.getCreatedAt());
-        result.setCreatedBy(specicalization.getCreatedBy());
-        if (specicalization.getIndustry() != null) {
-            ResSpecializationDTO.IndustryInfo industryInfo = new ResSpecializationDTO.IndustryInfo();
-            industryInfo.setId(specicalization.getIndustry().getId());
-            industryInfo.setName(specicalization.getIndustry().getName());
-            result.setIndustry(industryInfo);
-        }
-        return result;
+        return specializationMapper.toResSpecializationDTO(specialization);
     }
 
     public ResultPaginationDTO handleGetAllSpecializations(Specification<Specialization> spec, Pageable pageable, String name) {
         Specification<Specialization> finalSpec = spec;
         if (hasText(name)) {
             Specification<Specialization> nameSpec = (root, query, cb) ->
-                    cb.like(cb.lower(root.get("name")), "%" + name.trim().toLowerCase() + "%");
+                    cb.or(
+                            cb.like(cb.lower(root.get("nameVi")), "%" + name.trim().toLowerCase() + "%"),
+                            cb.like(cb.lower(root.get("nameEn")), "%" + name.trim().toLowerCase() + "%")
+                    );
             finalSpec = finalSpec == null ? nameSpec : finalSpec.and(nameSpec);
         }
 
         Page<Specialization> specializationPage = this.specializationRepository.findAll(finalSpec, pageable);
         List<ResSpecializationDTO> specializationDTOs = specializationPage.getContent()
                 .stream()
-                .map(this::convertToResSpecializationDTO)
+                .map(specializationMapper::toResSpecializationDTO)
                 .toList();
 
-        
-        log.info("Kiểm tra kiểu trả về: {}", specializationPage);
-        log.info(">>> KIỂM TRA DỮ LIỆU TRANG: ");
-        log.info("- Tổng số bản ghi (Total Elements): {}", specializationPage.getTotalElements());
-        log.info("- Tổng số trang (Total Pages): {}", specializationPage.getTotalPages());
-        log.info("- Số bản ghi trên 1 trang (Size): {}", specializationPage.getSize());
-        log.info("- Nội dung Data (Content): {}", specializationDTOs);
-        
         ResultPaginationDTO resultPaginationDTO = new ResultPaginationDTO();
         ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
         meta.setPage(specializationPage.getNumber() + 1);
@@ -146,8 +133,8 @@ public class SpecializationService {
         return resultPaginationDTO;
     }
 
-    public List<ResSpecializationByIndustryId> handleGetSpecializationsByIndustryId(long industryId) throws IdInvalidException {
-        if (industryId <= 0) {
+    public List<ResSpecializationByIndustryId> handleGetSpecializationsByIndustryId(UUID industryId) throws IdInvalidException {
+        if (industryId == null) {
             throw new IdInvalidException("Mã ngành nghề không hợp lệ");
         }
 
@@ -158,28 +145,11 @@ public class SpecializationService {
         return this.specializationRepository.findAllByIndustryIdProjected(industryId);
     }
 
-    private ResSpecializationDTO convertToResSpecializationDTO(Specialization specialization) {
-        ResSpecializationDTO dto = new ResSpecializationDTO();
-        dto.setId(specialization.getId());
-        dto.setName(specialization.getName());
-        dto.setCreatedAt(specialization.getCreatedAt());
-        dto.setCreatedBy(specialization.getCreatedBy());
-
-        if (specialization.getIndustry() != null) {
-            ResSpecializationDTO.IndustryInfo industryInfo = new ResSpecializationDTO.IndustryInfo();
-            industryInfo.setId(specialization.getIndustry().getId());
-            industryInfo.setName(specialization.getIndustry().getName());
-            dto.setIndustry(industryInfo);
-        }
-
-        return dto;
-    }
-
     private boolean hasText(String value) {
         return value != null && !value.trim().isEmpty();
     }
 
-    public void handleDeleteSpecialization(long id) throws IdInvalidException {
+    public void handleDeleteSpecialization(UUID id) throws IdInvalidException {
         Specialization currentSpecialization = this.specializationRepository.findById(id)
                 .orElseThrow(() -> new IdInvalidException("Specialization id not found!"));
 
@@ -190,4 +160,3 @@ public class SpecializationService {
         this.specializationRepository.delete(currentSpecialization);
     }
 }
-

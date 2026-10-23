@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
@@ -12,8 +13,8 @@ import java.time.Instant;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ResCreateApplicationDTO {
-    Long id;
+    UUID id;
     ApplicationStatus status;
     Instant appliedAt;
-    Long interviewSession;
+    UUID interviewSession;
 }

@@ -14,14 +14,20 @@ import org.springframework.lang.Nullable;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
-public interface SpecializationRepository extends JpaRepository<Specialization, Long>, JpaSpecificationExecutor<Specialization> {
-    boolean existsByIndustryId(long industryId);
+public interface SpecializationRepository extends JpaRepository<Specialization, UUID>, JpaSpecificationExecutor<Specialization> {
+    boolean existsByIndustryId(UUID industryId);
 
-    boolean existsByNameAndIndustryId(String name, long industryId);
+    boolean existsByNameViAndIndustryId(String nameVi, UUID industryId);
+
+    boolean existsByNameEnAndIndustryId(String nameEn, UUID industryId);
+
+    @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END FROM Specialization s WHERE s.industry.id = :industryId AND (LOWER(s.nameVi) = LOWER(:name) OR LOWER(s.nameEn) = LOWER(:name))")
+    boolean existsByNameAndIndustryId(@Param("name") String name, @Param("industryId") UUID industryId);
 
     @EntityGraph(attributePaths = {"industry"})
-    Optional<Specialization> findById(Long id);
+    Optional<Specialization> findById(UUID id);
 
     // @EntityGraph để lấy data của các bảng có quan hệ
     @Override
@@ -30,12 +36,11 @@ public interface SpecializationRepository extends JpaRepository<Specialization, 
 
     @Query("""
             SELECT new com.dtn.apply_job.domain.response.specialization.ResSpecializationByIndustryId(
-                s.id, s.name
+                s.id, s.nameVi, s.nameEn
             )
             FROM Specialization s
             WHERE s.industry.id = :industryId
-            ORDER BY s.name ASC
+            ORDER BY s.nameVi ASC
             """)
-    List<ResSpecializationByIndustryId> findAllByIndustryIdProjected(@Param("industryId") long industryId);
+    List<ResSpecializationByIndustryId> findAllByIndustryIdProjected(@Param("industryId") UUID industryId);
 }
-

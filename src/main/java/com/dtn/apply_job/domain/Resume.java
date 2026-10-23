@@ -3,9 +3,11 @@ package com.dtn.apply_job.domain;
 import com.dtn.apply_job.security.SecurityUtil;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "resumes")
@@ -14,33 +16,35 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Resume {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    UUID id;
 
     // Quan hệ N-1: Nhiều CV thuộc về 1 Ứng viên (Bảng User)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "candidate_id", nullable = false)
-    private User candidate;
+    User candidate;
 
     @Column(name = "file_name", nullable = false)
-    private String fileName;
+    String fileName;
 
     @Column(name = "file_url", nullable = false)
-    private String fileUrl;
+    String fileUrl;
 
     // VÙNG DỮ LIỆU DÀNH CHO AI (Lưu text đọc ra từ PDF)
     // Lưu ý: Dùng TEXT cho PostgreSQL
     @Column(name = "parsed_text", columnDefinition = "TEXT")
-    private String parsedText;
+    String parsedText;
 
     @Column(name = "is_active")
-    private boolean active;
+    boolean active;
 
+    @Builder.Default
     @Column(name = "is_default")
-    private boolean isDefault = false;
+    boolean isDefault = false;
 
     // Tùy chọn: Kết nối CV với các Kỹ năng (Bảng Skill)
     @ManyToMany
@@ -49,25 +53,23 @@ public class Resume {
             joinColumns = @JoinColumn(name = "resume_id"),
             inverseJoinColumns = @JoinColumn(name = "skill_id")
     )
-    private List<Skill> skills;
+    List<Skill> skills;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "specialization_id")
-
-
-    private Specialization specialization;
+    Specialization specialization;
 
     @Column(name = "created_at", updatable = false)
-    private Instant createdAt;
+    Instant createdAt;
 
     @Column(name = "updated_at")
-    private Instant updatedAt;
+    Instant updatedAt;
 
     @Column(name = "created_by", updatable = false)
-    private String createdBy;
+    String createdBy;
 
     @Column(name = "updated_by")
-    private String updatedBy;
+    String updatedBy;
 
     @PrePersist
     public void handleBeforeCreate() {

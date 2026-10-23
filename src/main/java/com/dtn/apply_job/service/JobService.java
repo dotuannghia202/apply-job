@@ -9,6 +9,7 @@ import com.dtn.apply_job.domain.response.job.ResJobDTO;
 import com.dtn.apply_job.domain.response.job.ResUpdateJobDTO;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.exception.InvalidDateRangeException;
+import com.dtn.apply_job.mapper.JobMapper;
 import com.dtn.apply_job.repository.*;
 import com.dtn.apply_job.security.SecurityUtil;
 import com.dtn.apply_job.util.constant.enums.CompanyStatus;
@@ -36,20 +37,23 @@ public class JobService {
     private final SkillRepository skillRepository;
     private final UserRepository userRepository;
     private final ApplicationRepository applicationRepository;
+    private final JobMapper jobMapper;
 
     public JobService(JobRepository jobRepository, CompanyRepository companyRepository,
                       SpecializationRepository specializationRepository, SkillRepository skillRepository,
-                      UserRepository userRepository, ApplicationRepository applicationRepository) {
+                      UserRepository userRepository, ApplicationRepository applicationRepository,
+                      JobMapper jobMapper) {
         this.jobRepository = jobRepository;
         this.companyRepository = companyRepository;
         this.specializationRepository = specializationRepository;
         this.skillRepository = skillRepository;
         this.userRepository = userRepository;
         this.applicationRepository = applicationRepository;
+        this.jobMapper = jobMapper;
     }
 
     public ResJobDTO handleCreateJob(ReqCreateJobDTO reqDTO) throws IdInvalidException, InvalidDateRangeException, AccessDeniedException {
-        
+
         Company company = companyRepository.findById(reqDTO.getCompanyId())
                 .orElseThrow(() -> new IdInvalidException("Company doesn't exist!"));
 
@@ -57,11 +61,9 @@ public class JobService {
             throw new AccessDeniedException("Hồ sơ Công ty của bạn chưa được Admin phê duyệt hoặc bị đình chỉ hoạt động. Vui lòng liên hệ ban quản trị!");
         }
 
-        
         Specialization spec = specializationRepository.findById(reqDTO.getSpecializationId())
                 .orElseThrow(() -> new IdInvalidException("Specialization doesn't exist!"));
 
-        
         List<Skill> skills = null;
         if (reqDTO.getSkillIds() != null && !reqDTO.getSkillIds().isEmpty()) {
             skills = skillRepository.findAllById(reqDTO.getSkillIds());
@@ -72,33 +74,14 @@ public class JobService {
 
         DateRangeValidator.validate(reqDTO.getStartDate(), reqDTO.getEndDate());
 
-        
-        Job job = new Job();
-        job.setName(reqDTO.getName());
-        job.setLocation(reqDTO.getLocation());
-        job.setMinSalary(reqDTO.getMinSalary());
-        job.setMaxSalary(reqDTO.getMaxSalary());
-        job.setQuantity(reqDTO.getQuantity());
-        job.setLevels(reqDTO.getLevels());
-        job.setDescription(reqDTO.getDescription());
-        job.setRequirements(reqDTO.getRequirements());
-        job.setStartDate(reqDTO.getStartDate());
-        job.setEndDate(reqDTO.getEndDate());
-        job.setBenefits(reqDTO.getBenefits());
-        job.setWorkingHours(reqDTO.getWorkingHours());
-
-
-        
+        Job job = jobMapper.toJob(reqDTO);
         job.setCompany(company);
         job.setSpecialization(spec);
         if (skills != null) {
-            job.setSkills(skills); 
+            job.setSkills(skills);
         }
 
-        
         Job savedJob = jobRepository.save(job);
-
-        
 
         return convertToResJobDTO(savedJob, Collections.emptySet(), Collections.emptySet());
     }
@@ -106,8 +89,8 @@ public class JobService {
     public ResultPaginationDTO handleGetAllJobs(Specification<Job> spec, Pageable pageable) {
         Pageable effectivePageable = applyCreatedAtSort(pageable, null);
         Page<Job> pageJob = jobRepository.findAll(spec, effectivePageable);
-        Set<Long> savedJobIds = getSavedJobIdsForCurrentUser();
-        Set<Long> appliedJobIds = getAppliedJobIdsForCurrentUser();
+        Set<UUID> savedJobIds = getSavedJobIdsForCurrentUser();
+        Set<UUID> appliedJobIds = getAppliedJobIdsForCurrentUser();
         List<ResJobDTO> listJobDTO = pageJob.getContent().stream()
                 .map(job -> convertToResJobDTO(job, savedJobIds, appliedJobIds))
                 .collect(Collectors.toList());
@@ -130,12 +113,11 @@ public class JobService {
             Pageable pageable,
             String location,
             List<String> levels,
-            Long specializationId,
+            UUID specializationId,
             String companyName,
             Double minSalary,
             Double maxSalary,
             String name,
-
             String skill,
             Boolean active,
             Integer sortCreatedAt
@@ -148,63 +130,86 @@ public class JobService {
                 location, levelEnums, specializationId, companyName,
                 minSalary, maxSalary, name, skill, active
         );
-        Specification<Job> combinedSpec = spec == null ? filterSpec : spec.and(filterSpec);
+
+        Specification<Job> combinedSpec = spec == null
+                ? filterSpec
+                : spec.and(filterSpec);
 
         Pageable effectivePageable = applyCreatedAtSort(pageable, sortCreatedAt);
-        if ((minSalary != null || maxSalary != null) && effectivePageable.getSort().isUnsorted()) {
-            effectivePageable = PageRequest.of(
-                    effectivePageable.getPageNumber(),
-                    effectivePageable.getPageSize(),
-                    Sort.by(Sort.Direction.DESC, "maxSalary")
-            );
-        }
+        Page<Job> pageJob = jobRepository.findAll(combinedSpec, effectivePageable);
+        Set<UUID> savedJobIds = getSavedJobIdsForCurrentUser();
+        Set<UUID> appliedJobIds = getAppliedJobIdsForCurrentUser();
+        List<ResJobDTO> listJobDTO = pageJob.getContent().stream()
+                .map(job -> convertToResJobDTO(job, savedJobIds, appliedJobIds))
+                .collect(Collectors.toList());
 
-        return handleGetAllJobs(combinedSpec, effectivePageable);
+        ResultPaginationDTO rs = new ResultPaginationDTO();
+        ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
+        meta.setPage(pageJob.getNumber() + 1);
+        meta.setPageSize(pageJob.getSize());
+        meta.setPages(pageJob.getTotalPages());
+        meta.setTotal(pageJob.getTotalElements());
+
+        rs.setMeta(meta);
+        rs.setResult(listJobDTO);
+
+        return rs;
     }
 
+    private void validateSalaryFilter(Double minSalary, Double maxSalary) throws IdInvalidException {
+        if (minSalary != null && minSalary < 0) {
+            throw new IdInvalidException("Lương tối thiểu phải lớn hơn hoặc bằng 0");
+        }
+        if (maxSalary != null && maxSalary < 0) {
+            throw new IdInvalidException("Lương tối đa phải lớn hơn hoặc bằng 0");
+        }
+        if (minSalary != null && maxSalary != null && maxSalary < minSalary) {
+            throw new IdInvalidException("Lương tối đa phải lớn hơn hoặc bằng lương tối thiểu");
+        }
+    }
 
-    public ResJobDTO handleGetJobById(long id) throws IdInvalidException {
+    public ResJobDTO handleGetJobById(UUID id) throws IdInvalidException {
         Job job = jobRepository.findById(id)
                 .orElseThrow(() -> new IdInvalidException("Job doesn't exist!"));
-        Set<Long> savedJobIds = getSavedJobIdsForCurrentUser();
-        Set<Long> appliedJobIds = getAppliedJobIdsForCurrentUser();
+        Set<UUID> savedJobIds = getSavedJobIdsForCurrentUser();
+        Set<UUID> appliedJobIds = getAppliedJobIdsForCurrentUser();
         return convertToResJobDTO(job, savedJobIds, appliedJobIds);
     }
 
-    public ResUpdateJobDTO handleUpdateJob(long id, ReqUpdateJobDTO reqDTO) throws Exception {
-        
+    public ResUpdateJobDTO handleUpdateJob(UUID id, ReqUpdateJobDTO reqDTO) throws Exception {
+
         Job currentJob = jobRepository.findById(id)
                 .orElseThrow(() -> new IdInvalidException("Job doesn't exist!"));
 
         checkJobOwnership(currentJob);
 
-        
         DateRangeValidator.validate(reqDTO.getStartDate(), reqDTO.getEndDate());
-        currentJob.setName(reqDTO.getName());
-        currentJob.setLocation(reqDTO.getLocation());
-        currentJob.setMinSalary(reqDTO.getMinSalary());
-        currentJob.setMaxSalary(reqDTO.getMaxSalary());
-        currentJob.setQuantity(reqDTO.getQuantity());
-        currentJob.setLevels(reqDTO.getLevels()); 
-        currentJob.setDescription(reqDTO.getDescription());
-        currentJob.setRequirements(reqDTO.getRequirements());
 
-        currentJob.setStartDate(reqDTO.getStartDate());
-        currentJob.setEndDate(reqDTO.getEndDate());
+        jobMapper.updateJobFromDTO(reqDTO, currentJob);
 
-        currentJob.setBenefits(reqDTO.getBenefits());
-        currentJob.setWorkingHours(reqDTO.getWorkingHours());
+        if (reqDTO.getName() != null && reqDTO.getNameVi() == null && reqDTO.getNameEn() == null) {
+            currentJob.setName(reqDTO.getName());
+        }
+        if (reqDTO.getDescription() != null && reqDTO.getDescriptionVi() == null && reqDTO.getDescriptionEn() == null) {
+            currentJob.setDescription(reqDTO.getDescription());
+        }
+        if (reqDTO.getRequirements() != null && reqDTO.getRequirementsVi() == null && reqDTO.getRequirementsEn() == null) {
+            currentJob.setRequirements(reqDTO.getRequirements());
+        }
+        if (reqDTO.getBenefits() != null && reqDTO.getBenefitsVi() == null && reqDTO.getBenefitsEn() == null) {
+            currentJob.setBenefits(reqDTO.getBenefits());
+        }
+        if (reqDTO.getWorkingHours() != null && reqDTO.getWorkingHoursVi() == null && reqDTO.getWorkingHoursEn() == null) {
+            currentJob.setWorkingHours(reqDTO.getWorkingHours());
+        }
 
-        
-        
-        if (reqDTO.getCompanyId() != null && !Objects.equals(currentJob.getCompany().getId(), reqDTO.getCompanyId())) {
+        if (reqDTO.getCompanyId() != null && (currentJob.getCompany() == null || !Objects.equals(currentJob.getCompany().getId(), reqDTO.getCompanyId()))) {
             Company company = companyRepository.findById(reqDTO.getCompanyId())
                     .orElseThrow(() -> new IdInvalidException("Company doesn't exist!"));
             currentJob.setCompany(company);
         }
 
-        
-        Long currentSpecializationId = currentJob.getSpecialization() != null
+        UUID currentSpecializationId = currentJob.getSpecialization() != null
                 ? currentJob.getSpecialization().getId()
                 : null;
         if (reqDTO.getSpecializationId() != null && !Objects.equals(currentSpecializationId, reqDTO.getSpecializationId())) {
@@ -213,7 +218,6 @@ public class JobService {
             currentJob.setSpecialization(specialization);
         }
 
-        
         if (reqDTO.getSkillIds() != null) {
             List<Skill> skills = skillRepository.findAllById(reqDTO.getSkillIds());
             if (skills.size() != reqDTO.getSkillIds().size()) {
@@ -221,17 +225,15 @@ public class JobService {
             }
             currentJob.setSkills(skills);
         } else {
-            
             currentJob.getSkills().clear();
         }
 
-        
         Job updatedJob = jobRepository.save(currentJob);
 
-        return convertToResUpdateJobDTO(updatedJob);
+        return jobMapper.toResUpdateJobDTO(updatedJob);
     }
 
-    public void handleDeleteJob(long id) throws Exception {
+    public void handleDeleteJob(UUID id) throws Exception {
         Job currentJob = jobRepository.findById(id)
                 .orElseThrow(() -> new IdInvalidException("Job doesn't exist!"));
         checkJobOwnership(currentJob);
@@ -248,112 +250,30 @@ public class JobService {
         for (int i = 0; i < reqDTOs.size(); i++) {
             try {
                 results.add(handleCreateJob(reqDTOs.get(i)));
-            } catch (IdInvalidException | InvalidDateRangeException ex) {
-                throw new IdInvalidException("Công việc tại chỉ mục " + i + " không hợp lệ: " + ex.getMessage());
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+            } catch (Exception ex) {
+                throw new IdInvalidException("Dòng " + (i + 1) + ": " + ex.getMessage());
             }
         }
 
         return results;
     }
 
-    
-    private ResJobDTO convertToResJobDTO(Job job, Set<Long> savedJobIds, Set<Long> appliedJobIds) {
-        ResJobDTO dto = new ResJobDTO();
-        dto.setId(job.getId());
-        dto.setName(job.getName());
-        dto.setLocation(job.getLocation());
-        dto.setMinSalary(job.getMinSalary());
-        dto.setMaxSalary(job.getMaxSalary());
-        dto.setQuantity(job.getQuantity());
-        dto.setLevels(job.getLevels());
-        dto.setDescription(job.getDescription());
-        dto.setRequirements(job.getRequirements());
-        dto.setStartDate(job.getStartDate());
-        dto.setEndDate(job.getEndDate());
-        dto.setActive(job.getActive());
-        dto.setCreatedAt(job.getCreatedAt());
-        dto.setCreatedBy(job.getCreatedBy());
-        dto.setBenefits(job.getBenefits());
-        dto.setWorkingHours(job.getWorkingHours());
-
-        
-        if (job.getSkills() != null) {
-            List<String> skillNames = job.getSkills().stream()
-                    .map(Skill::getName)
-                    .collect(Collectors.toList());
-            dto.setSkills(skillNames);
-        }
-
-        
-        if (job.getCompany() != null) {
-            ResJobDTO.CompanyInfo comInfo = new ResJobDTO.CompanyInfo();
-            comInfo.setId(job.getCompany().getId());
-            comInfo.setName(job.getCompany().getName());
-            comInfo.setLogo(job.getCompany().getLogo());
-            dto.setCompany(comInfo);
-        }
-
-        
-        if (job.getSpecialization() != null) {
-            ResJobDTO.SpecializationInfo specInfo = new ResJobDTO.SpecializationInfo();
-            specInfo.setId(job.getSpecialization().getId());
-            specInfo.setName(job.getSpecialization().getName());
-            dto.setSpecialization(specInfo);
-        }
-
-        if (savedJobIds != null && savedJobIds.contains(job.getId())) {
-            dto.setIsSaved(true);
-        } else {
-            dto.setIsSaved(false);
-        }
-
-        
+    private ResJobDTO convertToResJobDTO(Job job, Set<UUID> savedJobIds, Set<UUID> appliedJobIds) {
+        ResJobDTO dto = jobMapper.toResJobDTO(job);
+        dto.setIsSaved(savedJobIds != null && savedJobIds.contains(job.getId()));
         dto.setIsApplied(appliedJobIds != null && appliedJobIds.contains(job.getId()));
-
-        long applicants = applicationRepository.countByJob_Id(job.getId());
-        dto.setApplicantCount(applicants);
-
+        dto.setApplicantCount(applicationRepository.countByJob_Id(job.getId()));
         return dto;
     }
 
     private ResUpdateJobDTO convertToResUpdateJobDTO(Job job) {
-        ResUpdateJobDTO dto = new ResUpdateJobDTO();
-        dto.setId(job.getId());
-        dto.setName(job.getName());
-        dto.setLocation(job.getLocation());
-        dto.setMinSalary(job.getMinSalary());
-        dto.setMaxSalary(job.getMaxSalary());
-        dto.setQuantity(job.getQuantity());
-        dto.setLevels(job.getLevels());
-        dto.setDescription(job.getDescription());
-        dto.setRequirements(job.getRequirements());
-        dto.setStartDate(job.getStartDate());
-        dto.setEndDate(job.getEndDate());
-        dto.setActive(Boolean.TRUE.equals(job.getActive()));
-        dto.setUpdatedAt(job.getUpdatedAt());
-        dto.setUpdatedBy(job.getUpdatedBy());
-        dto.setBenefits(job.getBenefits());
-        dto.setWorkingHours(job.getWorkingHours());
-
-        if (job.getCompany() != null) {
-            dto.setCompanyName(job.getCompany().getName());
-        }
-        if (job.getSpecialization() != null) {
-            dto.setSpecializationName(job.getSpecialization().getName());
-        }
-        if (job.getSkills() != null) {
-            dto.setSkills(job.getSkills().stream().map(Skill::getName).collect(Collectors.toList()));
-        }
-
-        return dto;
+        return jobMapper.toResUpdateJobDTO(job);
     }
 
     private Specification<Job> buildJobFilterSpec(
             String location,
             Set<LevelEnum> levels,
-            Long specializationId,
+            UUID specializationId,
             String companyName,
             Double minSalary,
             Double maxSalary,
@@ -369,12 +289,13 @@ public class JobService {
                 predicates.add(cb.like(cb.lower(root.get("location")), "%" + location.trim().toLowerCase() + "%"));
             }
 
-            
             if (hasText(name)) {
-                predicates.add(cb.like(cb.lower(root.get("name")), "%" + name.trim().toLowerCase() + "%"));
+                predicates.add(cb.or(
+                        cb.like(cb.lower(root.get("nameVi")), "%" + name.trim().toLowerCase() + "%"),
+                        cb.like(cb.lower(root.get("nameEn")), "%" + name.trim().toLowerCase() + "%")
+                ));
             }
 
-            
             if (hasText(companyName)) {
                 predicates.add(cb.like(
                         cb.lower(root.get("company").get("name")),
@@ -382,9 +303,7 @@ public class JobService {
                 ));
             }
 
-            
-
-            if (specializationId != null && specializationId > 0) {
+            if (specializationId != null) {
                 predicates.add(cb.equal(root.get("specialization").get("id"), specializationId));
             }
 
@@ -404,7 +323,10 @@ public class JobService {
             }
             if (hasText(skill)) {
                 Join<Job, Skill> skillJoin = root.join("skills", JoinType.LEFT);
-                predicates.add(cb.like(cb.lower(skillJoin.get("name")), "%" + skill.trim().toLowerCase() + "%"));
+                predicates.add(cb.or(
+                        cb.like(cb.lower(skillJoin.get("nameVi")), "%" + skill.trim().toLowerCase() + "%"),
+                        cb.like(cb.lower(skillJoin.get("nameEn")), "%" + skill.trim().toLowerCase() + "%")
+                ));
                 needsDistinct = true;
             }
 
@@ -436,85 +358,66 @@ public class JobService {
         return result;
     }
 
-    @Transactional 
-    public boolean toggleSavedJob(Long jobId) throws Exception {
-        
+    @Transactional
+    public boolean toggleSavedJob(UUID jobId) throws Exception {
+
         String email = SecurityUtil.getCurrentUser()
                 .orElseThrow(() -> new IdInvalidException("Login please!"));
         User candidate = userRepository.findByEmail(email);
         if (candidate == null) {
             throw new IdInvalidException("Không tìm thấy người dùng!");
         }
-        
+
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new IdInvalidException("Job doesn't exist!"));
 
-        
         boolean isAlreadySaved = candidate.getSavedJobs().contains(job);
 
         if (isAlreadySaved) {
-            
             candidate.getSavedJobs().remove(job);
         } else {
-            
             candidate.getSavedJobs().add(job);
         }
 
-        
         userRepository.save(candidate);
-
-        
         return !isAlreadySaved;
     }
 
-    private boolean hasText(String value) {
-        return value != null && !value.trim().isEmpty();
-    }
-
-    private Set<Long> getSavedJobIdsForCurrentUser() {
-        Set<Long> savedJobIds = new java.util.HashSet<>();
-
+    private Set<UUID> getSavedJobIdsForCurrentUser() {
         try {
-            
-            String email = SecurityUtil.getCurrentUser().orElse("");
-
-            if (!email.isBlank()) {
-                User userOpt = userRepository.findByEmail(email);
-                if (userOpt != null) {
-                    
-                    savedJobIds = userOpt.getSavedJobs().stream()
-                            .map(Job::getId)
-                            .collect(Collectors.toSet());
-                }
+            String email = SecurityUtil.getCurrentUser().orElse(null);
+            if (email == null) {
+                return Collections.emptySet();
             }
+            User user = userRepository.findByEmail(email);
+            if (user == null || user.getSavedJobs() == null) {
+                return Collections.emptySet();
+            }
+            return user.getSavedJobs().stream().map(Job::getId).collect(Collectors.toSet());
         } catch (Exception e) {
-            
+            return Collections.emptySet();
         }
-
-        return savedJobIds;
     }
 
-    public ResultPaginationDTO handleGetSavedJobs(Pageable pageable) throws IdInvalidException {
-        
+    private boolean hasText(String str) {
+        return str != null && !str.trim().isEmpty();
+    }
+
+    public ResultPaginationDTO handleGetSavedJobs(Pageable pageable) throws Exception {
         String email = SecurityUtil.getCurrentUser()
                 .orElseThrow(() -> new IdInvalidException("Login to continue!"));
 
-        
         Page<Job> pageJob = jobRepository.findSavedJobsByUserEmail(email, pageable);
 
-        
-        
-        
-        Set<Long> appliedJobIds = getAppliedJobIdsForCurrentUser();
+        Set<UUID> appliedJobIds = getAppliedJobIdsForCurrentUser();
         List<ResJobDTO> listJobDTO = pageJob.getContent().stream()
                 .map(job -> {
                     ResJobDTO dto = convertToResJobDTO(job, Collections.emptySet(), appliedJobIds);
-                    dto.setIsSaved(true); 
+                    dto.setIsSaved(true);
                     return dto;
                 })
                 .collect(Collectors.toList());
 
-        
         ResultPaginationDTO rs = new ResultPaginationDTO();
         ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
         meta.setPage(pageJob.getNumber() + 1);
@@ -528,9 +431,8 @@ public class JobService {
         return rs;
     }
 
-    
-    private java.util.Set<Long> getAppliedJobIdsForCurrentUser() {
-        java.util.Set<Long> appliedJobIds = new java.util.HashSet<>();
+    private java.util.Set<UUID> getAppliedJobIdsForCurrentUser() {
+        java.util.Set<UUID> appliedJobIds = new java.util.HashSet<>();
         try {
             String email = SecurityUtil.getCurrentUser().orElse("");
             if (!email.isBlank()) {
@@ -540,53 +442,35 @@ public class JobService {
                 }
             }
         } catch (Exception e) {
+            return Collections.emptySet();
         }
-
         return appliedJobIds;
     }
 
-    private void validateSalaryFilter(Double minSalary, Double maxSalary) throws InputMismatchException {
-        if (minSalary != null && minSalary < 0) {
-            throw new InputMismatchException("Lương tối thiểu phải lớn hơn hoặc bằng 0!");
-        }
-
-        if (maxSalary != null && maxSalary < 0) {
-            throw new InputMismatchException("Lương tối đa phải lớn hơn hoặc bằng 0!");
-        }
-
-        if (minSalary != null && maxSalary != null && maxSalary < minSalary) {
-            throw new InputMismatchException("Lương tối đa phải lớn hơn hoặc bằng lương tối thiểu!");
-        }
-    }
-
-    
-
-    private void checkJobOwnership(Job job) throws Exception {
-        
+    private void checkJobOwnership(Job job) throws AccessDeniedException, IdInvalidException {
         String email = SecurityUtil.getCurrentUser().orElseThrow(() -> new IdInvalidException("Login please!"));
         User currentUser = userRepository.findByEmail(email);
 
-        
         boolean isAdmin = currentUser.getRoles().stream()
                 .anyMatch(r -> r.getName().name().equals("ROLE_ADMIN") || r.getName().name().equals("ADMIN"));
-        if (isAdmin) return;
 
-        
-        boolean isEmployer = currentUser.getRoles().stream()
-                .anyMatch(r -> r.getName().name().equals("ROLE_EMPLOYER") || r.getName().name().equals("EMPLOYER"));
+        if (!isAdmin) {
+            boolean isEmployer = currentUser.getRoles().stream()
+                    .anyMatch(r -> r.getName().name().equals("ROLE_EMPLOYER") || r.getName().name().equals("EMPLOYER"));
 
-        if (isEmployer) {
+            if (!isEmployer) {
+                throw new AccessDeniedException("Bạn không có quyền thực hiện hành động này!");
+            }
             if (currentUser.getCompany() == null) {
                 throw new AccessDeniedException("Bạn chưa tham gia vào công ty nào!");
             }
-            if (job.getCompany().getId() != currentUser.getCompany().getId()) {
+            if (!job.getCompany().getId().equals(currentUser.getCompany().getId())) {
                 throw new AccessDeniedException("Lỗi bảo mật: Bạn không có quyền chỉnh sửa/xóa tin tuyển dụng của công ty khác!");
             }
         }
     }
 
     public ResultPaginationDTO handleGetJobsByCurrentHr(Specification<Job> spec, Pageable pageable) throws Exception {
-        
         String email = SecurityUtil.getCurrentUser().orElseThrow(() -> new IdInvalidException("Login please!"));
         User currentHr = userRepository.findByEmail(email);
 
@@ -594,26 +478,19 @@ public class JobService {
             throw new IdInvalidException("Bạn chưa tham gia vào công ty nào!");
         }
 
-        
-        long companyId = currentHr.getCompany().getId();
-
-        
+        UUID companyId = currentHr.getCompany().getId();
         Specification<Job> companySpec = (root, query, cb) -> cb.equal(root.get("company").get("id"), companyId);
-
-        
         Specification<Job> finalSpec = spec == null ? companySpec : spec.and(companySpec);
 
-        
         return handleGetAllJobs(finalSpec, pageable);
     }
 
-    
     public ResultPaginationDTO handleGetJobsByCurrentHrWithFilters(
             Specification<Job> spec,
             Pageable pageable,
             String location,
             List<String> levels,
-            Long specializationId,
+            UUID specializationId,
             String companyName,
             Double minSalary,
             Double maxSalary,
@@ -624,7 +501,6 @@ public class JobService {
             Integer sortCreatedAt
     ) throws Exception {
 
-        
         String email = SecurityUtil.getCurrentUser()
                 .orElseThrow(() -> new IdInvalidException("Vui lòng đăng nhập!"));
         User currentHr = userRepository.findByEmail(email);
@@ -632,17 +508,13 @@ public class JobService {
         if (currentHr.getCompany() == null) {
             throw new IdInvalidException("Bạn chưa gia nhập công ty nào!");
         }
-        long companyId = currentHr.getCompany().getId();
+        UUID companyId = currentHr.getCompany().getId();
 
-        
         Specification<Job> securitySpec = (root, query, cb) ->
                 cb.equal(root.get("company").get("id"), companyId);
 
-        
         Specification<Job> securedSpec = (spec == null) ? securitySpec : spec.and(securitySpec);
 
-        
-        
         return handleGetAllJobsWithFilters(
                 securedSpec, pageable, location, levels, specializationId,
                 companyName, minSalary, maxSalary, name, skill, active, sortCreatedAt

@@ -1,15 +1,15 @@
 package com.dtn.apply_job.domain.request.job;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
-
-@Getter
-@Setter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ReqGenerateJdDTO {
-    private String title;
-    private String skills;
-    
-    private String levels;
+    String title;
+    String skills;
+    String levels;
 }
-

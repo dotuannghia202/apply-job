@@ -1,6 +1,10 @@
 package com.dtn.apply_job.security;
 
 import com.dtn.apply_job.domain.User;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -18,23 +22,22 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SecurityUtil {
 
     public static final MacAlgorithm JWT_ALGORITHM = MacAlgorithm.HS256;
 
-    private final JwtEncoder jwtEncoder;
-    private final JwtDecoder jwtDecoder;
+    JwtEncoder jwtEncoder;
+    JwtDecoder jwtDecoder;
 
+    @NonFinal
     @Value("${jwt.access-token.expiration}")
-    private long accessTokenExpiration;
+    long accessTokenExpiration;
 
+    @NonFinal
     @Value("${jwt.refresh-token.expiration}")
-    private long refreshTokenExpiration;
-
-    public SecurityUtil(JwtEncoder jwtEncoder, JwtDecoder jwtDecoder) {
-        this.jwtEncoder = jwtEncoder;
-        this.jwtDecoder = jwtDecoder;
-    }
+    long refreshTokenExpiration;
 
     public Jwt checkValidRefreshToken(String refreshToken) {
         try {
@@ -60,7 +63,7 @@ public class SecurityUtil {
                 .issuedAt(now)
                 .expiresAt(validity)
                 .subject(userDetails.getUsername())
-                .claim("id", userDetails.getId())
+                .claim("id", userDetails.getId().toString())
                 .claim("email", userDetails.getUsername())
                 .claim("name", userDetails.getFullName())
                 .claim("roles", permissions)
@@ -101,7 +104,7 @@ public class SecurityUtil {
 
     private CustomUserDetails extractCustomUserDetails(Authentication authentication) {
         if (authentication == null || authentication.getPrincipal() == null) {
-            throw new IllegalStateException("Xác thực hoặc thông tin người dùng bị rỗng!");
+            throw new IllegalStateException("Authentication or user details is null!");
         }
 
         Object principal = authentication.getPrincipal();
@@ -111,7 +114,7 @@ public class SecurityUtil {
         }
 
         throw new IllegalStateException(
-                "Thông tin người dùng phải là CustomUserDetails, nhưng nhận được: " + principal.getClass().getName()
+                "User details must be CustomUserDetails, but received: " + principal.getClass().getName()
         );
     }
 

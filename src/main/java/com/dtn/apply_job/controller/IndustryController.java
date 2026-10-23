@@ -15,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
@@ -33,7 +35,7 @@ public class IndustryController {
     @PutMapping("/industries/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @ApiMessage("Cập nhật ngành nghề thành công")
-    public ResponseEntity<Industry> updateIndustry(@PathVariable long id, @Valid @RequestBody Industry industry)
+    public ResponseEntity<Industry> updateIndustry(@PathVariable UUID id, @Valid @RequestBody Industry industry)
             throws IdInvalidException {
         Industry updatedIndustry = this.industryService.handleUpdateIndustry(id, industry);
         return ResponseEntity.status(HttpStatus.OK).body(updatedIndustry);
@@ -42,7 +44,7 @@ public class IndustryController {
     @DeleteMapping("/industries/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @ApiMessage("Xóa ngành nghề thành công")
-    public ResponseEntity<Void> deleteIndustry(@PathVariable long id) throws IdInvalidException {
+    public ResponseEntity<Void> deleteIndustry(@PathVariable UUID id) throws IdInvalidException {
         this.industryService.handleDeleteIndustry(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
@@ -50,7 +52,7 @@ public class IndustryController {
 
     @GetMapping("/industries/{id}")
     @ApiMessage("Lấy thông tin ngành nghề thành công")
-    public ResponseEntity<Industry> getIndustry(@PathVariable long id) throws IdInvalidException {
+    public ResponseEntity<Industry> getIndustry(@PathVariable UUID id) throws IdInvalidException {
         Industry industry = this.industryService.handleGetIndustryById(id);
         return ResponseEntity.status(HttpStatus.OK).body(industry);
     }

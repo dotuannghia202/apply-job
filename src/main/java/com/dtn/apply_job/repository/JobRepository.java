@@ -14,14 +14,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificationExecutor<Job> {
+public interface JobRepository extends JpaRepository<Job, UUID>, JpaSpecificationExecutor<Job> {
 
-    boolean existsBySpecializationId(Long specializationId);
+    boolean existsBySpecializationId(UUID specializationId);
 
     @EntityGraph(attributePaths = {"company", "specialization", "skills"})
-    Optional<Job> findById(Long id);
+    Optional<Job> findById(UUID id);
 
     @Override
     @EntityGraph(attributePaths = {"company", "specialization", "skills"})
@@ -30,14 +31,13 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
     @Query("SELECT j FROM User u JOIN u.savedJobs j WHERE u.email = :email")
     Page<Job> findSavedJobsByUserEmail(@Param("email") String email, Pageable pageable);
 
-    long countByCompany_IdAndActiveTrue(Long companyId);
+    long countByCompany_IdAndActiveTrue(UUID companyId);
 
     long countByActiveTrue();
 
-    // Lấy thống kê cho biểu đồ tròn (Dùng JPQL gom nhóm siêu đỉnh)
     // Lấy thống kê cho biểu đồ tròn (Dùng Interface Projection)
-    @Query("SELECT s.industry.name AS industryName, COUNT(j) AS jobCount " +
-            "FROM Job j JOIN j.specialization s GROUP BY s.industry.name")
+    @Query("SELECT s.industry.nameVi AS industryNameVi, s.industry.nameEn AS industryNameEn, COUNT(j) AS jobCount " +
+            "FROM Job j JOIN j.specialization s GROUP BY s.industry.nameVi, s.industry.nameEn")
     List<IndustryStatProjection> getJobCountByIndustry();
 
     @Modifying

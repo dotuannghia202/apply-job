@@ -10,7 +10,9 @@ import com.dtn.apply_job.repository.ApplicationRepository;
 import com.dtn.apply_job.repository.InterviewQuestionRepository;
 import com.dtn.apply_job.repository.InterviewSessionRepository;
 import com.dtn.apply_job.repository.ResumeRepository;
+import com.dtn.apply_job.util.constant.enums.InterviewSessionStatus;
 import com.dtn.apply_job.util.constant.enums.QuestionCategory;
+import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -65,7 +67,7 @@ public class AiPythonService {
     //Run in the background while uploading the CV
     //Convert the CV to text format.
     @Async
-    public void processCvTextAsync(Long resumeId, String fileUrl) {
+    public void processCvTextAsync(UUID resumeId, String fileUrl) {
         try {
             System.out.println(">>> Sending the PDF file to the Python AI for reading...");
 
@@ -104,7 +106,7 @@ public class AiPythonService {
     }
 
     @Async
-    public void calculateMatchScoreAsync(Long applicationId, String jobText, String cvText) {
+    public void calculateMatchScoreAsync(UUID applicationId, String jobText, String cvText) {
         try {
             System.out.println(">>> Sending text to Python AI for scoring...");
 
@@ -233,7 +235,7 @@ public class AiPythonService {
 
     // Call the Python API to generate five interview questions
     @Async
-    public void generateInterviewQuestionsAsync(Long sessionId, String jobText, String cvText) {
+    public void generateInterviewQuestionsAsync(UUID sessionId, String jobText, String cvText) {
         try {
             System.out.println(">>> [AI Interview] Sending JD & CV to Python AI to generate interview question for Session ID: " + sessionId);
 
@@ -265,10 +267,14 @@ public class AiPythonService {
 
                 List<InterviewQuestion> questions = new ArrayList<>();
                 for (Map<String, Object> q : rawQuestions) {
+                    String qText = (String) q.get("question_text");
+                    String qTextVi = q.get("question_text_vi") != null ? (String) q.get("question_text_vi") : qText;
+                    String qTextEn = q.get("question_text_en") != null ? (String) q.get("question_text_en") : qText;
                     InterviewQuestion question = InterviewQuestion.builder()
                             .interviewSession(session)
                             .orderIndex((Integer) q.get("order_index"))
-                            .questionText((String) q.get("question_text"))
+                            .questionTextVi(qTextVi)
+                            .questionTextEn(qTextEn)
                             .category(QuestionCategory.valueOf(((String) q.get("category")).toUpperCase()))
                             .timeLimitSeconds((Integer) q.get("time_limit_seconds"))
                             .rubric((String) q.get("rubric"))
@@ -290,6 +296,73 @@ public class AiPythonService {
             log.error(">>> [AI Interview] Unable to connect to the Python service (Connection Timeout/Refused)");
         } catch (Exception ex) {
             log.error(">>> [AI Interview] Unknown error: ", ex);
+        }
+    }
+
+    @Async
+    public void evaluateInterviewSessionAsync(UUID sessionId, String videoUrl) {
+        try {
+            InterviewSession session = interviewSessionRepository.findById(sessionId)
+                    .orElseThrow(() -> new RuntimeException("Session not found: " + sessionId));
+
+            String evalUrl = pythonAiBaseUrl + "/api/v1/ai/interview/evaluate";
+
+            List<Map<String, Object>> questionsData = session.getQuestions().stream().map(q -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("question_id", q.getId().toString());
+                map.put("question_text", q.getQuestionTextVi() != null ? q.getQuestionTextVi() : q.getQuestionText());
+                map.put("rubric", q.getRubric());
+                map.put("duration_seconds", q.getDurationSeconds() != null ? q.getDurationSeconds() : 60);
+                map.put("time_limit_seconds", q.getTimeLimitSeconds());
+                map.put("start_time_seconds", q.getStartTimeSeconds() != null ? q.getStartTimeSeconds() : 0);
+                return map;
+            }).toList();
+
+            Map<String, Object> requestPayload = Map.of(
+                    "session_id", sessionId.toString(),
+                    "video_url", videoUrl,
+                    "questions", questionsData
+            );
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestPayload, headers);
+
+            ResponseEntity<Map> response = restTemplate.postForEntity(evalUrl, entity, Map.class);
+            Map<String, Object> body = response.getBody();
+
+            if (body != null && Integer.valueOf(200).equals(body.get("status_code"))) {
+                Map<String, Object> data = (Map<String, Object>) body.get("data");
+
+                session.setTotalScore(((Number) data.get("total_score")).doubleValue());
+                session.setAiOverallFeedbackVi((String) data.get("ai_overall_feedback_vi"));
+                session.setAiOverallFeedbackEn((String) data.get("ai_overall_feedback_en"));
+                session.setStatus(InterviewSessionStatus.COMPLETED);
+                session.setCompletedAt(Instant.now());
+
+                List<Map<String, Object>> evals = (List<Map<String, Object>>) data.get("evaluations");
+                Map<UUID, Map<String, Object>> evalMap = evals.stream()
+                        .collect(Collectors.toMap(e -> UUID.fromString(String.valueOf(e.get("question_id"))), e -> e));
+
+                for (InterviewQuestion q : session.getQuestions()) {
+                    Map<String, Object> res = evalMap.get(q.getId());
+                    if (res != null) {
+                        q.setTranscribedTextVi((String) res.get("transcribed_text_vi"));
+                        q.setTranscribedTextEn((String) res.get("transcribed_text_en"));
+                        q.setAccuracyScore(((Number) res.get("accuracy_score")).doubleValue());
+                        q.setSpeedFactor(((Number) res.get("speed_factor")).doubleValue());
+                        q.setFinalScore(((Number) res.get("final_score")).doubleValue());
+                        q.setEvidenceQuote((String) res.get("evidence_quote"));
+                        q.setFeedbackVi((String) res.get("feedback_vi"));
+                        q.setFeedbackEn((String) res.get("feedback_en"));
+                    }
+                }
+
+                interviewSessionRepository.save(session);
+                log.info(">>> [AI Interview] Đã hoàn thành chấm điểm buổi phỏng vấn Session: {}", sessionId);
+            }
+        } catch (Exception ex) {
+            log.error(">>> [AI Interview] Lỗi chấm điểm buổi phỏng vấn: ", ex);
         }
     }
 }

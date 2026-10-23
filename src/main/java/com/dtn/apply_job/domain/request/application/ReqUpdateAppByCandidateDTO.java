@@ -1,11 +1,16 @@
 package com.dtn.apply_job.domain.request.application;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
-@Getter
-@Setter
+import java.util.UUID;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ReqUpdateAppByCandidateDTO {
-    private Long resumeId;
-    private String coverLetter;
+    UUID resumeId;
+    String coverLetter;
 }

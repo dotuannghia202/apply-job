@@ -1,64 +1,95 @@
 package com.dtn.apply_job.domain.response.application;
 
+import com.dtn.apply_job.util.LanguageUtil;
 import com.dtn.apply_job.util.constant.enums.ApplicationStatus;
-import jakarta.persistence.Column;
-import lombok.Getter;
-import lombok.Setter;
+import com.dtn.apply_job.util.constant.enums.InterviewSessionStatus;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
-@Getter
-@Setter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ResApplicationDTO {
-    private Long id;
-    private ApplicationStatus status;
-    private Double matchScore; // Điểm AI
-    private List<String> matchedSkills;
-    private List<String> missingSkills;
-    private String coverLetter;
-    private Boolean hasCoverLetter;
+    UUID id;
+    ApplicationStatus status;
+    Double matchScore; // Điểm AI
+    List<String> matchedSkills;
+    List<String> missingSkills;
+    String coverLetter;
+    Boolean hasCoverLetter;
 
-    private Instant appliedAt;
-    
-    private Instant interviewTime;
+    Instant appliedAt;
+    Instant interviewTime;
+    String interviewLocation;
+    String interviewMessage;
 
-    private String interviewLocation;
+    // AI Online Interview Session info
+    UUID interviewSessionId;
+    InterviewSessionStatus interviewSessionStatus;
 
-    @Column(name = "interview_message", columnDefinition = "TEXT")
-    private String interviewMessage;
-
-    private JobInfo job;
-    private ResumeInfo resume;
-    private CandidateInfo candidate; // Phẳng hóa dữ liệu để FE dễ dùng
+    JobInfo job;
+    ResumeInfo resume;
+    CandidateInfo candidate; // Phẳng hóa dữ liệu để FE dễ dùng
 
     // --- INNER CLASSES (GỌN NHẸ) ---
-    @Getter
-    @Setter
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @FieldDefaults(level = AccessLevel.PRIVATE)
     public static class JobInfo {
-        private Long id;
-        private String name;
-        private Double minSalary;
-        private Double maxSalary;
-        private String companyName;
-        private String location;
-        private String companyLogo;
+        UUID id;
+
+        @JsonProperty("name_vi")
+        String nameVi;
+
+        @JsonProperty("name_en")
+        String nameEn;
+
+        Double minSalary;
+        Double maxSalary;
+        String companyName;
+        String location;
+        String companyLogo;
+
+        @JsonProperty("name")
+        public String getName() {
+            return LanguageUtil.resolve(this.nameVi, this.nameEn);
+        }
+
+        public void setName(String name) {
+            if (this.nameVi == null) this.nameVi = name;
+            if (this.nameEn == null) this.nameEn = name;
+        }
     }
 
-    @Getter
-    @Setter
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @FieldDefaults(level = AccessLevel.PRIVATE)
     public static class ResumeInfo {
-        private Long id;
-        private String fileName;
-        private String fileUrl; // HR dùng link này để xem CV
+        UUID id;
+        String fileName;
+        String fileUrl; // HR dùng link này để xem CV
     }
 
-    @Getter
-    @Setter
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @FieldDefaults(level = AccessLevel.PRIVATE)
     public static class CandidateInfo {
-        private Long id;
-        private String name;
-        private String email;
-        private String avatarUrl;
+        UUID id;
+        String name;
+        String email;
+        String avatarUrl;
     }
 }

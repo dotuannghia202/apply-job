@@ -1,25 +1,64 @@
 package com.dtn.apply_job.domain.response.specialization;
 
-import lombok.Getter;
-import lombok.Setter;
+import com.dtn.apply_job.util.LanguageUtil;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
+import java.util.UUID;
 
-@Getter
-@Setter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ResSpecializationDTO {
-    private long id;
-    private String name;
-    private Instant createdAt;
-    private String createdBy;
+    UUID id;
 
-    
-    private IndustryInfo industry;
+    @JsonProperty("name_vi")
+    String nameVi;
 
-    @Getter
-    @Setter
+    @JsonProperty("name_en")
+    String nameEn;
+
+    Instant createdAt;
+    String createdBy;
+
+    IndustryInfo industry;
+
+    @JsonProperty("name")
+    public String getName() {
+        return LanguageUtil.resolve(this.nameVi, this.nameEn);
+    }
+
+    public void setName(String name) {
+        if (this.nameVi == null) this.nameVi = name;
+        if (this.nameEn == null) this.nameEn = name;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @FieldDefaults(level = AccessLevel.PRIVATE)
     public static class IndustryInfo {
-        private long id;
-        private String name;
+        UUID id;
+
+        @JsonProperty("name_vi")
+        String nameVi;
+
+        @JsonProperty("name_en")
+        String nameEn;
+
+        @JsonProperty("name")
+        public String getName() {
+            return LanguageUtil.resolve(this.nameVi, this.nameEn);
+        }
+
+        public void setName(String name) {
+            if (this.nameVi == null) this.nameVi = name;
+            if (this.nameEn == null) this.nameEn = name;
+        }
     }
 }

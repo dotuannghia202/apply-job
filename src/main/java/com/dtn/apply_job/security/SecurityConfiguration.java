@@ -59,11 +59,22 @@ public class SecurityConfiguration {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
+
+    // cấu hình để đọc cookie access_token trên mọi request ngoại trừ auth
     @Bean
     public BearerTokenResolver bearerTokenResolver() {
         DefaultBearerTokenResolver defaultResolver = new DefaultBearerTokenResolver();
 
         return request -> {
+            String path = request.getRequestURI();
+            if (path.startsWith("/api/v1/auth/login")
+                    || path.startsWith("/api/v1/auth/google")
+                    || path.startsWith("/api/v1/auth/register")
+                    || path.startsWith("/api/v1/auth/forgot-password")
+                    || path.startsWith("/api/v1/auth/refresh")) {
+                return null;
+            }
+
             if (request.getCookies() != null) {
                 for (Cookie cookie : request.getCookies()) {
                     if ("access_token".equals(cookie.getName())) {
@@ -93,6 +104,7 @@ public class SecurityConfiguration {
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/register",
                                 "/api/v1/auth/refresh",
+                                "/api/v1/auth/google",
                                 "/storage/**",
                                 "/api/v1/auth/forgot-password",
                                 "/ws/**"

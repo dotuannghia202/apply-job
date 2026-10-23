@@ -1,30 +1,52 @@
 package com.dtn.apply_job.domain.response.admin;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import com.dtn.apply_job.util.LanguageUtil;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.util.List;
 
-@Getter
-@Setter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ResAdminDashboardDTO {
     // 1. Dữ liệu cho Top Cards
-    private long totalUsers;
-    private long totalCandidates;
-    private long totalEmployers;
-    private long totalCompanies;
-    private long totalActiveJobs;
-    private long totalApplications;
+    long totalUsers;
+    long totalCandidates;
+    long totalEmployers;
+    long totalCompanies;
+    long totalActiveJobs;
+    long totalApplications;
 
     // 2. Dữ liệu cho Biểu đồ tròn (Tùy chọn nâng cao)
-    private List<IndustryStat> industryStats;
+    List<IndustryStat> industryStats;
 
-    @Getter
-    @Setter
+    @Data
+    @NoArgsConstructor
     @AllArgsConstructor
+    @Builder
+    @FieldDefaults(level = AccessLevel.PRIVATE)
     public static class IndustryStat {
-        private String industryName;
-        private long jobCount;
+        @JsonProperty("industry_name_vi")
+        String industryNameVi;
+
+        @JsonProperty("industry_name_en")
+        String industryNameEn;
+
+        long jobCount;
+
+        public IndustryStat(String industryName, long jobCount) {
+            this.industryNameVi = industryName;
+            this.industryNameEn = industryName;
+            this.jobCount = jobCount;
+        }
+
+        @JsonProperty("industry_name")
+        public String getIndustryName() {
+            return LanguageUtil.resolve(this.industryNameVi, this.industryNameEn);
+        }
     }
 }

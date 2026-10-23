@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/v1/notifications")
 public class NotificationController {
@@ -31,10 +33,10 @@ public class NotificationController {
         return ResponseEntity.ok(result);
     }
 
-    @PutMapping("/{id:\\d+}/read")
+    @PutMapping("/{id}/read")
     @PreAuthorize("isAuthenticated()")
     @ApiMessage("Đánh dấu thông báo đã đọc thành công")
-    public ResponseEntity<Void> markAsRead(@PathVariable("id") Long id) throws Exception {
+    public ResponseEntity<Void> markAsRead(@PathVariable("id") UUID id) throws Exception {
 
         notificationService.markAsRead(id);
         return ResponseEntity.ok().build();

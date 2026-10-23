@@ -3,16 +3,22 @@ package com.dtn.apply_job.controller;
 import com.dtn.apply_job.common.annotation.ApiMessage;
 import com.dtn.apply_job.domain.User;
 import com.dtn.apply_job.domain.request.auth.ReqForgotPasswordDTO;
+import com.dtn.apply_job.domain.request.auth.ReqGoogleLoginDTO;
 import com.dtn.apply_job.domain.request.auth.ReqRegisterDTO;
 import com.dtn.apply_job.domain.request.user.ReqLoginDTO;
 import com.dtn.apply_job.domain.response.user.ResLoginDTO;
 import com.dtn.apply_job.exception.EmailExistedException;
 import com.dtn.apply_job.exception.IdInvalidException;
+import com.dtn.apply_job.mapper.UserMapper;
 import com.dtn.apply_job.security.CustomUserDetails;
 import com.dtn.apply_job.security.SecurityUtil;
 import com.dtn.apply_job.service.AuthService;
 import com.dtn.apply_job.service.UserService;
 import jakarta.validation.Valid;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -27,37 +33,28 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.stream.Collectors;
-
 @RestController
 @RequestMapping("/api/v1/auth")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthController {
 
-    private final AuthenticationManager authenticationManager;
-    private final SecurityUtil securityUtil;
-    private final UserService userService;
-    private final AuthService authService;
+    AuthenticationManager authenticationManager;
+    SecurityUtil securityUtil;
+    UserService userService;
+    AuthService authService;
+    UserMapper userMapper;
 
+    @NonFinal
     @Value("${jwt.refresh-token.expiration}")
-    private long refreshTokenExpiration;
+    long refreshTokenExpiration;
 
+    @NonFinal
     @Value("${jwt.access-token.expiration}")
-    private long accessTokenExpiration;
-
-    public AuthController(
-            AuthenticationManager authenticationManager,
-            SecurityUtil securityUtil,
-            UserService userService,
-            AuthService authService
-    ) {
-        this.authenticationManager = authenticationManager;
-        this.securityUtil = securityUtil;
-        this.userService = userService;
-        this.authService = authService;
-    }
+    long accessTokenExpiration;
 
     @PostMapping("/login")
-    @ApiMessage("Đăng nhập thành công")
+    @ApiMessage("Login successful")
     public ResponseEntity<ResLoginDTO> login(@Valid @RequestBody ReqLoginDTO reqLoginDTO) {
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(
@@ -66,24 +63,48 @@ public class AuthController {
                 );
 
         Authentication authentication = authenticationManager.authenticate(authenticationToken);
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        User currentUser = userService.handleGetUserByUsername(userDetails.getUsername());
+
+        return issueAuthResponse(currentUser);
+    }
+
+    @PostMapping("/google")
+    @ApiMessage("Google login successful")
+    public ResponseEntity<ResLoginDTO> loginWithGoogle(@Valid @RequestBody ReqGoogleLoginDTO reqDTO) throws Exception {
+        User currentUser = authService.authenticateGoogleUser(reqDTO.getCode(), reqDTO.getRedirectUri());
+        return issueAuthResponse(currentUser);
+    }
+
+    private ResponseEntity<ResLoginDTO> issueAuthResponse(User user) {
+        CustomUserDetails userDetails = new CustomUserDetails(
+                user.getId(),
+                user.getEmail(),
+                user.getName(),
+                user.getPassword(),
+                user.getAvatarUrl(),
+                securityUtil.buildAuthorities(user)
+        );
+
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                userDetails,
+                null,
+                userDetails.getAuthorities()
+        );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
         String accessToken = securityUtil.createAccessToken(authentication);
         String refreshToken = securityUtil.createRefreshToken(authentication);
 
-        userService.handleUpdateUserToken(refreshToken, userDetails.getUsername());
+        userService.handleUpdateUserToken(refreshToken, user.getEmail());
 
-        User currentUser = userService.handleGetUserByUsername(userDetails.getUsername());
-
-        ResLoginDTO response = new ResLoginDTO();
-        response.setUserLogin(buildUserLogin(currentUser));
+        ResLoginDTO response = ResLoginDTO.builder()
+                .userLogin(userMapper.toUserLogin(user))
+                .build();
 
         ResponseCookie refreshTokenCookie = buildRefreshTokenCookie(refreshToken);
         ResponseCookie accessTokenCookie = buildAccessTokenCookie(accessToken);
-
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
@@ -92,17 +113,14 @@ public class AuthController {
     }
 
     @GetMapping("/account")
-    @ApiMessage("Lấy thông tin tài khoản thành công")
+    @ApiMessage("Account retrieved successfully")
     public ResponseEntity<ResLoginDTO.UserGetAccount> getAccount() {
         String email = SecurityUtil.getCurrentUser().orElse("");
-
         User currentUser = userService.handleGetUserByUsername(email);
 
-        ResLoginDTO.UserGetAccount response = new ResLoginDTO.UserGetAccount();
-
-        if (currentUser != null) {
-            response.setUser(buildUserLogin(currentUser));
-        }
+        ResLoginDTO.UserGetAccount response = ResLoginDTO.UserGetAccount.builder()
+                .user(currentUser != null ? userMapper.toUserLogin(currentUser) : null)
+                .build();
 
         return ResponseEntity.ok(response);
     }
@@ -111,7 +129,6 @@ public class AuthController {
     public ResponseEntity<Void> refreshToken(
             @CookieValue(name = "refresh_token", defaultValue = "") String refreshToken
     ) throws Exception {
-
         if (refreshToken == null || refreshToken.isBlank()) {
             throw new BadCredentialsException("Refresh token is missing!");
         }
@@ -147,7 +164,6 @@ public class AuthController {
         ResponseCookie accessCookie = buildAccessTokenCookie(newAccessToken);
         ResponseCookie refreshCookie = buildRefreshTokenCookie(newRefreshToken);
 
-
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
@@ -155,7 +171,7 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    @ApiMessage("Đăng xuất thành công")
+    @ApiMessage("Logout successful")
     public ResponseEntity<Void> logout() throws IdInvalidException {
         String email = SecurityUtil.getCurrentUser().orElse("");
 
@@ -193,25 +209,11 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(null);
     }
 
-
-    private ResLoginDTO.UserLogin buildUserLogin(User user) {
-        ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin();
-        userLogin.setId(user.getId());
-        userLogin.setEmail(user.getEmail());
-        userLogin.setName(user.getName());
-        userLogin.setAvatarUrl(user.getAvatarUrl());
-        userLogin.setRoles(user.getRoles().stream()
-                .map(role -> role.getName().name())
-                .collect(Collectors.toList()));
-
-        if (user.getCompany() != null) {
-            ResLoginDTO.UserLogin.CompanyInfo companyInfo = new ResLoginDTO.UserLogin.CompanyInfo();
-            companyInfo.setId(user.getCompany().getId());
-            companyInfo.setName(user.getCompany().getName());
-            userLogin.setCompany(companyInfo);
-        }
-        userLogin.setIsGmailLinked(user.getGoogleRefreshToken() != null);
-        return userLogin;
+    @PostMapping("/forgot-password")
+    @ApiMessage("A new password has been sent to your email address!")
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ReqForgotPasswordDTO reqDTO) throws Exception {
+        authService.handleForgotPassword(reqDTO.getEmail());
+        return ResponseEntity.ok().build();
     }
 
     private ResponseCookie buildRefreshTokenCookie(String refreshToken) {
@@ -232,13 +234,5 @@ public class AuthController {
                 .sameSite("None")
                 .maxAge(accessTokenExpiration / 1000)
                 .build();
-    }
-
-
-    @PostMapping("/forgot-password")
-    @ApiMessage("Mật khẩu mới đã được gửi tới địa chỉ email của bạn!")
-    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ReqForgotPasswordDTO reqDTO) throws Exception {
-        authService.handleForgotPassword(reqDTO.getEmail());
-        return ResponseEntity.ok().build();
     }
 }

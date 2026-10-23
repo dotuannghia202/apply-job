@@ -4,10 +4,11 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.UUID;
 
 public class CustomUserDetails implements UserDetails {
 
-    private final Long id;
+    private final UUID id;
     private final String email;
     private final String fullName;
     private final String password;
@@ -15,7 +16,7 @@ public class CustomUserDetails implements UserDetails {
     private final Collection<? extends GrantedAuthority> authorities;
 
     public CustomUserDetails(
-            Long id,
+            UUID id,
             String email,
             String fullName,
             String password,
@@ -30,7 +31,7 @@ public class CustomUserDetails implements UserDetails {
         this.authorities = authorities;
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
