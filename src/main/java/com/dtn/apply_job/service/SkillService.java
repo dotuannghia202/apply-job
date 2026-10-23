@@ -19,22 +19,35 @@ import java.util.UUID;
 public class SkillService {
     private final SkillRepository skillRepository;
     private final SkillMapper skillMapper;
+    private final AiPythonService aiPythonService;
 
-    public SkillService(SkillRepository skillRepository, SkillMapper skillMapper) {
+    public SkillService(SkillRepository skillRepository, SkillMapper skillMapper, AiPythonService aiPythonService) {
         this.skillRepository = skillRepository;
         this.skillMapper = skillMapper;
+        this.aiPythonService = aiPythonService;
     }
 
     public Skill handleCreateSkill(Skill skill) {
+        String rawName = skill.getName();
+        boolean hasVi = skill.getNameVi() != null && !skill.getNameVi().isBlank();
+        boolean hasEn = skill.getNameEn() != null && !skill.getNameEn().isBlank();
+        if (hasVi && !hasEn) {
+            var res = aiPythonService.autoDetectAndTranslate(skill.getNameVi());
+            skill.setNameEn(res.textEn());
+        } else if (!hasVi && hasEn) {
+            var res = aiPythonService.autoDetectAndTranslate(skill.getNameEn());
+            skill.setNameVi(res.textVi());
+        } else if (!hasVi && !hasEn && rawName != null && !rawName.isBlank()) {
+            var res = aiPythonService.autoDetectAndTranslate(rawName);
+            skill.setNameVi(res.textVi());
+            skill.setNameEn(res.textEn());
+        }
+
         if (skill.getNameVi() != null && this.skillRepository.existsByNameVi(skill.getNameVi())) {
             throw new NameExistedException("Tên kỹ năng tiếng Việt phải là duy nhất!");
         }
         if (skill.getNameEn() != null && this.skillRepository.existsByNameEn(skill.getNameEn())) {
             throw new NameExistedException("Tên kỹ năng tiếng Anh phải là duy nhất!");
-        }
-        if (skill.getNameVi() == null && skill.getNameEn() == null && skill.getName() != null) {
-            skill.setNameVi(skill.getName());
-            skill.setNameEn(skill.getName());
         }
         return this.skillRepository.save(skill);
     }

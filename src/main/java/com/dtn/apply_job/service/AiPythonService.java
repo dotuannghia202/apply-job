@@ -58,6 +58,14 @@ public class AiPythonService {
     @Value("${python.ai.generate-interview-question-path}")
     String generateInterviewQuestionPath;
 
+    @NonFinal
+    @Value("${python.ai.translate-path:/api/v1/ai/translate}")
+    String translatePath;
+
+    @NonFinal
+    @Value("${python.ai.translate-batch-path:/api/v1/ai/translate-batch}")
+    String translateBatchPath;
+
     ResumeRepository resumeRepository;
     RestTemplate restTemplate;
     ApplicationRepository applicationRepository;
@@ -364,5 +372,71 @@ public class AiPythonService {
         } catch (Exception ex) {
             log.error(">>> [AI Interview] Lỗi chấm điểm buổi phỏng vấn: ", ex);
         }
+    }
+
+    public record BilingualTextDTO(String detectedLang, String textVi, String textEn) {}
+    public record BilingualBatchDTO(String detectedLang, List<String> textsVi, List<String> textsEn) {}
+
+    public BilingualTextDTO autoDetectAndTranslate(String text) {
+        if (text == null || text.isBlank()) {
+            return new BilingualTextDTO("vi", "", "");
+        }
+        String cleanText = text.trim();
+        try {
+            String pythonApiUrl = pythonAiBaseUrl + translatePath;
+            Map<String, String> requestBody = Map.of("text", cleanText);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
+
+            ResponseEntity<Map> response = restTemplate.postForEntity(pythonApiUrl, requestEntity, Map.class);
+            Map<String, Object> responseBody = response.getBody();
+
+            if (responseBody != null && Integer.valueOf(200).equals(responseBody.get("status_code"))) {
+                Map<String, Object> data = (Map<String, Object>) responseBody.get("data");
+                if (data != null) {
+                    String detectedLang = (String) data.getOrDefault("detected_lang", "vi");
+                    String textVi = (String) data.getOrDefault("text_vi", cleanText);
+                    String textEn = (String) data.getOrDefault("text_en", cleanText);
+                    return new BilingualTextDTO(detectedLang, textVi, textEn);
+                }
+            }
+        } catch (Exception ex) {
+            log.warn(">>> [AI Translation] Could not translate text via Python AI service ({}), falling back to raw text.", ex.getMessage());
+        }
+
+        return new BilingualTextDTO("vi", cleanText, cleanText);
+    }
+
+    public BilingualBatchDTO autoDetectAndTranslateBatch(List<String> texts) {
+        if (texts == null || texts.isEmpty()) {
+            return new BilingualBatchDTO("vi", Collections.emptyList(), Collections.emptyList());
+        }
+        try {
+            String pythonApiUrl = pythonAiBaseUrl + translateBatchPath;
+            Map<String, Object> requestBody = Map.of("texts", texts);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
+
+            ResponseEntity<Map> response = restTemplate.postForEntity(pythonApiUrl, requestEntity, Map.class);
+            Map<String, Object> responseBody = response.getBody();
+
+            if (responseBody != null && Integer.valueOf(200).equals(responseBody.get("status_code"))) {
+                Map<String, Object> data = (Map<String, Object>) responseBody.get("data");
+                if (data != null) {
+                    String detectedLang = (String) data.getOrDefault("detected_lang", "vi");
+                    List<String> textsVi = (List<String>) data.getOrDefault("texts_vi", texts);
+                    List<String> textsEn = (List<String>) data.getOrDefault("texts_en", texts);
+                    return new BilingualBatchDTO(detectedLang, textsVi, textsEn);
+                }
+            }
+        } catch (Exception ex) {
+            log.warn(">>> [AI Batch Translation] Could not translate batch via Python AI service ({}), falling back to raw texts.", ex.getMessage());
+        }
+
+        return new BilingualBatchDTO("vi", texts, texts);
     }
 }

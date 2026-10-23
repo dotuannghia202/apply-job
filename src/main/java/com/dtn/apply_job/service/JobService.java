@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,11 +39,12 @@ public class JobService {
     private final UserRepository userRepository;
     private final ApplicationRepository applicationRepository;
     private final JobMapper jobMapper;
+    private final AiPythonService aiPythonService;
 
     public JobService(JobRepository jobRepository, CompanyRepository companyRepository,
                       SpecializationRepository specializationRepository, SkillRepository skillRepository,
                       UserRepository userRepository, ApplicationRepository applicationRepository,
-                      JobMapper jobMapper) {
+                      JobMapper jobMapper, AiPythonService aiPythonService) {
         this.jobRepository = jobRepository;
         this.companyRepository = companyRepository;
         this.specializationRepository = specializationRepository;
@@ -50,6 +52,7 @@ public class JobService {
         this.userRepository = userRepository;
         this.applicationRepository = applicationRepository;
         this.jobMapper = jobMapper;
+        this.aiPythonService = aiPythonService;
     }
 
     public ResJobDTO handleCreateJob(ReqCreateJobDTO reqDTO) throws IdInvalidException, InvalidDateRangeException, AccessDeniedException {
@@ -80,6 +83,14 @@ public class JobService {
         if (skills != null) {
             job.setSkills(skills);
         }
+
+        applyBilingualJobFields(job,
+                reqDTO.getName(), reqDTO.getNameVi(), reqDTO.getNameEn(),
+                reqDTO.getDescription(), reqDTO.getDescriptionVi(), reqDTO.getDescriptionEn(),
+                reqDTO.getRequirements(), reqDTO.getRequirementsVi(), reqDTO.getRequirementsEn(),
+                reqDTO.getBenefits(), reqDTO.getBenefitsVi(), reqDTO.getBenefitsEn(),
+                reqDTO.getWorkingHours(), reqDTO.getWorkingHoursVi(), reqDTO.getWorkingHoursEn()
+        );
 
         Job savedJob = jobRepository.save(job);
 
@@ -187,21 +198,13 @@ public class JobService {
 
         jobMapper.updateJobFromDTO(reqDTO, currentJob);
 
-        if (reqDTO.getName() != null && reqDTO.getNameVi() == null && reqDTO.getNameEn() == null) {
-            currentJob.setName(reqDTO.getName());
-        }
-        if (reqDTO.getDescription() != null && reqDTO.getDescriptionVi() == null && reqDTO.getDescriptionEn() == null) {
-            currentJob.setDescription(reqDTO.getDescription());
-        }
-        if (reqDTO.getRequirements() != null && reqDTO.getRequirementsVi() == null && reqDTO.getRequirementsEn() == null) {
-            currentJob.setRequirements(reqDTO.getRequirements());
-        }
-        if (reqDTO.getBenefits() != null && reqDTO.getBenefitsVi() == null && reqDTO.getBenefitsEn() == null) {
-            currentJob.setBenefits(reqDTO.getBenefits());
-        }
-        if (reqDTO.getWorkingHours() != null && reqDTO.getWorkingHoursVi() == null && reqDTO.getWorkingHoursEn() == null) {
-            currentJob.setWorkingHours(reqDTO.getWorkingHours());
-        }
+        applyBilingualJobFields(currentJob,
+                reqDTO.getName(), reqDTO.getNameVi(), reqDTO.getNameEn(),
+                reqDTO.getDescription(), reqDTO.getDescriptionVi(), reqDTO.getDescriptionEn(),
+                reqDTO.getRequirements(), reqDTO.getRequirementsVi(), reqDTO.getRequirementsEn(),
+                reqDTO.getBenefits(), reqDTO.getBenefitsVi(), reqDTO.getBenefitsEn(),
+                reqDTO.getWorkingHours(), reqDTO.getWorkingHoursVi(), reqDTO.getWorkingHoursEn()
+        );
 
         if (reqDTO.getCompanyId() != null && (currentJob.getCompany() == null || !Objects.equals(currentJob.getCompany().getId(), reqDTO.getCompanyId()))) {
             Company company = companyRepository.findById(reqDTO.getCompanyId())
@@ -529,4 +532,54 @@ public class JobService {
         Sort.Direction direction = requestAsc ? Sort.Direction.ASC : Sort.Direction.DESC;
         return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(direction, "createdAt"));
     }
+
+    private void applyBilingualJobFields(Job job,
+                                         String rawName, String nameVi, String nameEn,
+                                         String rawDesc, String descVi, String descEn,
+                                         List<String> rawReqs, List<String> reqsVi, List<String> reqsEn,
+                                         List<String> rawBens, List<String> bensVi, List<String> bensEn,
+                                         String rawWh, String whVi, String whEn) {
+        translateAndSetTextField(rawName, nameVi, nameEn, job::setNameVi, job::setNameEn);
+        translateAndSetTextField(rawDesc, descVi, descEn, job::setDescriptionVi, job::setDescriptionEn);
+        translateAndSetTextField(rawWh, whVi, whEn, job::setWorkingHoursVi, job::setWorkingHoursEn);
+        translateAndSetBatchField(rawReqs, reqsVi, reqsEn, job::setRequirementsVi, job::setRequirementsEn);
+        translateAndSetBatchField(rawBens, bensVi, bensEn, job::setBenefitsVi, job::setBenefitsEn);
+    }
+
+    private void translateAndSetTextField(String raw, String vi, String en, Consumer<String> setVi, Consumer<String> setEn) {
+        boolean hasVi = vi != null && !vi.isBlank();
+        boolean hasEn = en != null && !en.isBlank();
+        if (hasVi && !hasEn) {
+            var res = aiPythonService.autoDetectAndTranslate(vi);
+            setVi.accept(res.textVi());
+            setEn.accept(res.textEn());
+        } else if (!hasVi && hasEn) {
+            var res = aiPythonService.autoDetectAndTranslate(en);
+            setVi.accept(res.textVi());
+            setEn.accept(res.textEn());
+        } else if (!hasVi && !hasEn && raw != null && !raw.isBlank()) {
+            var res = aiPythonService.autoDetectAndTranslate(raw);
+            setVi.accept(res.textVi());
+            setEn.accept(res.textEn());
+        }
+    }
+
+    private void translateAndSetBatchField(List<String> raw, List<String> vi, List<String> en, Consumer<List<String>> setVi, Consumer<List<String>> setEn) {
+        boolean hasVi = vi != null && !vi.isEmpty();
+        boolean hasEn = en != null && !en.isEmpty();
+        if (hasVi && !hasEn) {
+            var res = aiPythonService.autoDetectAndTranslateBatch(vi);
+            setVi.accept(res.textsVi());
+            setEn.accept(res.textsEn());
+        } else if (!hasVi && hasEn) {
+            var res = aiPythonService.autoDetectAndTranslateBatch(en);
+            setVi.accept(res.textsVi());
+            setEn.accept(res.textsEn());
+        } else if (!hasVi && !hasEn && raw != null && !raw.isEmpty()) {
+            var res = aiPythonService.autoDetectAndTranslateBatch(raw);
+            setVi.accept(res.textsVi());
+            setEn.accept(res.textsEn());
+        }
+    }
 }
+

@@ -20,17 +20,29 @@ public class IndustryService {
 
     private final IndustryRepository industryRepository;
     private final SpecializationRepository specializationRepository;
+    private final AiPythonService aiPythonService;
 
     public Industry handleCreateIndustry(Industry industry) {
+        String rawName = industry.getName();
+        boolean hasVi = industry.getNameVi() != null && !industry.getNameVi().isBlank();
+        boolean hasEn = industry.getNameEn() != null && !industry.getNameEn().isBlank();
+        if (hasVi && !hasEn) {
+            var res = aiPythonService.autoDetectAndTranslate(industry.getNameVi());
+            industry.setNameEn(res.textEn());
+        } else if (!hasVi && hasEn) {
+            var res = aiPythonService.autoDetectAndTranslate(industry.getNameEn());
+            industry.setNameVi(res.textVi());
+        } else if (!hasVi && !hasEn && rawName != null && !rawName.isBlank()) {
+            var res = aiPythonService.autoDetectAndTranslate(rawName);
+            industry.setNameVi(res.textVi());
+            industry.setNameEn(res.textEn());
+        }
+
         if (industry.getNameVi() != null && this.industryRepository.existsByNameVi(industry.getNameVi())) {
             throw new NameExistedException("Tên ngành nghề tiếng Việt phải là duy nhất!");
         }
         if (industry.getNameEn() != null && this.industryRepository.existsByNameEn(industry.getNameEn())) {
             throw new NameExistedException("Tên ngành nghề tiếng Anh phải là duy nhất!");
-        }
-        if (industry.getNameVi() == null && industry.getNameEn() == null && industry.getName() != null) {
-            industry.setNameVi(industry.getName());
-            industry.setNameEn(industry.getName());
         }
         return this.industryRepository.save(industry);
     }

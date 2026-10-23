@@ -33,12 +33,25 @@ public class SpecializationService {
     private final JobRepository jobRepository;
     private final ResumeRepository resumeRepository;
     private final SpecializationMapper specializationMapper;
+    private final AiPythonService aiPythonService;
 
     public ResSpecializationDTO handleCreateSpecialization(ReqCreateSpecializationDTO payload) throws IdInvalidException {
+        String rawName = payload.getName();
         String nameVi = payload.getNameVi() != null ? payload.getNameVi().trim() : null;
         String nameEn = payload.getNameEn() != null ? payload.getNameEn().trim() : null;
-        if (nameVi == null && nameEn != null) nameVi = nameEn;
-        if (nameEn == null && nameVi != null) nameEn = nameVi;
+        boolean hasVi = nameVi != null && !nameVi.isBlank();
+        boolean hasEn = nameEn != null && !nameEn.isBlank();
+        if (hasVi && !hasEn) {
+            var res = aiPythonService.autoDetectAndTranslate(nameVi);
+            nameEn = res.textEn();
+        } else if (!hasVi && hasEn) {
+            var res = aiPythonService.autoDetectAndTranslate(nameEn);
+            nameVi = res.textVi();
+        } else if (!hasVi && !hasEn && rawName != null && !rawName.isBlank()) {
+            var res = aiPythonService.autoDetectAndTranslate(rawName);
+            nameVi = res.textVi();
+            nameEn = res.textEn();
+        }
 
         UUID industryId = payload.getIndustryId();
         if (industryId == null) {

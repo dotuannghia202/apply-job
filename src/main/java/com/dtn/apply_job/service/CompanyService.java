@@ -41,13 +41,15 @@ public class CompanyService {
     private final NotificationService notificationService;
     private final EmailService emailService;
     private final CompanyMapper companyMapper;
+    private final AiPythonService aiPythonService;
 
-    public CompanyService(CompanyRepository companyRepository, UserRepository userRepository, NotificationService notificationService, EmailService emailService, CompanyMapper companyMapper) {
+    public CompanyService(CompanyRepository companyRepository, UserRepository userRepository, NotificationService notificationService, EmailService emailService, CompanyMapper companyMapper, AiPythonService aiPythonService) {
         this.companyRepository = companyRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
         this.emailService = emailService;
         this.companyMapper = companyMapper;
+        this.aiPythonService = aiPythonService;
     }
 
     @Transactional
@@ -65,6 +67,9 @@ public class CompanyService {
         
         Company company = companyMapper.toCompany(reqDTO);
         company.setStatus(CompanyStatus.PENDING);
+
+        // Auto-detect and translate description if only one language or single description provided
+        applyBilingualDescription(company, reqDTO.getDescription(), reqDTO.getDescriptionVi(), reqDTO.getDescriptionEn());
 
         Company savedCompany = this.companyRepository.save(company);
 
@@ -103,8 +108,29 @@ public class CompanyService {
         Company currentCompany = currentUser.getCompany();
         companyMapper.updateCompanyFromDTO(reqDTO, currentCompany);
 
+        // Auto-detect and translate description if updated
+        applyBilingualDescription(currentCompany, reqDTO.getDescription(), reqDTO.getDescriptionVi(), reqDTO.getDescriptionEn());
+
         Company updatedCompany = companyRepository.save(currentCompany);
         return convertToResCompanyDTO(updatedCompany);
+    }
+
+    private void applyBilingualDescription(Company company, String rawDesc, String descVi, String descEn) {
+        boolean hasVi = descVi != null && !descVi.isBlank();
+        boolean hasEn = descEn != null && !descEn.isBlank();
+        if (hasVi && !hasEn) {
+            var translation = aiPythonService.autoDetectAndTranslate(descVi);
+            company.setDescriptionVi(translation.textVi());
+            company.setDescriptionEn(translation.textEn());
+        } else if (!hasVi && hasEn) {
+            var translation = aiPythonService.autoDetectAndTranslate(descEn);
+            company.setDescriptionVi(translation.textVi());
+            company.setDescriptionEn(translation.textEn());
+        } else if (!hasVi && !hasEn && rawDesc != null && !rawDesc.isBlank()) {
+            var translation = aiPythonService.autoDetectAndTranslate(rawDesc);
+            company.setDescriptionVi(translation.textVi());
+            company.setDescriptionEn(translation.textEn());
+        }
     }
 
     public void handleDeleteCompany(UUID id) {
