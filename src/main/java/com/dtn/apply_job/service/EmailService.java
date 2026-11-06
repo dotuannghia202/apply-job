@@ -1,6 +1,5 @@
 package com.dtn.apply_job.service;
 
-import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -22,30 +21,32 @@ public class EmailService {
                 <html>
                 <head>
                     <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <style>
-                        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
-                        .email-container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+                        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; margin: 0; padding: 20px 0; }
+                        .email-container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #cbd5e1; border-bottom: 4px solid #16a34a; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
                         .header { background-color: #16a34a; padding: 25px 20px; text-align: center; }
                         .header h1 { margin: 0; color: #ffffff; font-size: 28px; letter-spacing: 1px; }
                         .content { padding: 30px 40px; color: #374151; line-height: 1.6; font-size: 16px; }
-                        .content h2 { color: #111827; font-size: 20px; margin-top: 0; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; }
+                        .content h2 { color: #111827; font-size: 20px; margin-top: 0; border-bottom: 2px solid #e5e7eb; padding-bottom: 12px; margin-bottom: 20px; }
                         .highlight-box { background-color: #f8fafc; border: 1px dashed #cbd5e1; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0; font-size: 22px; font-weight: bold; color: #16a34a; letter-spacing: 2px;}
-                        .footer { background-color: #f8fafc; padding: 20px; text-align: center; color: #64748b; font-size: 13px; border-top: 1px solid #e5e7eb; }
-                        .btn { display: inline-block; padding: 12px 25px; background-color: #16a34a; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 20px; }
+                        .footer { background-color: #f8fafc; padding: 20px; text-align: center; color: #64748b; font-size: 13px; border-top: 1px solid #cbd5e1; }
+                        .footer p { margin: 4px 0; }
+                        .btn { display: inline-block; padding: 12px 25px; background-color: #16a34a; color: #ffffff !important; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 15px; }
                     </style>
                 </head>
-                <body>
-                    <div class="email-container">
-                        <div class="header">
-                            <h1>Job Portal</h1>
+                <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; margin: 0; padding: 20px 0;">
+                    <div class="email-container" style="max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #cbd5e1; border-bottom: 4px solid #16a34a; box-shadow: 0 4px 15px rgba(0,0,0,0.06);">
+                        <div class="header" style="background-color: #16a34a; padding: 25px 20px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; letter-spacing: 1px;">Job Portal</h1>
                         </div>
-                        <div class="content">
-                            <h2>%s</h2>
+                        <div class="content" style="padding: 30px 40px; color: #374151; line-height: 1.6; font-size: 16px;">
+                            <h2 style="color: #111827; font-size: 20px; margin-top: 0; border-bottom: 2px solid #e5e7eb; padding-bottom: 12px; margin-bottom: 20px;">%s</h2>
                             %s
                         </div>
-                        <div class="footer">
-                            <p>© 2026 Job Portal Platform. Tất cả các quyền được bảo lưu.</p>
-                            <p>Đây là email tự động, vui lòng không trả lời email này.</p>
+                        <div class="footer" style="background-color: #f8fafc; padding: 20px; text-align: center; color: #64748b; font-size: 13px; border-top: 1px solid #cbd5e1;">
+                            <p style="margin: 4px 0; color: #64748b;">© 2026 Job Portal Platform. Tất cả các quyền được bảo lưu.</p>
+                            <p style="margin: 4px 0; color: #94a3b8; font-size: 12px;">Đây là email tự động, vui lòng không trả lời email này.</p>
                         </div>
                     </div>
                 </body>
@@ -66,7 +67,7 @@ public class EmailService {
 
             mailSender.send(message);
             System.out.println("Đã gửi HTML Email thành công tới: " + toEmail);
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             System.err.println("Lỗi khi gửi email: " + e.getMessage());
         }
     }
@@ -124,10 +125,9 @@ public class EmailService {
                 <p>Xin chào,</p>
                 <p>Chúc mừng! Hồ sơ đăng ký doanh nghiệp của công ty <b>'%s'</b> đã được Quản trị viên của chúng tôi phê duyệt thành công.</p>
                 <p>Ngay bây giờ, bạn có thể truy cập vào Hệ thống quản trị (Employer Dashboard) để bắt đầu sử dụng các tính năng AI, đăng tải tin tuyển dụng và tìm kiếm những ứng viên tài năng nhất.</p>
-                <center>
-                    <a href="https:
-                </center>
-                <br>
+                <div style="text-align: center; margin: 25px 0;">
+                    <a href="http://localhost:5173/employer/dashboard" class="btn" style="display: inline-block; padding: 12px 25px; background-color: #16a34a; color: #ffffff !important; text-decoration: none; border-radius: 6px; font-weight: bold;">Truy cập Employer Dashboard</a>
+                </div>
                 <p>Nếu cần hỗ trợ thêm, vui lòng liên hệ với chúng tôi.</p>
                 """.formatted(companyName);
 

@@ -170,7 +170,7 @@ public class GlobalException {
         RestRespon<Object> res = new RestRespon<>();
         res.setStatusCode(HttpStatus.FORBIDDEN.value());
         res.setError("FORBIDDEN_ACCESS");
-        res.setMessage("Bạn không có quyền truy cập tài nguyên này!");
+        res.setMessage("You do not have access to this resource!");
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(res);
     }
 }
