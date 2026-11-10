@@ -26,7 +26,7 @@ public class IndustryController {
 
     @PostMapping("/industries")
     @PreAuthorize("hasRole('ADMIN')")
-    @ApiMessage("Tạo ngành nghề thành công")
+    @ApiMessage("Industry created successfully")
     public ResponseEntity<Industry> createIndustry(@Valid @RequestBody Industry industry) {
         Industry newIndustry = this.industryService.handleCreateIndustry(industry);
         return ResponseEntity.status(HttpStatus.CREATED).body(newIndustry);
@@ -34,7 +34,7 @@ public class IndustryController {
 
     @PutMapping("/industries/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @ApiMessage("Cập nhật ngành nghề thành công")
+    @ApiMessage("Industry updated successfully")
     public ResponseEntity<Industry> updateIndustry(@PathVariable UUID id, @Valid @RequestBody Industry industry)
             throws IdInvalidException {
         Industry updatedIndustry = this.industryService.handleUpdateIndustry(id, industry);
@@ -43,7 +43,7 @@ public class IndustryController {
 
     @DeleteMapping("/industries/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @ApiMessage("Xóa ngành nghề thành công")
+    @ApiMessage("Industry deleted successfully")
     public ResponseEntity<Void> deleteIndustry(@PathVariable UUID id) throws IdInvalidException {
         this.industryService.handleDeleteIndustry(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
@@ -51,14 +51,14 @@ public class IndustryController {
 
 
     @GetMapping("/industries/{id}")
-    @ApiMessage("Lấy thông tin ngành nghề thành công")
+    @ApiMessage("Industry details retrieved successfully")
     public ResponseEntity<Industry> getIndustry(@PathVariable UUID id) throws IdInvalidException {
         Industry industry = this.industryService.handleGetIndustryById(id);
         return ResponseEntity.status(HttpStatus.OK).body(industry);
     }
 
     @GetMapping("/industries")
-    @ApiMessage("Lấy danh sách ngành nghề thành công")
+    @ApiMessage("Industries retrieved successfully")
     public ResponseEntity<ResultPaginationDTO> getAllIndustries(
             @Filter Specification<Industry> spec,
             Pageable pageable,

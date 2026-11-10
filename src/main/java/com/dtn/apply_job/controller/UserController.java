@@ -45,7 +45,7 @@ public class UserController {
 
     @GetMapping("/users")
     @PreAuthorize("hasRole('ADMIN')")
-    @ApiMessage("Lấy danh sách người dùng thành công")
+    @ApiMessage("Users retrieved successfully")
     public ResponseEntity<ResultPaginationDTO> getAllUsers(
             @Filter Specification<User> spec,
             Pageable pageable,
@@ -60,7 +60,7 @@ public class UserController {
 
 
     @PostMapping("/users")
-    @ApiMessage("Tạo người dùng mới thành công")
+    @ApiMessage("User created successfully")
     public ResponseEntity<ResCreateUserDTO> createUser(@RequestBody ReqCreateUserDTO user) throws EmailExistedException, IdInvalidException {
 
         ResCreateUserDTO result = this.userService.handleCreateUser(user);
@@ -70,7 +70,7 @@ public class UserController {
 
     @GetMapping("/users/{id}")
     @PreAuthorize("isAuthenticated()")
-    @ApiMessage("Lấy thông tin người dùng thành công")
+    @ApiMessage("User details retrieved successfully")
     public ResponseEntity<ResUserDTO> getUserById(@PathVariable UUID id) throws IdInvalidException {
         ResUserDTO result = this.userService.getUserById(id);
         return ResponseEntity.ok().body(result);
@@ -78,7 +78,7 @@ public class UserController {
 
     @PutMapping("/users/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
-    @ApiMessage("Cập nhật trạng thái người dùng thành công!")
+    @ApiMessage("User status updated successfully!")
     public ResponseEntity<Void> updateUserStatus(
             @PathVariable("id") UUID targetUserId,
             @Valid @RequestBody ReqUpdateUserStatusDTO reqDTO) throws Exception {
@@ -89,29 +89,38 @@ public class UserController {
 
 
     @PutMapping("/users/{id}")
-    @ApiMessage("Cập nhật người dùng thành công")
+    @ApiMessage("User updated successfully")
     public ResponseEntity<ResUpdateUserDTO> updateUser(@PathVariable UUID id, @RequestBody ReqUpdateUserDTO user) throws IdInvalidException {
         ResUpdateUserDTO result = this.userService.handleUpdateUser(id, user);
         return ResponseEntity.ok().body(result);
     }
 
     @PostMapping("/users/save-job/{jobId}")
-    @ApiMessage("Bật/tắt trạng thái lưu công việc thành công")
+    @ApiMessage("Job save status toggled successfully")
     public ResponseEntity<Boolean> toggleSaveJob(@PathVariable UUID jobId) throws Exception {
         boolean isSaved = jobService.toggleSavedJob(jobId);
         return ResponseEntity.ok(isSaved);
     }
 
     @PutMapping("/users/assign-company/{companyId}")
-    @ApiMessage("Gán công ty cho nhà tuyển dụng thành công")
+    @ApiMessage("Company assigned to employer successfully")
     public ResponseEntity<Void> assignCompany(@PathVariable UUID companyId) throws Exception {
         userService.assignCompanyToCurrentUser(companyId);
         return ResponseEntity.ok().body(null);
     }
 
+    @PutMapping("/users/preferred-language")
+    @PreAuthorize("isAuthenticated()")
+    @ApiMessage("Preferred language updated successfully")
+    public ResponseEntity<Void> updatePreferredLanguage(@RequestBody Map<String, String> body) throws Exception {
+        String lang = body != null ? body.get("language") : "vi";
+        userService.handleUpdatePreferredLanguage(lang);
+        return ResponseEntity.ok().build();
+    }
+
     @PutMapping("/users/{id}/roles")
     @PreAuthorize("hasAnyRole('ADMIN', 'CANDIDATE', 'EMPLOYER')")
-    @ApiMessage("Cập nhật quyền người dùng thành công!")
+    @ApiMessage("User roles updated successfully!")
     public ResponseEntity<ResUpdateUserDTO> updateUserRoles(
             @PathVariable("id") UUID targetUserId,
             @Valid @RequestBody ReqUpdateUserRoleDTO reqDTO) throws Exception {
@@ -122,7 +131,7 @@ public class UserController {
 
     @GetMapping("/saved-jobs")
     @PreAuthorize("hasRole('CANDIDATE')")
-    @ApiMessage("Lấy danh sách công việc đã lưu thành công")
+    @ApiMessage("Saved jobs retrieved successfully")
     public ResponseEntity<ResultPaginationDTO> getMySavedJobs(Pageable pageable) throws Exception {
         ResultPaginationDTO result = jobService.handleGetSavedJobs(pageable);
         return ResponseEntity.ok(result);
@@ -130,7 +139,7 @@ public class UserController {
 
     @GetMapping("/hr/dashboard-stats")
     @PreAuthorize("hasRole('EMPLOYER')")
-    @ApiMessage("Lấy số liệu thống kê trang quản trị nhà tuyển dụng thành công")
+    @ApiMessage("Employer dashboard statistics retrieved successfully")
     public ResponseEntity<ResHrDashboardStatsDTO> getHrDashboardStats() throws Exception {
         ResHrDashboardStatsDTO result = userService.getHrDashboardStats();
         return ResponseEntity.ok(result);
@@ -138,7 +147,7 @@ public class UserController {
 
     @PutMapping("/change-password")
     @PreAuthorize("isAuthenticated()")
-    @ApiMessage("Thay đổi mật khẩu thành công")
+    @ApiMessage("Password changed successfully")
     public ResponseEntity<Void> changePassword(@Valid @RequestBody ReqChangePasswordDTO reqDTO) throws Exception {
         userService.handleChangePassword(reqDTO);
         return ResponseEntity.ok().build();

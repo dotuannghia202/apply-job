@@ -20,6 +20,7 @@ public class ResUpdateUserDTO {
     Integer age;
     String gender;
     String address;
+    String preferredLanguage;
     List<String> roles;
     Boolean isActive;
     Instant updatedAt;

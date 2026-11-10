@@ -46,7 +46,7 @@ public class ResumeService {
                 .orElseThrow(() -> new IdInvalidException("Please login to create a CV!"));
         User currentUser = userRepository.findByEmail(email);
         if (currentUser == null) {
-            throw new IdInvalidException("Tài khoản không tồn tại!");
+            throw new IdInvalidException("Account does not exist!");
         }
 
         Resume resume = resumeMapper.toResume(req);
@@ -147,7 +147,7 @@ public class ResumeService {
 
         User currentUser = this.userRepository.findByEmail(email);
         if (currentUser == null) {
-            throw new IdInvalidException("Tài khoản không tồn tại! Vui lòng đăng ký trước!");
+            throw new IdInvalidException("Account does not exist! Vui lòng đăng ký trước!");
         }
 
         List<Resume> myResumes = this.resumeRepository.findByCandidateAndActiveTrue(currentUser);
@@ -164,7 +164,7 @@ public class ResumeService {
                 .orElseThrow(() -> new IdInvalidException("Please log in to view this CV!"));
         User currentUser = userRepository.findByEmail(currentUserEmail);
         if (currentUser == null) {
-            throw new IdInvalidException("Tài khoản không tồn tại! Vui lòng đăng ký trước!");
+            throw new IdInvalidException("Account does not exist! Vui lòng đăng ký trước!");
         }
 
         boolean isAdmin = currentUser.getRoles().stream()

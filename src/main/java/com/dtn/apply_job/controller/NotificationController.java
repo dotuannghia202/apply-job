@@ -23,7 +23,7 @@ public class NotificationController {
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    @ApiMessage("Lấy danh sách thông báo theo Role")
+    @ApiMessage("Notifications retrieved successfully")
     public ResponseEntity<ResultPaginationDTO> getMyNotifications(
             @RequestParam(required = false) Boolean isRead,
             @RequestParam("role") ERole role,
@@ -35,7 +35,7 @@ public class NotificationController {
 
     @PutMapping("/{id}/read")
     @PreAuthorize("isAuthenticated()")
-    @ApiMessage("Đánh dấu thông báo đã đọc thành công")
+    @ApiMessage("Notification marked as read successfully")
     public ResponseEntity<Void> markAsRead(@PathVariable("id") UUID id) throws Exception {
 
         notificationService.markAsRead(id);
@@ -44,7 +44,7 @@ public class NotificationController {
 
     @PutMapping("/read-all")
     @PreAuthorize("isAuthenticated()")
-    @ApiMessage("Đánh dấu tất cả thông báo đã đọc thành công")
+    @ApiMessage("All notifications marked as read successfully")
     public ResponseEntity<Void> markAllAsRead(@RequestParam("role") ERole role) throws Exception {
 
         notificationService.markAllAsRead(role);

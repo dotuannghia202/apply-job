@@ -41,14 +41,14 @@ public class JobController {
     }
 
     @PostMapping
-    @ApiMessage("Tạo công việc thành công")
+    @ApiMessage("Job created successfully")
     public ResponseEntity<ResJobDTO> createJob(@Valid @RequestBody ReqCreateJobDTO reqDTO) throws IdInvalidException, InvalidDateRangeException, AccessDeniedException {
         ResJobDTO newJob = this.jobService.handleCreateJob(reqDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(newJob);
     }
 
     @PostMapping("/batch")
-    @ApiMessage("Tạo hàng loạt công việc thành công")
+    @ApiMessage("Jobs batch created successfully")
     public ResponseEntity<List<ResJobDTO>> createJobsBatch(
             @Valid @RequestBody List<ReqCreateJobDTO> reqDTOs) throws IdInvalidException, InvalidDateRangeException, AccessDeniedException {
         List<ResJobDTO> newJobs = this.jobService.handleCreateJobs(reqDTOs);
@@ -56,7 +56,7 @@ public class JobController {
     }
 
     @PutMapping("/{id}")
-    @ApiMessage("Cập nhật công việc thành công")
+    @ApiMessage("Job updated successfully")
     public ResponseEntity<ResUpdateJobDTO> updateJob(
             @PathVariable UUID id,
             @Valid @RequestBody ReqUpdateJobDTO reqDTO) throws Exception {
@@ -65,7 +65,7 @@ public class JobController {
     }
 
     @GetMapping
-    @ApiMessage("Lấy danh sách công việc thành công")
+    @ApiMessage("Jobs retrieved successfully")
     public ResponseEntity<ResultPaginationDTO> getAllJobs(
             @Filter Specification<Job> spec,
             Pageable pageable,
@@ -92,7 +92,7 @@ public class JobController {
     }
 
     @GetMapping("/{id}")
-    @ApiMessage("Lấy thông tin công việc thành công")
+    @ApiMessage("Job details retrieved successfully")
     public ResponseEntity<ResJobDTO> getJobById(@PathVariable UUID id) throws IdInvalidException {
         ResJobDTO dto = this.jobService.handleGetJobById(id);
         return ResponseEntity.ok().body(dto);
@@ -100,7 +100,7 @@ public class JobController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('EMPLOYER', 'ADMIN')")
-    @ApiMessage("Xóa công việc thành công")
+    @ApiMessage("Job deleted successfully")
     public ResponseEntity<Void> deleteJob(@PathVariable UUID id) throws Exception {
         this.jobService.handleDeleteJob(id);
         return ResponseEntity.ok().build();
@@ -108,7 +108,7 @@ public class JobController {
 
     @GetMapping("/hr")
     @PreAuthorize("hasRole('EMPLOYER')")
-    @ApiMessage("Lấy danh sách công việc của công ty thành công")
+    @ApiMessage("Company jobs retrieved successfully")
     public ResponseEntity<ResultPaginationDTO> getJobsByCurrentHr(
             @Filter Specification<Job> spec,
             Pageable pageable,
@@ -134,7 +134,7 @@ public class JobController {
 
     @PostMapping("/generate-jd")
     @PreAuthorize("hasAnyRole('EMPLOYER', 'ADMIN')")
-    @ApiMessage("Tự động sinh JD bằng AI thành công")
+    @ApiMessage("AI job description generated successfully")
     public ResponseEntity<ResGenerateJdDTO> generateJdByAi(@RequestBody ReqGenerateJdDTO reqDTO) throws Exception {
 
         ResGenerateJdDTO generatedContent = aiPythonService.generateJdFromPython(reqDTO);

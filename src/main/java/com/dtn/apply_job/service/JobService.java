@@ -368,7 +368,7 @@ public class JobService {
                 .orElseThrow(() -> new IdInvalidException("Login please!"));
         User candidate = userRepository.findByEmail(email);
         if (candidate == null) {
-            throw new IdInvalidException("Không tìm thấy người dùng!");
+            throw new IdInvalidException("User not found!");
         }
 
         Job job = jobRepository.findById(jobId)
@@ -505,7 +505,7 @@ public class JobService {
     ) throws Exception {
 
         String email = SecurityUtil.getCurrentUser()
-                .orElseThrow(() -> new IdInvalidException("Vui lòng đăng nhập!"));
+                .orElseThrow(() -> new IdInvalidException("Please log in to continue!"));
         User currentHr = userRepository.findByEmail(email);
 
         if (currentHr.getCompany() == null) {

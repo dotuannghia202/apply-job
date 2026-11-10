@@ -21,6 +21,7 @@ public class ResUserDTO {
     Integer age;
     String gender;
     String address;
+    String preferredLanguage;
 
     Instant createdAt;
     String createdBy;

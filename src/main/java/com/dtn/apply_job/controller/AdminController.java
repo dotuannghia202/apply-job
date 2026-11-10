@@ -21,7 +21,7 @@ public class AdminController {
 
     @GetMapping("/dashboard-stats")
     @PreAuthorize("hasRole('ADMIN')")
-    @ApiMessage("Lấy số liệu thống kê trang quản trị Admin thành công")
+    @ApiMessage("Admin dashboard statistics retrieved successfully")
     public ResponseEntity<ResAdminDashboardDTO> getAdminDashboardStats() {
 
         ResAdminDashboardDTO result = dashboardService.getAdminDashboardStats();

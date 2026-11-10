@@ -60,9 +60,31 @@ public class SecurityConfiguration {
     }
 
 
+    private boolean isPublicGetRequest(jakarta.servlet.http.HttpServletRequest request) {
+        if (!HttpMethod.GET.matches(request.getMethod())) {
+            return false;
+        }
+        String path = request.getRequestURI();
+        if (path.startsWith("/api/v1/jobs/hr")
+                || path.startsWith("/api/v1/companies/dashboard-stats")
+                || path.startsWith("/api/v1/companies/my-company")) {
+            return false;
+        }
+        if (path.equals("/api/v1/companies") || path.equals("/api/v1/companies/")) {
+            return false;
+        }
+
+        return path.startsWith("/api/v1/industries")
+                || path.startsWith("/api/v1/specializations")
+                || path.startsWith("/api/v1/jobs")
+                || path.startsWith("/api/v1/skills")
+                || path.startsWith("/storage/")
+                || path.startsWith("/api/v1/companies/");
+    }
+
     // cấu hình để đọc cookie access_token trên mọi request ngoại trừ auth
     @Bean
-    public BearerTokenResolver bearerTokenResolver() {
+    public BearerTokenResolver bearerTokenResolver(JwtDecoder jwtDecoder) {
         DefaultBearerTokenResolver defaultResolver = new DefaultBearerTokenResolver();
 
         return request -> {
@@ -75,14 +97,30 @@ public class SecurityConfiguration {
                 return null;
             }
 
+            String token = null;
             if (request.getCookies() != null) {
                 for (Cookie cookie : request.getCookies()) {
                     if ("access_token".equals(cookie.getName())) {
-                        return cookie.getValue();
+                        token = cookie.getValue();
+                        break;
                     }
                 }
             }
-            return defaultResolver.resolve(request);
+
+            if (token == null) {
+                token = defaultResolver.resolve(request);
+            }
+
+            // Với request GET public (trang chủ, tìm việc): nếu token hết hạn/lỗi, coi như khách vãng lai (bỏ qua token để không bị chặn 401)
+            if (token != null && isPublicGetRequest(request)) {
+                try {
+                    jwtDecoder.decode(token);
+                } catch (Exception e) {
+                    return null;
+                }
+            }
+
+            return token;
         };
     }
 
@@ -91,7 +129,8 @@ public class SecurityConfiguration {
             HttpSecurity http,
             DaoAuthenticationProvider authenticationProvider,
             CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
-            CustomAccessDeniedHandler customAccessDeniedHandler
+            CustomAccessDeniedHandler customAccessDeniedHandler,
+            BearerTokenResolver bearerTokenResolver
     ) throws Exception {
 
         http
@@ -109,13 +148,17 @@ public class SecurityConfiguration {
                                 "/api/v1/auth/forgot-password",
                                 "/ws/**"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/jobs/hr").authenticated()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/v1/industries",
                                 "/api/v1/industries/**",
                                 "/api/v1/specializations",
                                 "/api/v1/specializations/**",
                                 "/api/v1/jobs",
-                                "/api/v1/jobs/**"
+                                "/api/v1/jobs/**",
+                                "/api/v1/skills",
+                                "/api/v1/skills/**",
+                                "/api/v1/companies/*"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
@@ -127,8 +170,7 @@ public class SecurityConfiguration {
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
                         .authenticationEntryPoint(customAuthenticationEntryPoint)
-
-                        .bearerTokenResolver(bearerTokenResolver())
+                        .bearerTokenResolver(bearerTokenResolver)
                 )
                 .formLogin(form -> form.disable())
                 .httpBasic(httpBasic -> httpBasic.disable())

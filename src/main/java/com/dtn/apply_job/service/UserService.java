@@ -12,10 +12,10 @@ import com.dtn.apply_job.domain.response.user.ResUserDTO;
 import com.dtn.apply_job.exception.EmailExistedException;
 import com.dtn.apply_job.exception.IdInvalidException;
 import com.dtn.apply_job.exception.InvalidRequestException;
+import com.dtn.apply_job.mapper.UserMapper;
 import com.dtn.apply_job.repository.*;
 import com.dtn.apply_job.security.SecurityUtil;
 import com.dtn.apply_job.util.constant.enums.ERole;
-import com.dtn.apply_job.mapper.UserMapper;
 import jakarta.persistence.criteria.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -106,7 +106,7 @@ public class UserService {
                 .orElseThrow(() -> new IdInvalidException("Không tìm thấy người dùng với id " + id + "!"));
 
         String email = SecurityUtil.getCurrentUser()
-                .orElseThrow(() -> new AccessDeniedException("Vui lòng đăng nhập!"));
+                .orElseThrow(() -> new AccessDeniedException("Please log in to continue!"));
         User currentUser = userRepository.findByEmail(email);
 
         boolean isAdmin = currentUser.getRoles().stream()
@@ -122,7 +122,7 @@ public class UserService {
     @Transactional
     public void handleUpdateUserStatus(UUID targetUserId, ReqUpdateUserStatusDTO reqDTO) throws IdInvalidException {
         User targetUser = this.userRepository.findById(targetUserId)
-                .orElseThrow(() -> new IdInvalidException("Người dùng không tồn tại!"));
+                .orElseThrow(() -> new IdInvalidException("User not found!"));
 
         boolean wasActive = targetUser.getIsActive();
         boolean willBeActive = reqDTO.getIsActive();
@@ -131,8 +131,13 @@ public class UserService {
         this.userRepository.save(targetUser);
 
         if (wasActive == true && willBeActive == false) {
+            String lang = targetUser.getPreferredLanguage();
+            if (lang == null || lang.isBlank()) {
+                lang = "vi";
+            }
+            final String userLang = lang;
             new Thread(() -> {
-                emailService.sendAccountLockedEmail(targetUser.getEmail(), targetUser.getName());
+                emailService.sendAccountLockedEmail(targetUser.getEmail(), targetUser.getName(), userLang);
             }).start();
         }
     }
@@ -140,7 +145,7 @@ public class UserService {
     public ResUpdateUserDTO handleUpdateUser(UUID id, ReqUpdateUserDTO reqUser) throws IdInvalidException, InvalidRequestException {
 
         String email = SecurityUtil.getCurrentUser()
-                .orElseThrow(() -> new IdInvalidException("Vui lòng đăng nhập!"));
+                .orElseThrow(() -> new IdInvalidException("Please log in to continue!"));
         User loggedInUser = userRepository.findByEmail(email);
 
         boolean isAdmin = loggedInUser.getRoles().stream()
@@ -187,7 +192,7 @@ public class UserService {
     @Transactional
     public void assignCompanyToCurrentUser(UUID companyId) throws Exception {
         String email = SecurityUtil.getCurrentUser()
-                .orElseThrow(() -> new IdInvalidException("Vui lòng đăng nhập!"));
+                .orElseThrow(() -> new IdInvalidException("Please log in to continue!"));
         User currentUser = userRepository.findByEmail(email);
 
         Company company = companyRepository.findById(companyId)
@@ -201,6 +206,19 @@ public class UserService {
     }
 
     @Transactional
+    public void handleUpdatePreferredLanguage(String language) throws IdInvalidException {
+        if (language == null || (!language.equalsIgnoreCase("vi") && !language.equalsIgnoreCase("en"))) {
+            language = "vi";
+        }
+        String email = SecurityUtil.getCurrentUser()
+                .orElseThrow(() -> new IdInvalidException("Please log in to continue!"));
+        User user = userRepository.findByEmail(email);
+        if (user != null) {
+            user.setPreferredLanguage(language.toLowerCase());
+            userRepository.save(user);
+        }
+    }
+
     public ResUpdateUserDTO handleUpdateUserRoles(UUID targetUserId, ReqUpdateUserRoleDTO reqDTO) throws Exception, AccessDeniedException {
 
         String email = SecurityUtil.getCurrentUser().orElseThrow();
@@ -210,23 +228,23 @@ public class UserService {
                 .anyMatch(r -> r.getName().name().equals("ROLE_ADMIN"));
 
         if (!isAdmin && !currentUser.getId().equals(targetUserId)) {
-            throw new Exception("Lỗi bảo mật: Bạn không có quyền thay đổi quyền truy cập của người khác!");
+            throw new Exception("Security error: You do not have permission to modify another user's roles!");
         }
 
         if (!isAdmin) {
             boolean wantsAdminRole = reqDTO.getRoles().contains(ERole.ADMIN);
             if (wantsAdminRole) {
-                throw new AccessDeniedException("Lỗi bảo mật: Bạn không có quyền thay đổi quyền truy cập của người khác!");
+                throw new AccessDeniedException("Security error: You do not have permission to modify another user's roles!");
             }
         }
 
         User targetUser = userRepository.findById(targetUserId)
-                .orElseThrow(() -> new IdInvalidException("Không tìm thấy người dùng!"));
+                .orElseThrow(() -> new IdInvalidException("User not found!"));
 
         targetUser.getRoles().clear();
         for (ERole roleName : reqDTO.getRoles()) {
             Role role = roleRepository.findByName(roleName)
-                    .orElseThrow(() -> new IdInvalidException("Quyền không hợp lệ: " + roleName));
+                    .orElseThrow(() -> new IdInvalidException("Invalid role: " + roleName));
             targetUser.getRoles().add(role);
         }
 
@@ -264,12 +282,12 @@ public class UserService {
             throw new Exception("Mật khẩu mới và xác nhận mật khẩu không khớp!");
         }
 
-        String email = SecurityUtil.getCurrentUser().orElseThrow(() -> new IdInvalidException("Vui lòng đăng nhập!"));
+        String email = SecurityUtil.getCurrentUser().orElseThrow(() -> new IdInvalidException("Please log in to continue!"));
         User currentUser = userRepository.findByEmail(email);
 
         boolean isOldPasswordCorrect = passwordEncoder.matches(reqDTO.getOldPassword(), currentUser.getPassword());
         if (!isOldPasswordCorrect) {
-            throw new Exception("Mật khẩu hiện tại không chính xác!");
+            throw new Exception("Current password is incorrect!");
         }
 
         currentUser.setPassword(passwordEncoder.encode(reqDTO.getNewPassword()));

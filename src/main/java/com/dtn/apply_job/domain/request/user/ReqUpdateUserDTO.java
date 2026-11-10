@@ -18,4 +18,5 @@ public class ReqUpdateUserDTO {
     int age;
     GenderEnum gender;
     String address;
+    String preferredLanguage;
 }

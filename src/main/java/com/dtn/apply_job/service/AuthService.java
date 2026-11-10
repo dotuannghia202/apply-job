@@ -1,6 +1,7 @@
 package com.dtn.apply_job.service;
 
 import com.dtn.apply_job.domain.Role;
+import com.dtn.apply_job.util.LanguageUtil;
 import com.dtn.apply_job.domain.User;
 import com.dtn.apply_job.domain.request.auth.ReqRegisterDTO;
 import com.dtn.apply_job.exception.EmailExistedException;
@@ -66,17 +67,19 @@ public class AuthService {
         Role userRole = roleRepository.findByName(ERole.CANDIDATE)
                 .orElseThrow(() -> new RuntimeException("Role CANDIDATE not found."));
 
+        String currentLang = LanguageUtil.getCurrentLanguage();
         User newUser = User.builder()
                 .email(payload.getEmail())
                 .name(payload.getName())
                 .password(passwordEncoder.encode(rawPassword))
                 .isActive(true)
+                .preferredLanguage(currentLang)
                 .build();
         newUser.getRoles().add(userRole);
 
         userRepository.save(newUser);
 
-        emailService.sendPasswordEmail(payload.getEmail(), rawPassword);
+        emailService.sendPasswordEmail(payload.getEmail(), rawPassword, currentLang);
     }
 
     @Transactional
@@ -90,7 +93,11 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(newRandomPassword));
         userRepository.save(user);
 
-        emailService.sendResetPasswordEmail(email, newRandomPassword);
+        String lang = user.getPreferredLanguage();
+        if (lang == null || lang.isBlank()) {
+            lang = LanguageUtil.getCurrentLanguage();
+        }
+        emailService.sendResetPasswordEmail(email, newRandomPassword, lang);
     }
 
     @Transactional

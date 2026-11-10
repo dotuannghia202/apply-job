@@ -31,9 +31,9 @@ public class GlobalException {
     public ResponseEntity<RestRespon<Object>> handleUnauthorizedException(Exception ex) {
         RestRespon<Object> res = new RestRespon<>();
         res.setStatusCode(HttpStatus.UNAUTHORIZED.value());
-        res.setError(ex.getClass().getSimpleName());
+        res.setError("UNAUTHORIZED");
 
-        res.setMessage("Tài khoản hoặc mật khẩu không chính xác!");
+        res.setMessage("Invalid username or password!");
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(res);
     }
@@ -85,7 +85,7 @@ public class GlobalException {
         res.setMessage(
                 (message != null && !message.isBlank())
                         ? message
-                        : "Tải lên tệp tin thất bại!"
+                        : "File upload failed!"
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
     }
@@ -96,7 +96,7 @@ public class GlobalException {
         RestRespon<Object> res = new RestRespon<>();
         res.setStatusCode(HttpStatus.NOT_FOUND.value());
         res.setError("RESOURCE_NOT_FOUND");
-        res.setMessage("Đường dẫn không tồn tại");
+        res.setMessage("Resource path not found");
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(res);
     }
 
@@ -116,7 +116,7 @@ public class GlobalException {
         res.setError(ex.getClass().getSimpleName());
 
         Map<String, Object> errorBody = new HashMap<>();
-        errorBody.put("message", "Dữ liệu đầu vào không hợp lệ");
+        errorBody.put("message", "Invalid request body format");
 
         Throwable cause = ex.getCause();
         if (cause instanceof InvalidFormatException invalidFormatException) {
@@ -129,20 +129,20 @@ public class GlobalException {
                 String allowedValues = Arrays.toString(invalidFormatException.getTargetType().getEnumConstants());
                 errorBody.put("field", fieldName);
                 errorBody.put("message", String.format(
-                        "Giá trị không hợp lệ cho '%s'. Các giá trị được phép: %s",
+                        "Invalid value for '%s'. Allowed values: %s",
                         fieldName,
                         allowedValues
                 ));
             } else if (Instant.class.equals(invalidFormatException.getTargetType())) {
                 errorBody.put("field", fieldName);
                 errorBody.put("message", String.format(
-                        "Giá trị không hợp lệ cho '%s'. Định dạng ngày giờ mong muốn ISO-8601, ví dụ: 2026-05-11T00:00:00Z",
+                        "Invalid value for '%s'. Expected ISO-8601 date format, e.g. 2026-05-11T00:00:00Z",
                         fieldName
                 ));
             } else {
                 errorBody.put("field", fieldName);
                 errorBody.put("message", String.format(
-                        "Giá trị không hợp lệ cho '%s'. Kiểu dữ liệu mong muốn: %s",
+                        "Invalid value for '%s'. Expected type: %s",
                         fieldName,
                         invalidFormatException.getTargetType() != null
                                 ? invalidFormatException.getTargetType().getSimpleName()
@@ -161,7 +161,7 @@ public class GlobalException {
         RestRespon<Object> res = new RestRespon<>();
         res.setStatusCode(HttpStatus.FORBIDDEN.value());
         res.setError("ACCOUNT_LOCKED");
-        res.setMessage("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ với Quản trị viên!");
+        res.setMessage("Your account has been locked. Please contact the Administrator!");
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(res);
     }
 

@@ -30,7 +30,7 @@ public class SpecializationController {
 
     @PostMapping("/specializations")
     @PreAuthorize("hasRole('ADMIN')")
-    @ApiMessage("Tạo chuyên ngành thành công")
+    @ApiMessage("Specialization created successfully")
     public ResponseEntity<ResSpecializationDTO> createSpecialization(@Valid @RequestBody ReqCreateSpecializationDTO reqCreateSpecializationDTO)
             throws IdInvalidException {
         ResSpecializationDTO newSpecialization = this.specializationService.handleCreateSpecialization(reqCreateSpecializationDTO);
@@ -39,7 +39,7 @@ public class SpecializationController {
 
     @PutMapping("/specializations/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @ApiMessage("Cập nhật chuyên ngành thành công")
+    @ApiMessage("Specialization updated successfully")
     public ResponseEntity<Specialization> updateSpecialization(
             @PathVariable UUID id,
             @Valid @RequestBody Specialization specialization
@@ -50,21 +50,21 @@ public class SpecializationController {
 
     @DeleteMapping("/specializations/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @ApiMessage("Xóa chuyên ngành thành công")
+    @ApiMessage("Specialization deleted successfully")
     public ResponseEntity<Void> deleteSpecialization(@PathVariable UUID id) throws IdInvalidException {
         this.specializationService.handleDeleteSpecialization(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     @GetMapping("/specializations/{id}")
-    @ApiMessage("Lấy thông tin chuyên ngành thành công")
+    @ApiMessage("Specialization details retrieved successfully")
     public ResponseEntity<ResSpecializationDTO> getSpecialization(@PathVariable UUID id) throws IdInvalidException {
         ResSpecializationDTO specialization = this.specializationService.handleGetSpecializationById(id);
         return ResponseEntity.status(HttpStatus.OK).body(specialization);
     }
 
     @GetMapping("/specializations")
-    @ApiMessage("Lấy danh sách chuyên ngành thành công")
+    @ApiMessage("Specializations retrieved successfully")
     public ResponseEntity<ResultPaginationDTO> getAllSpecializations(
             @Filter Specification<Specialization> spec,
             Pageable pageable,
@@ -75,7 +75,7 @@ public class SpecializationController {
     }
 
     @GetMapping("/specializations/by-industry/{industryId}")
-    @ApiMessage("Lấy danh sách chuyên ngành theo mã ngành thành công")
+    @ApiMessage("Specializations by industry retrieved successfully")
     public ResponseEntity<List<ResSpecializationByIndustryId>> getSpecializationsByIndustryId(
             @PathVariable UUID industryId
     ) throws IdInvalidException {

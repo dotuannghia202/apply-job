@@ -91,7 +91,7 @@ public class NotificationService {
 
     public ResultPaginationDTO getMyNotifications(Boolean isRead, Pageable pageable, ERole role) throws Exception {
         String email = SecurityUtil.getCurrentUser()
-                .orElseThrow(() -> new IdInvalidException("Vui lòng đăng nhập!"));
+                .orElseThrow(() -> new IdInvalidException("Please log in to continue!"));
         User currentUser = userRepository.findByEmail(email);
 
         Page<Notification> pageNotif;
@@ -131,7 +131,7 @@ public class NotificationService {
 
         
         String email = SecurityUtil.getCurrentUser()
-                .orElseThrow(() -> new IdInvalidException("Vui lòng đăng nhập!"));
+                .orElseThrow(() -> new IdInvalidException("Please log in to continue!"));
 
         
         if (!notif.getRecipient().getEmail().equals(email)) {
@@ -150,7 +150,7 @@ public class NotificationService {
     @Transactional
     public void markAllAsRead(ERole role) throws Exception {
         String email = SecurityUtil.getCurrentUser()
-                .orElseThrow(() -> new IdInvalidException("Vui lòng đăng nhập!"));
+                .orElseThrow(() -> new IdInvalidException("Please log in to continue!"));
         User currentUser = userRepository.findByEmail(email);
 
         

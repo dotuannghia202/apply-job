@@ -29,6 +29,7 @@ public class ResLoginDTO {
         List<String> roles;
         String avatarUrl;
         Boolean isGmailLinked;
+        String preferredLanguage;
         CompanyInfo company;
 
         @Data

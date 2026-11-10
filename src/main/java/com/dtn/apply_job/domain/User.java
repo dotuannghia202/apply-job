@@ -52,6 +52,10 @@ public class User {
     @Column(name = "is_active", nullable = false)
     Boolean isActive = true;
 
+    @Builder.Default
+    @Column(name = "preferred_language", length = 10)
+    String preferredLanguage = "vi";
+
     @Column(columnDefinition = "TEXT")
     String refreshToken;
 

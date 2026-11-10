@@ -25,28 +25,28 @@ public class RoleController {
     }
 
     @PostMapping("/roles")
-    @ApiMessage("Tạo vai trò thành công")
+    @ApiMessage("Role created successfully")
     public ResponseEntity<Role> createRole(@RequestBody Role role) throws NameExistedException {
         Role newRole = this.roleService.handleCreateRole(role);
         return ResponseEntity.status(HttpStatus.CREATED).body(newRole);
     }
 
     @PutMapping("/roles/{id}")
-    @ApiMessage("Cập nhật vai trò thành công")
+    @ApiMessage("Role updated successfully")
     public ResponseEntity<Role> updateRole(@PathVariable UUID id, @RequestBody Role role) throws IdInvalidException {
         Role updatedRole = this.roleService.handleUpdateRole(id, role);
         return ResponseEntity.status(HttpStatus.OK).body(updatedRole);
     }
 
     @GetMapping("/roles/{id}")
-    @ApiMessage("Lấy thông tin vai trò thành công")
+    @ApiMessage("Role details retrieved successfully")
     public ResponseEntity<Role> getRole(@PathVariable UUID id) throws IdInvalidException {
         Role role = this.roleService.handleGetRoleById(id);
         return ResponseEntity.status(HttpStatus.OK).body(role);
     }
 
     @GetMapping("/roles")
-    @ApiMessage("Lấy danh sách vai trò thành công")
+    @ApiMessage("Roles retrieved successfully")
     public ResponseEntity<ResultPaginationDTO> getAllRoles(
             @Filter Specification<Role> spec,
             Pageable pageable
@@ -56,7 +56,7 @@ public class RoleController {
     }
 
     @DeleteMapping("/roles/{id}")
-    @ApiMessage("Xóa vai trò thành công")
+    @ApiMessage("Role deleted successfully")
     public ResponseEntity<Void> deleteRole(@PathVariable UUID id) throws IdInvalidException {
         this.roleService.handleDeleteRole(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();

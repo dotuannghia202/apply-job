@@ -20,21 +20,21 @@ public class InterviewController {
 
     @GetMapping("/{sessionId}")
     @PreAuthorize("isAuthenticated()")
-    @ApiMessage("Lấy thông tin buổi phỏng vấn thành công")
+    @ApiMessage("Interview session retrieved successfully")
     public ResponseEntity<ResInterviewSessionDTO> getSession(@PathVariable UUID sessionId) throws Exception {
         return ResponseEntity.ok(interviewService.getSessionDetail(sessionId));
     }
 
     @GetMapping("/by-application/{applicationId}")
     @PreAuthorize("isAuthenticated()")
-    @ApiMessage("Lấy thông tin buổi phỏng vấn theo hồ sơ thành công")
+    @ApiMessage("Interview session by application retrieved successfully")
     public ResponseEntity<ResInterviewSessionDTO> getSessionByApplication(@PathVariable UUID applicationId) throws Exception {
         return ResponseEntity.ok(interviewService.getSessionByApplication(applicationId));
     }
 
     @PostMapping("/{sessionId}/start")
     @PreAuthorize("hasAnyRole('CANDIDATE', 'ROLE_CANDIDATE', 'ADMIN', 'ROLE_ADMIN')")
-    @ApiMessage("Bắt đầu buổi phỏng vấn")
+    @ApiMessage("Interview session started successfully")
     public ResponseEntity<Void> startInterview(@PathVariable UUID sessionId) throws Exception {
         interviewService.startSession(sessionId);
         return ResponseEntity.ok().build();
@@ -42,7 +42,7 @@ public class InterviewController {
 
     @PostMapping("/{sessionId}/submit")
     @PreAuthorize("hasAnyRole('CANDIDATE', 'ROLE_CANDIDATE', 'ADMIN', 'ROLE_ADMIN')")
-    @ApiMessage("Nộp bài phỏng vấn thành công")
+    @ApiMessage("Interview session submitted successfully")
     public ResponseEntity<Void> submitInterview(
             @PathVariable UUID sessionId,
             @RequestParam("video") MultipartFile video,

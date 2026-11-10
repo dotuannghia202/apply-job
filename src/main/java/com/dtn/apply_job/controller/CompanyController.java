@@ -52,7 +52,7 @@ public class CompanyController {
 
     @GetMapping("/companies")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYER')")
-    @ApiMessage("Lấy danh sách công ty thành công")
+    @ApiMessage("Companies retrieved successfully")
     public ResponseEntity<ResultPaginationDTO> getAllCompanies(
             @Filter Specification<Company> spec,
             Pageable pageable,
@@ -70,7 +70,7 @@ public class CompanyController {
 
     @PutMapping("companies/{id}")
     @PreAuthorize("hasRole('EMPLOYER')")
-    @ApiMessage("Cập nhật thông tin công ty thành công")
+    @ApiMessage("Company updated successfully")
     public ResponseEntity<ResCompanyDTO> updateCompany(
             @PathVariable UUID id,
             @Valid @RequestBody ReqUpdateCompanyDTO reqDTO) throws Exception {
@@ -81,7 +81,7 @@ public class CompanyController {
 
     @PutMapping("companies/{id}/approve")
     @PreAuthorize("hasRole('ADMIN')")
-    @ApiMessage("Cập nhật trạng thái duyệt công ty thành công")
+    @ApiMessage("Company approval status updated successfully")
     public ResponseEntity<Void> approveCompany(
             @PathVariable("id") UUID companyId,
             @RequestParam("isApproved") boolean isApproved) throws Exception {
@@ -92,14 +92,14 @@ public class CompanyController {
 
     @GetMapping("/companies/dashboard-stats")
     @PreAuthorize("hasRole('ADMIN')")
-    @ApiMessage("Lấy thống kê trạng thái công ty")
+    @ApiMessage("Company status statistics retrieved successfully")
     public ResponseEntity<ResCompanyStatsDTO> getCompanyStats() {
         return ResponseEntity.ok(companyService.getCompanyDashboardStats());
     }
 
     @GetMapping("/my-company")
     @PreAuthorize("hasRole('EMPLOYER')")
-    @ApiMessage("Lấy hồ sơ công ty của tôi")
+    @ApiMessage("My company profile retrieved successfully")
     public ResponseEntity<ResCompanyDTO> getMyCompany() throws Exception {
         return ResponseEntity.ok(companyService.handleGetMyCompany());
     }
@@ -107,7 +107,7 @@ public class CompanyController {
 
     @PutMapping("companies/{id}/suspend")
     @PreAuthorize("hasRole('ADMIN')")
-    @ApiMessage("Cập nhật trạng thái đình chỉ công ty thành công")
+    @ApiMessage("Company suspension status updated successfully")
     public ResponseEntity<Void> toggleSuspendCompany(
             @PathVariable("id") UUID companyId,
             @RequestParam("isSuspended") boolean isSuspended) throws Exception {
@@ -117,7 +117,7 @@ public class CompanyController {
     }
 
     @GetMapping("companies/{id}")
-    @ApiMessage("Lấy chi tiết công ty thành công")
+    @ApiMessage("Company details retrieved successfully")
     public ResponseEntity<ResCompanyDTO> getCompanyById(@PathVariable("id") UUID id) throws Exception {
         return ResponseEntity.ok(companyService.handleGetCompanyById(id));
     }

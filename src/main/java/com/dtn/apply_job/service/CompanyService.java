@@ -57,11 +57,11 @@ public class CompanyService {
 
         
         String currentUserEmail = SecurityUtil.getCurrentUser()
-                .orElseThrow(() -> new IdInvalidException("Vui lòng đăng nhập để tạo công ty!"));
+                .orElseThrow(() -> new IdInvalidException("Please log in to create a company!"));
 
         User currentUser = this.userRepository.findByEmail(currentUserEmail);
         if (currentUser == null) {
-            throw new IdInvalidException("Tài khoản không tồn tại!");
+            throw new IdInvalidException("Account does not exist!");
         }
 
         
@@ -96,7 +96,7 @@ public class CompanyService {
     public ResCompanyDTO handleUpdateCompany(UUID id, ReqUpdateCompanyDTO reqDTO) throws Exception {
         
         String email = SecurityUtil.getCurrentUser()
-                .orElseThrow(() -> new IdInvalidException("Vui lòng đăng nhập!"));
+                .orElseThrow(() -> new IdInvalidException("Please log in to continue!"));
         User currentUser = userRepository.findByEmail(email);
 
         
@@ -214,11 +214,16 @@ public class CompanyService {
             );
 
             
+            String lang = primaryEmployer.getPreferredLanguage();
+            if (lang == null || lang.isBlank()) {
+                lang = "vi";
+            }
+            final String employerLang = lang;
             new Thread(() -> {
                 if (isApproved) {
-                    emailService.sendCompanyApprovedEmail(primaryEmployer.getEmail(), company.getName());
+                    emailService.sendCompanyApprovedEmail(primaryEmployer.getEmail(), company.getName(), employerLang);
                 } else {
-                    emailService.sendCompanyRejectedEmail(primaryEmployer.getEmail(), company.getName());
+                    emailService.sendCompanyRejectedEmail(primaryEmployer.getEmail(), company.getName(), employerLang);
                 }
             }).start();
         }
@@ -312,7 +317,7 @@ public class CompanyService {
 
     public ResCompanyDTO handleGetMyCompany() throws Exception {
         String email = SecurityUtil.getCurrentUser()
-                .orElseThrow(() -> new IdInvalidException("Vui lòng đăng nhập!"));
+                .orElseThrow(() -> new IdInvalidException("Please log in to continue!"));
         User currentUser = userRepository.findByEmail(email);
 
         if (currentUser.getCompany() == null) {

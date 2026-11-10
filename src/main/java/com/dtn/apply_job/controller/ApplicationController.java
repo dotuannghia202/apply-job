@@ -39,7 +39,7 @@ public class ApplicationController {
     }
 
     @GetMapping
-    @ApiMessage("Lấy danh sách ứng tuyển thành công")
+    @ApiMessage("Applications retrieved successfully")
     @PreAuthorize("hasAnyRole('CANDIDATE', 'EMPLOYER', 'ADMIN')")
     public ResponseEntity<ResultPaginationDTO> getAll(
             @Filter Specification<Application> spec,
@@ -51,14 +51,14 @@ public class ApplicationController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('CANDIDATE', 'EMPLOYER', 'ADMIN')")
-    @ApiMessage("Lấy chi tiết ứng tuyển thành công")
+    @ApiMessage("Application details retrieved successfully")
     public ResponseEntity<ResApplicationDTO> getById(@PathVariable UUID id) throws Exception {
         return ResponseEntity.ok(applicationService.handleGetAppById(id));
     }
 
     @PutMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('EMPLOYER', 'ADMIN')")
-    @ApiMessage("Cập nhật trạng thái ứng tuyển thành công!")
+    @ApiMessage("Application status updated successfully!")
     public ResponseEntity<ResUpdateApplicationDTO> updateStatus(
             @PathVariable UUID id,
             @Valid @RequestBody ReqUpdateApplicationStatusDTO reqDTO) throws Exception {
@@ -67,7 +67,7 @@ public class ApplicationController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('CANDIDATE')")
-    @ApiMessage("Cập nhật ứng tuyển thành công")
+    @ApiMessage("Application updated successfully")
     public ResponseEntity<ResApplicationDTO> updateAppByCandidate(
             @PathVariable UUID id,
             @Valid @RequestBody ReqUpdateAppByCandidateDTO reqDTO) throws Exception {
@@ -77,7 +77,7 @@ public class ApplicationController {
 
     @GetMapping("/hr")
     @PreAuthorize("hasAnyRole('EMPLOYER', 'ADMIN')")
-    @ApiMessage("Lấy danh sách hồ sơ ứng tuyển thành công")
+    @ApiMessage("Candidate applications retrieved successfully")
     public ResponseEntity<ResultPaginationDTO> getApplicationsForHr(
             @Filter Specification<Application> spec,
             Pageable pageable,

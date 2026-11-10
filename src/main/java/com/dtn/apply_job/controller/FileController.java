@@ -27,7 +27,7 @@ public class FileController {
 
 
     @PostMapping("/files")
-    @ApiMessage("Tải lên tập tin lên Cloudinary thành công")
+    @ApiMessage("File uploaded successfully")
     public ResponseEntity<ResUploadFileDTO> upload(
             @RequestParam("file") MultipartFile file,
             @RequestParam("folder") String folder) throws URISyntaxException, IOException, FileUploadException {
