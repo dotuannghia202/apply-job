@@ -20,10 +20,10 @@ import java.util.UUID;
 public class ResCreateJobDTO {
     UUID id;
 
-    @JsonProperty("name_vi")
+    @JsonProperty(value = "name_vi", access = JsonProperty.Access.WRITE_ONLY)
     String nameVi;
 
-    @JsonProperty("name_en")
+    @JsonProperty(value = "name_en", access = JsonProperty.Access.WRITE_ONLY)
     String nameEn;
 
     String location;
@@ -31,10 +31,10 @@ public class ResCreateJobDTO {
     int quantity;
     Set<LevelEnum> levels;
 
-    @JsonProperty("description_vi")
+    @JsonProperty(value = "description_vi", access = JsonProperty.Access.WRITE_ONLY)
     String descriptionVi;
 
-    @JsonProperty("description_en")
+    @JsonProperty(value = "description_en", access = JsonProperty.Access.WRITE_ONLY)
     String descriptionEn;
 
     Instant startDate;
@@ -44,11 +44,11 @@ public class ResCreateJobDTO {
     String createdBy;
 
     @Builder.Default
-    @JsonProperty("skills_vi")
+    @JsonProperty(value = "skills_vi", access = JsonProperty.Access.WRITE_ONLY)
     List<String> skillsVi = new ArrayList<>();
 
     @Builder.Default
-    @JsonProperty("skills_en")
+    @JsonProperty(value = "skills_en", access = JsonProperty.Access.WRITE_ONLY)
     List<String> skillsEn = new ArrayList<>();
 
     @JsonProperty("name")

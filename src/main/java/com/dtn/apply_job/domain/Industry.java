@@ -29,11 +29,11 @@ public class Industry {
     UUID id;
 
     @Column(name = "name_vi")
-    @JsonProperty("name_vi")
+    @JsonProperty(value = "name_vi", access = JsonProperty.Access.WRITE_ONLY)
     String nameVi;
 
     @Column(name = "name_en")
-    @JsonProperty("name_en")
+    @JsonProperty(value = "name_en", access = JsonProperty.Access.WRITE_ONLY)
     String nameEn;
 
     // 1 Ngành lớn có nhiều Mảng ngành (Specialization)

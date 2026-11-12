@@ -28,11 +28,11 @@ public class Skill {
     UUID id;
 
     @Column(name = "name_vi")
-    @JsonProperty("name_vi")
+    @JsonProperty(value = "name_vi", access = JsonProperty.Access.WRITE_ONLY)
     String nameVi;
 
     @Column(name = "name_en")
-    @JsonProperty("name_en")
+    @JsonProperty(value = "name_en", access = JsonProperty.Access.WRITE_ONLY)
     String nameEn;
 
     // Quan hệ N-N ngược lại với bảng Job

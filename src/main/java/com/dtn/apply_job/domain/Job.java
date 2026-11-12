@@ -37,11 +37,11 @@ public class Job {
     UUID id;
 
     @Column(name = "name_vi", length = 255)
-    @JsonProperty("name_vi")
+    @JsonProperty(value = "name_vi", access = JsonProperty.Access.WRITE_ONLY)
     String nameVi;
 
     @Column(name = "name_en", length = 255)
-    @JsonProperty("name_en")
+    @JsonProperty(value = "name_en", access = JsonProperty.Access.WRITE_ONLY)
     String nameEn;
 
     String location;
@@ -72,11 +72,11 @@ public class Job {
     Set<LevelEnum> levels = new HashSet<>();
 
     @Column(name = "description_vi", columnDefinition = "TEXT")
-    @JsonProperty("description_vi")
+    @JsonProperty(value = "description_vi", access = JsonProperty.Access.WRITE_ONLY)
     String descriptionVi;
 
     @Column(name = "description_en", columnDefinition = "TEXT")
-    @JsonProperty("description_en")
+    @JsonProperty(value = "description_en", access = JsonProperty.Access.WRITE_ONLY)
     String descriptionEn;
 
     @Builder.Default
@@ -86,7 +86,7 @@ public class Job {
             joinColumns = @JoinColumn(name = "job_id", nullable = false)
     )
     @Column(name = "requirement", length = 500)
-    @JsonProperty("requirements_vi")
+    @JsonProperty(value = "requirements_vi", access = JsonProperty.Access.WRITE_ONLY)
     List<String> requirementsVi = new ArrayList<>();
 
     @Builder.Default
@@ -96,7 +96,7 @@ public class Job {
             joinColumns = @JoinColumn(name = "job_id", nullable = false)
     )
     @Column(name = "requirement", length = 500)
-    @JsonProperty("requirements_en")
+    @JsonProperty(value = "requirements_en", access = JsonProperty.Access.WRITE_ONLY)
     List<String> requirementsEn = new ArrayList<>();
 
     Instant startDate;
@@ -139,7 +139,7 @@ public class Job {
             joinColumns = @JoinColumn(name = "job_id", nullable = false)
     )
     @Column(name = "benefit", length = 255)
-    @JsonProperty("benefits_vi")
+    @JsonProperty(value = "benefits_vi", access = JsonProperty.Access.WRITE_ONLY)
     List<String> benefitsVi = new ArrayList<>();
 
     @Builder.Default
@@ -149,15 +149,15 @@ public class Job {
             joinColumns = @JoinColumn(name = "job_id", nullable = false)
     )
     @Column(name = "benefit", length = 255)
-    @JsonProperty("benefits_en")
+    @JsonProperty(value = "benefits_en", access = JsonProperty.Access.WRITE_ONLY)
     List<String> benefitsEn = new ArrayList<>();
 
     @Column(name = "working_hours_vi", length = 255)
-    @JsonProperty("working_hours_vi")
+    @JsonProperty(value = "working_hours_vi", access = JsonProperty.Access.WRITE_ONLY)
     String workingHoursVi;
 
     @Column(name = "working_hours_en", length = 255)
-    @JsonProperty("working_hours_en")
+    @JsonProperty(value = "working_hours_en", access = JsonProperty.Access.WRITE_ONLY)
     String workingHoursEn;
 
     // --- Resolved / Backward Compatibility Getters & Setters ---

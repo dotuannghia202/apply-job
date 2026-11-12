@@ -6,6 +6,7 @@ import com.dtn.apply_job.domain.InterviewSession;
 import com.dtn.apply_job.domain.Resume;
 import com.dtn.apply_job.domain.request.job.ReqGenerateJdDTO;
 import com.dtn.apply_job.domain.response.job.ResGenerateJdDTO;
+import com.dtn.apply_job.exception.InvalidRequestException;
 import com.dtn.apply_job.repository.ApplicationRepository;
 import com.dtn.apply_job.repository.InterviewQuestionRepository;
 import com.dtn.apply_job.repository.InterviewSessionRepository;
@@ -176,7 +177,16 @@ public class AiPythonService {
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
 
-        ResponseEntity<Map> response = restTemplate.postForEntity(pythonApiUrl, requestEntity, Map.class);
+        ResponseEntity<Map> response;
+        try {
+            response = restTemplate.postForEntity(pythonApiUrl, requestEntity, Map.class);
+        } catch (HttpStatusCodeException e) {
+            log.error(">>> Error from Python AI generate-jd: {}", e.getResponseBodyAsString());
+            throw new InvalidRequestException("AI service is currently busy or experiencing high demand. Please try again shortly!");
+        } catch (ResourceAccessException e) {
+            log.error(">>> Connection error to Python AI: {}", e.getMessage());
+            throw new InvalidRequestException("Cannot connect to AI service (Port 8000). Please ensure the AI service is running!");
+        }
         Map<String, Object> responseBody = response.getBody();
 
         if (responseBody == null) {

@@ -116,7 +116,7 @@ public class SpecializationService {
         return specializationMapper.toResSpecializationDTO(specialization);
     }
 
-    public ResultPaginationDTO handleGetAllSpecializations(Specification<Specialization> spec, Pageable pageable, String name) {
+    public ResultPaginationDTO handleGetAllSpecializations(Specification<Specialization> spec, Pageable pageable, String name, UUID industryId) {
         Specification<Specialization> finalSpec = spec;
         if (hasText(name)) {
             Specification<Specialization> nameSpec = (root, query, cb) ->
@@ -125,6 +125,12 @@ public class SpecializationService {
                             cb.like(cb.lower(root.get("nameEn")), "%" + name.trim().toLowerCase() + "%")
                     );
             finalSpec = finalSpec == null ? nameSpec : finalSpec.and(nameSpec);
+        }
+
+        if (industryId != null) {
+            Specification<Specialization> industrySpec = (root, query, cb) ->
+                    cb.equal(root.get("industry").get("id"), industryId);
+            finalSpec = finalSpec == null ? industrySpec : finalSpec.and(industrySpec);
         }
 
         Page<Specialization> specializationPage = this.specializationRepository.findAll(finalSpec, pageable);

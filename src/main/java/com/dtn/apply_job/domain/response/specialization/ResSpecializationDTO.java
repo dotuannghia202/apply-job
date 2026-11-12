@@ -16,10 +16,10 @@ import java.util.UUID;
 public class ResSpecializationDTO {
     UUID id;
 
-    @JsonProperty("name_vi")
+    @JsonProperty(value = "name_vi", access = JsonProperty.Access.WRITE_ONLY)
     String nameVi;
 
-    @JsonProperty("name_en")
+    @JsonProperty(value = "name_en", access = JsonProperty.Access.WRITE_ONLY)
     String nameEn;
 
     Instant createdAt;
@@ -45,10 +45,10 @@ public class ResSpecializationDTO {
     public static class IndustryInfo {
         UUID id;
 
-        @JsonProperty("name_vi")
+        @JsonProperty(value = "name_vi", access = JsonProperty.Access.WRITE_ONLY)
         String nameVi;
 
-        @JsonProperty("name_en")
+        @JsonProperty(value = "name_en", access = JsonProperty.Access.WRITE_ONLY)
         String nameEn;
 
         @JsonProperty("name")

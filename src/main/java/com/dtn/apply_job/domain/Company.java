@@ -37,11 +37,11 @@ public class Company {
     CompanyStatus status = CompanyStatus.PENDING;
 
     @Column(name = "description_vi", columnDefinition = "TEXT")
-    @JsonProperty("description_vi")
+    @JsonProperty(value = "description_vi", access = JsonProperty.Access.WRITE_ONLY)
     String descriptionVi;
 
     @Column(name = "description_en", columnDefinition = "TEXT")
-    @JsonProperty("description_en")
+    @JsonProperty(value = "description_en", access = JsonProperty.Access.WRITE_ONLY)
     String descriptionEn;
 
     @NotBlank(message = "Field address is required!")

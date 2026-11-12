@@ -11,6 +11,7 @@ import com.dtn.apply_job.service.SpecializationService;
 import com.turkraft.springfilter.boot.Filter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
@@ -68,9 +70,18 @@ public class SpecializationController {
     public ResponseEntity<ResultPaginationDTO> getAllSpecializations(
             @Filter Specification<Specialization> spec,
             Pageable pageable,
-            @RequestParam(required = false) String name
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String industryId
     ) {
-        ResultPaginationDTO result = this.specializationService.handleGetAllSpecializations(spec, pageable, name);
+        UUID targetIndustryId = null;
+        if (industryId != null && !industryId.isBlank()) {
+            try {
+                targetIndustryId = UUID.fromString(industryId.trim());
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        log.info(">>> GET /specializations - name: {}, industryId: {}", name, targetIndustryId);
+        ResultPaginationDTO result = this.specializationService.handleGetAllSpecializations(spec, pageable, name, targetIndustryId);
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
 

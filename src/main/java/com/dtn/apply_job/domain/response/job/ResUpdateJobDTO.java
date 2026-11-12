@@ -20,10 +20,10 @@ import java.util.UUID;
 public class ResUpdateJobDTO {
     UUID id;
 
-    @JsonProperty("name_vi")
+    @JsonProperty(value = "name_vi", access = JsonProperty.Access.WRITE_ONLY)
     String nameVi;
 
-    @JsonProperty("name_en")
+    @JsonProperty(value = "name_en", access = JsonProperty.Access.WRITE_ONLY)
     String nameEn;
 
     String location;
@@ -32,18 +32,18 @@ public class ResUpdateJobDTO {
     Integer quantity;
     Set<LevelEnum> levels;
 
-    @JsonProperty("description_vi")
+    @JsonProperty(value = "description_vi", access = JsonProperty.Access.WRITE_ONLY)
     String descriptionVi;
 
-    @JsonProperty("description_en")
+    @JsonProperty(value = "description_en", access = JsonProperty.Access.WRITE_ONLY)
     String descriptionEn;
 
     @Builder.Default
-    @JsonProperty("requirements_vi")
+    @JsonProperty(value = "requirements_vi", access = JsonProperty.Access.WRITE_ONLY)
     List<String> requirementsVi = new ArrayList<>();
 
     @Builder.Default
-    @JsonProperty("requirements_en")
+    @JsonProperty(value = "requirements_en", access = JsonProperty.Access.WRITE_ONLY)
     List<String> requirementsEn = new ArrayList<>();
 
     Instant startDate;
@@ -53,33 +53,33 @@ public class ResUpdateJobDTO {
     String updatedBy;
 
     @Builder.Default
-    @JsonProperty("benefits_vi")
+    @JsonProperty(value = "benefits_vi", access = JsonProperty.Access.WRITE_ONLY)
     List<String> benefitsVi = new ArrayList<>();
 
     @Builder.Default
-    @JsonProperty("benefits_en")
+    @JsonProperty(value = "benefits_en", access = JsonProperty.Access.WRITE_ONLY)
     List<String> benefitsEn = new ArrayList<>();
 
-    @JsonProperty("working_hours_vi")
+    @JsonProperty(value = "working_hours_vi", access = JsonProperty.Access.WRITE_ONLY)
     String workingHoursVi;
 
-    @JsonProperty("working_hours_en")
+    @JsonProperty(value = "working_hours_en", access = JsonProperty.Access.WRITE_ONLY)
     String workingHoursEn;
 
     String companyName;
 
-    @JsonProperty("specialization_name_vi")
+    @JsonProperty(value = "specialization_name_vi", access = JsonProperty.Access.WRITE_ONLY)
     String specializationNameVi;
 
-    @JsonProperty("specialization_name_en")
+    @JsonProperty(value = "specialization_name_en", access = JsonProperty.Access.WRITE_ONLY)
     String specializationNameEn;
 
     @Builder.Default
-    @JsonProperty("skills_vi")
+    @JsonProperty(value = "skills_vi", access = JsonProperty.Access.WRITE_ONLY)
     List<String> skillsVi = new ArrayList<>();
 
     @Builder.Default
-    @JsonProperty("skills_en")
+    @JsonProperty(value = "skills_en", access = JsonProperty.Access.WRITE_ONLY)
     List<String> skillsEn = new ArrayList<>();
 
     @JsonProperty("name")

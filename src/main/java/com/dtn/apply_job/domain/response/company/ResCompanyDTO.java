@@ -21,10 +21,10 @@ public class ResCompanyDTO {
     String logo;
     String address;
 
-    @JsonProperty("description_vi")
+    @JsonProperty(value = "description_vi", access = JsonProperty.Access.WRITE_ONLY)
     String descriptionVi;
 
-    @JsonProperty("description_en")
+    @JsonProperty(value = "description_en", access = JsonProperty.Access.WRITE_ONLY)
     String descriptionEn;
 
     // Cột 2: EMPLOYER
