@@ -41,7 +41,11 @@ public class SpecializationService {
         String nameEn = payload.getNameEn() != null ? payload.getNameEn().trim() : null;
         boolean hasVi = nameVi != null && !nameVi.isBlank();
         boolean hasEn = nameEn != null && !nameEn.isBlank();
-        if (hasVi && !hasEn) {
+        if (hasVi && hasEn && nameVi.equalsIgnoreCase(nameEn)) {
+            var res = aiPythonService.autoDetectAndTranslate(nameVi);
+            nameVi = res.textVi();
+            nameEn = res.textEn();
+        } else if (hasVi && !hasEn) {
             var res = aiPythonService.autoDetectAndTranslate(nameVi);
             nameEn = res.textEn();
         } else if (!hasVi && hasEn) {
@@ -85,6 +89,21 @@ public class SpecializationService {
         if (reqSpecialization.getIndustry() != null && reqSpecialization.getIndustry().getId() != null) {
             targetIndustry = this.industryRepository.findById(reqSpecialization.getIndustry().getId())
                     .orElseThrow(() -> new IdInvalidException("Không tìm thấy mã ngành nghề"));
+        }
+
+        boolean hasVi = reqSpecialization.getNameVi() != null && !reqSpecialization.getNameVi().isBlank();
+        boolean hasEn = reqSpecialization.getNameEn() != null && !reqSpecialization.getNameEn().isBlank();
+
+        if (hasVi && hasEn && reqSpecialization.getNameVi().trim().equalsIgnoreCase(reqSpecialization.getNameEn().trim())) {
+            var res = aiPythonService.autoDetectAndTranslate(reqSpecialization.getNameVi().trim());
+            reqSpecialization.setNameVi(res.textVi());
+            reqSpecialization.setNameEn(res.textEn());
+        } else if (hasVi && !hasEn) {
+            var res = aiPythonService.autoDetectAndTranslate(reqSpecialization.getNameVi());
+            reqSpecialization.setNameEn(res.textEn());
+        } else if (!hasVi && hasEn) {
+            var res = aiPythonService.autoDetectAndTranslate(reqSpecialization.getNameEn());
+            reqSpecialization.setNameVi(res.textVi());
         }
 
         String targetNameVi = reqSpecialization.getNameVi() != null ? reqSpecialization.getNameVi().trim() : currentSpecialization.getNameVi();

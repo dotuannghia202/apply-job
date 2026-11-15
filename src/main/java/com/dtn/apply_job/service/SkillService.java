@@ -31,7 +31,12 @@ public class SkillService {
         String rawName = skill.getName();
         boolean hasVi = skill.getNameVi() != null && !skill.getNameVi().isBlank();
         boolean hasEn = skill.getNameEn() != null && !skill.getNameEn().isBlank();
-        if (hasVi && !hasEn) {
+
+        if (hasVi && hasEn && skill.getNameVi().trim().equalsIgnoreCase(skill.getNameEn().trim())) {
+            var res = aiPythonService.autoDetectAndTranslate(skill.getNameVi().trim());
+            skill.setNameVi(res.textVi());
+            skill.setNameEn(res.textEn());
+        } else if (hasVi && !hasEn) {
             var res = aiPythonService.autoDetectAndTranslate(skill.getNameVi());
             skill.setNameEn(res.textEn());
         } else if (!hasVi && hasEn) {
@@ -55,6 +60,21 @@ public class SkillService {
     public ResUpdateDTO handleUpdateSkill(UUID id, Skill skill) throws IdInvalidException, NameExistedException {
         Skill currentSkill = this.skillRepository.findById(id)
                 .orElseThrow(() -> new IdInvalidException("Không tìm thấy mã kỹ năng"));
+
+        boolean hasVi = skill.getNameVi() != null && !skill.getNameVi().isBlank();
+        boolean hasEn = skill.getNameEn() != null && !skill.getNameEn().isBlank();
+
+        if (hasVi && hasEn && skill.getNameVi().trim().equalsIgnoreCase(skill.getNameEn().trim())) {
+            var res = aiPythonService.autoDetectAndTranslate(skill.getNameVi().trim());
+            skill.setNameVi(res.textVi());
+            skill.setNameEn(res.textEn());
+        } else if (hasVi && !hasEn) {
+            var res = aiPythonService.autoDetectAndTranslate(skill.getNameVi());
+            skill.setNameEn(res.textEn());
+        } else if (!hasVi && hasEn) {
+            var res = aiPythonService.autoDetectAndTranslate(skill.getNameEn());
+            skill.setNameVi(res.textVi());
+        }
 
         if (skill.getNameVi() != null) {
             boolean isNameChanged = !skill.getNameVi().equals(currentSkill.getNameVi());
@@ -111,7 +131,7 @@ public class SkillService {
         return value != null && !value.trim().isEmpty();
     }
 
-    public void handleDeleteSkill(UUID id) {
+    public void handleDeleteSkill(UUID id) throws IdInvalidException {
         Optional<Skill> skillOptional = this.skillRepository.findById(id);
         if (skillOptional.isPresent()) {
             Skill currentSkill = skillOptional.get();
@@ -119,6 +139,8 @@ public class SkillService {
                 currentSkill.getJobs().forEach(job -> job.getSkills().remove(currentSkill));
             }
             this.skillRepository.delete(currentSkill);
+        } else {
+            throw new IdInvalidException("Skill is not existed!");
         }
     }
 }

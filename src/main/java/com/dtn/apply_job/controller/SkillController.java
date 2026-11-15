@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v1/skills")
 public class SkillController {
     private final SkillService skillService;
 
@@ -25,28 +25,28 @@ public class SkillController {
         this.skillService = skillService;
     }
 
-    @PostMapping("/skills")
+    @PostMapping
     @ApiMessage("Skill created successfully")
     public ResponseEntity<Skill> createSkill(@RequestBody Skill skill) throws NameExistedException {
         Skill newSkill = this.skillService.handleCreateSkill(skill);
         return ResponseEntity.status(HttpStatus.CREATED).body(newSkill);
     }
 
-    @PutMapping("/skills/{id}")
+    @PutMapping("/{id}")
     @ApiMessage("Skill updated successfully")
     public ResponseEntity<ResUpdateDTO> updateSkill(@PathVariable UUID id, @RequestBody Skill skill) throws IdInvalidException, NameExistedException {
         ResUpdateDTO result = this.skillService.handleUpdateSkill(id, skill);
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
 
-    @GetMapping("/skills/{id}")
+    @GetMapping("/{id}")
     @ApiMessage("Skill details retrieved successfully")
     public ResponseEntity<Skill> getSkill(@PathVariable UUID id) throws IdInvalidException {
         Skill skill = this.skillService.handleGetSkillById(id);
         return ResponseEntity.status(HttpStatus.OK).body(skill);
     }
 
-    @GetMapping("/skills")
+    @GetMapping()
     @ApiMessage("Skills retrieved successfully")
     public ResponseEntity<ResultPaginationDTO> getAllSkills(
             @Filter Specification<Skill> spec,
@@ -55,5 +55,12 @@ public class SkillController {
     ) {
         ResultPaginationDTO result = this.skillService.handleGetAllSkills(spec, pageable, name);
         return ResponseEntity.status(HttpStatus.OK).body(result);
+    }
+
+    @DeleteMapping("/{id}")
+    @ApiMessage("Skill deleted successfully!")
+    public ResponseEntity<Void> deleteSkill(@PathVariable UUID id) throws IdInvalidException {
+        skillService.handleDeleteSkill(id);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

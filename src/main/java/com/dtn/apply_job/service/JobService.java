@@ -549,7 +549,11 @@ public class JobService {
     private void translateAndSetTextField(String raw, String vi, String en, Consumer<String> setVi, Consumer<String> setEn) {
         boolean hasVi = vi != null && !vi.isBlank();
         boolean hasEn = en != null && !en.isBlank();
-        if (hasVi && !hasEn) {
+        if (hasVi && hasEn && vi.trim().equalsIgnoreCase(en.trim())) {
+            var res = aiPythonService.autoDetectAndTranslate(vi.trim());
+            setVi.accept(res.textVi());
+            setEn.accept(res.textEn());
+        } else if (hasVi && !hasEn) {
             var res = aiPythonService.autoDetectAndTranslate(vi);
             setVi.accept(res.textVi());
             setEn.accept(res.textEn());
@@ -567,7 +571,11 @@ public class JobService {
     private void translateAndSetBatchField(List<String> raw, List<String> vi, List<String> en, Consumer<List<String>> setVi, Consumer<List<String>> setEn) {
         boolean hasVi = vi != null && !vi.isEmpty();
         boolean hasEn = en != null && !en.isEmpty();
-        if (hasVi && !hasEn) {
+        if (hasVi && hasEn && vi.equals(en)) {
+            var res = aiPythonService.autoDetectAndTranslateBatch(vi);
+            setVi.accept(res.textsVi());
+            setEn.accept(res.textsEn());
+        } else if (hasVi && !hasEn) {
             var res = aiPythonService.autoDetectAndTranslateBatch(vi);
             setVi.accept(res.textsVi());
             setEn.accept(res.textsEn());

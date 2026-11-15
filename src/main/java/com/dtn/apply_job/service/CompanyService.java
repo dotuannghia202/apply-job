@@ -118,7 +118,11 @@ public class CompanyService {
     private void applyBilingualDescription(Company company, String rawDesc, String descVi, String descEn) {
         boolean hasVi = descVi != null && !descVi.isBlank();
         boolean hasEn = descEn != null && !descEn.isBlank();
-        if (hasVi && !hasEn) {
+        if (hasVi && hasEn && descVi.trim().equalsIgnoreCase(descEn.trim())) {
+            var translation = aiPythonService.autoDetectAndTranslate(descVi.trim());
+            company.setDescriptionVi(translation.textVi());
+            company.setDescriptionEn(translation.textEn());
+        } else if (hasVi && !hasEn) {
             var translation = aiPythonService.autoDetectAndTranslate(descVi);
             company.setDescriptionVi(translation.textVi());
             company.setDescriptionEn(translation.textEn());

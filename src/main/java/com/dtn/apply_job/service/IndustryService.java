@@ -26,7 +26,12 @@ public class IndustryService {
         String rawName = industry.getName();
         boolean hasVi = industry.getNameVi() != null && !industry.getNameVi().isBlank();
         boolean hasEn = industry.getNameEn() != null && !industry.getNameEn().isBlank();
-        if (hasVi && !hasEn) {
+
+        if (hasVi && hasEn && industry.getNameVi().trim().equalsIgnoreCase(industry.getNameEn().trim())) {
+            var res = aiPythonService.autoDetectAndTranslate(industry.getNameVi().trim());
+            industry.setNameVi(res.textVi());
+            industry.setNameEn(res.textEn());
+        } else if (hasVi && !hasEn) {
             var res = aiPythonService.autoDetectAndTranslate(industry.getNameVi());
             industry.setNameEn(res.textEn());
         } else if (!hasVi && hasEn) {
@@ -50,6 +55,21 @@ public class IndustryService {
     public Industry handleUpdateIndustry(UUID id, Industry reqIndustry) throws IdInvalidException {
         Industry currentIndustry = this.industryRepository.findById(id)
                 .orElseThrow(() -> new IdInvalidException("Industry id not found"));
+
+        boolean hasVi = reqIndustry.getNameVi() != null && !reqIndustry.getNameVi().isBlank();
+        boolean hasEn = reqIndustry.getNameEn() != null && !reqIndustry.getNameEn().isBlank();
+
+        if (hasVi && hasEn && reqIndustry.getNameVi().trim().equalsIgnoreCase(reqIndustry.getNameEn().trim())) {
+            var res = aiPythonService.autoDetectAndTranslate(reqIndustry.getNameVi().trim());
+            reqIndustry.setNameVi(res.textVi());
+            reqIndustry.setNameEn(res.textEn());
+        } else if (hasVi && !hasEn) {
+            var res = aiPythonService.autoDetectAndTranslate(reqIndustry.getNameVi());
+            reqIndustry.setNameEn(res.textEn());
+        } else if (!hasVi && hasEn) {
+            var res = aiPythonService.autoDetectAndTranslate(reqIndustry.getNameEn());
+            reqIndustry.setNameVi(res.textVi());
+        }
 
         if (reqIndustry.getNameVi() != null) {
             boolean isNameChanged = !reqIndustry.getNameVi().equals(currentIndustry.getNameVi());
