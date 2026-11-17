@@ -31,20 +31,20 @@ public class InterviewService {
 
     public ResInterviewSessionDTO getSessionDetail(UUID sessionId) throws IdInvalidException {
         InterviewSession session = interviewSessionRepository.findById(sessionId)
-                .orElseThrow(() -> new IdInvalidException("Phiên phỏng vấn không tồn tại: " + sessionId));
+                .orElseThrow(() -> new IdInvalidException("The interview session doesn't exist: " + sessionId));
         return interviewMapper.toResInterviewSessionDTO(session);
     }
 
     public ResInterviewSessionDTO getSessionByApplication(UUID applicationId) throws IdInvalidException {
         InterviewSession session = interviewSessionRepository.findByApplicationId(applicationId)
-                .orElseThrow(() -> new IdInvalidException("Không tìm thấy phiên phỏng vấn cho hồ sơ này: " + applicationId));
+                .orElseThrow(() -> new IdInvalidException("No interview session found for this CV: " + applicationId));
         return interviewMapper.toResInterviewSessionDTO(session);
     }
 
     @Transactional
     public void startSession(UUID sessionId) throws IdInvalidException {
         InterviewSession session = interviewSessionRepository.findById(sessionId)
-                .orElseThrow(() -> new IdInvalidException("Phiên phỏng vấn không tồn tại: " + sessionId));
+                .orElseThrow(() -> new IdInvalidException("The interview session doesn't exist: " + sessionId));
         session.setStatus(InterviewSessionStatus.IN_PROGRESS);
         session.setStartedAt(Instant.now());
         interviewSessionRepository.save(session);
@@ -53,7 +53,7 @@ public class InterviewService {
     @Transactional
     public void submitSession(UUID sessionId, MultipartFile videoFile, String progressJson) throws Exception {
         InterviewSession session = interviewSessionRepository.findById(sessionId)
-                .orElseThrow(() -> new IdInvalidException("Phiên phỏng vấn không tồn tại: " + sessionId));
+                .orElseThrow(() -> new IdInvalidException("The interview session doesn't exist: " + sessionId));
 
         String videoUrl = fileService.storeToCloudinary(videoFile, "interviews");
         session.setMediaRecordUrl(videoUrl);
@@ -78,5 +78,18 @@ public class InterviewService {
 
         interviewSessionRepository.save(session);
         aiPythonService.evaluateInterviewSessionAsync(sessionId, videoUrl);
+    }
+
+    public void retryEvaluate(UUID sessionId) throws Exception {
+        InterviewSession session = interviewSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new IdInvalidException("The interview session does not exist: " + sessionId));
+
+        if (session.getMediaRecordUrl() == null || session.getMediaRecordUrl().isBlank()) {
+            throw new IdInvalidException("The interview session hasn't a video for grading!");
+        }
+
+        session.setStatus(InterviewSessionStatus.EVALUATING);
+        interviewSessionRepository.save(session);
+        aiPythonService.evaluateInterviewSessionAsync(sessionId, session.getMediaRecordUrl());
     }
 }

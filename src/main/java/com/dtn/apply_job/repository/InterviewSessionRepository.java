@@ -2,6 +2,7 @@ package com.dtn.apply_job.repository;
 
 import com.dtn.apply_job.domain.Application;
 import com.dtn.apply_job.domain.InterviewSession;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,4 +13,7 @@ import java.util.UUID;
 public interface InterviewSessionRepository extends JpaRepository<InterviewSession, UUID> {
     Optional<InterviewSession> findByApplication(Application application);
     Optional<InterviewSession> findByApplicationId(UUID applicationId);
+
+    @EntityGraph(attributePaths = {"questions"})
+    Optional<InterviewSession> findWithQuestionsById(UUID id);
 }

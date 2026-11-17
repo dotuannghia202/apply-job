@@ -33,7 +33,7 @@ public class InterviewController {
     }
 
     @PostMapping("/{sessionId}/start")
-    @PreAuthorize("hasAnyRole('CANDIDATE', 'ROLE_CANDIDATE', 'ADMIN', 'ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('CANDIDATE', 'ADMIN')")
     @ApiMessage("Interview session started successfully")
     public ResponseEntity<Void> startInterview(@PathVariable UUID sessionId) throws Exception {
         interviewService.startSession(sessionId);
@@ -41,13 +41,21 @@ public class InterviewController {
     }
 
     @PostMapping("/{sessionId}/submit")
-    @PreAuthorize("hasAnyRole('CANDIDATE', 'ROLE_CANDIDATE', 'ADMIN', 'ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('CANDIDATE', 'ADMIN')")
     @ApiMessage("Interview session submitted successfully")
     public ResponseEntity<Void> submitInterview(
             @PathVariable UUID sessionId,
             @RequestParam("video") MultipartFile video,
             @RequestParam("progress") String progressJson) throws Exception {
         interviewService.submitSession(sessionId, video, progressJson);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{sessionId}/retry-evaluate")
+    @PreAuthorize("hasAnyRole('CANDIDATE', 'ADMIN')")
+    @ApiMessage("Interview session re-evaluation triggered successfully")
+    public ResponseEntity<Void> retryEvaluate(@PathVariable UUID sessionId) throws Exception {
+        interviewService.retryEvaluate(sessionId);
         return ResponseEntity.ok().build();
     }
 }

@@ -26,6 +26,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
@@ -318,9 +319,10 @@ public class AiPythonService {
     }
 
     @Async
+    @Transactional
     public void evaluateInterviewSessionAsync(UUID sessionId, String videoUrl) {
         try {
-            InterviewSession session = interviewSessionRepository.findById(sessionId)
+            InterviewSession session = interviewSessionRepository.findWithQuestionsById(sessionId)
                     .orElseThrow(() -> new RuntimeException("Session not found: " + sessionId));
 
             String evalUrl = pythonAiBaseUrl + "/api/v1/ai/interview/evaluate";
@@ -376,6 +378,7 @@ public class AiPythonService {
                     }
                 }
 
+                interviewQuestionRepository.saveAll(session.getQuestions());
                 interviewSessionRepository.save(session);
                 log.info(">>> [AI Interview] Đã hoàn thành chấm điểm buổi phỏng vấn Session: {}", sessionId);
             }
