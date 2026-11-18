@@ -52,7 +52,7 @@ public class InterviewController {
     }
 
     @PostMapping("/{sessionId}/retry-evaluate")
-    @PreAuthorize("hasAnyRole('CANDIDATE', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('CANDIDATE', 'EMPLOYER', 'ADMIN')")
     @ApiMessage("Interview session re-evaluation triggered successfully")
     public ResponseEntity<Void> retryEvaluate(@PathVariable UUID sessionId) throws Exception {
         interviewService.retryEvaluate(sessionId);

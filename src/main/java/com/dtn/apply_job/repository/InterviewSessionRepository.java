@@ -12,6 +12,8 @@ import java.util.UUID;
 @Repository
 public interface InterviewSessionRepository extends JpaRepository<InterviewSession, UUID> {
     Optional<InterviewSession> findByApplication(Application application);
+
+    @EntityGraph(attributePaths = {"questions"})
     Optional<InterviewSession> findByApplicationId(UUID applicationId);
 
     @EntityGraph(attributePaths = {"questions"})

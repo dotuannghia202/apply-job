@@ -29,12 +29,14 @@ public class InterviewService {
     private final ObjectMapper objectMapper;
     private final InterviewMapper interviewMapper;
 
+    @Transactional(readOnly = true)
     public ResInterviewSessionDTO getSessionDetail(UUID sessionId) throws IdInvalidException {
-        InterviewSession session = interviewSessionRepository.findById(sessionId)
+        InterviewSession session = interviewSessionRepository.findWithQuestionsById(sessionId)
                 .orElseThrow(() -> new IdInvalidException("The interview session doesn't exist: " + sessionId));
         return interviewMapper.toResInterviewSessionDTO(session);
     }
 
+    @Transactional(readOnly = true)
     public ResInterviewSessionDTO getSessionByApplication(UUID applicationId) throws IdInvalidException {
         InterviewSession session = interviewSessionRepository.findByApplicationId(applicationId)
                 .orElseThrow(() -> new IdInvalidException("No interview session found for this CV: " + applicationId));
@@ -80,6 +82,7 @@ public class InterviewService {
         aiPythonService.evaluateInterviewSessionAsync(sessionId, videoUrl);
     }
 
+    @Transactional
     public void retryEvaluate(UUID sessionId) throws Exception {
         InterviewSession session = interviewSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new IdInvalidException("The interview session does not exist: " + sessionId));
